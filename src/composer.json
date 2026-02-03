@@ -19,7 +19,6 @@
         "symfony/dotenv": "7.4.*",
         "symfony/flex": "^2",
         "symfony/framework-bundle": "7.4.*",
-        "symfony/maker-bundle": "^1.49",
         "symfony/monolog-bundle": "^3.0|^4.0",
         "symfony/property-access": "7.4.*",
         "symfony/property-info": "7.4.*",
@@ -34,6 +33,7 @@
     "require-dev": {
         "roave/security-advisories": "dev-latest",
         "symfony/debug-bundle": "7.4.*",
+        "symfony/maker-bundle": "^1.65",
         "symfony/stopwatch": "7.4.*",
         "symfony/web-profiler-bundle": "7.4.*"
     },
