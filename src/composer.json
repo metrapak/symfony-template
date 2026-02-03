@@ -16,6 +16,7 @@
         "symfony/flex": "^2",
         "symfony/framework-bundle": "7.4.*",
         "symfony/maker-bundle": "^1.49",
+        "symfony/monolog-bundle": "^3.0|^4.0",
         "symfony/runtime": "7.4.*",
         "symfony/twig-bundle": "7.4.*",
         "symfony/yaml": "7.4.*",
@@ -23,7 +24,10 @@
         "twig/twig": "^2.12|^3.0"
     },
     "require-dev": {
-        "roave/security-advisories": "dev-latest"
+        "roave/security-advisories": "dev-latest",
+        "symfony/debug-bundle": "7.4.*",
+        "symfony/stopwatch": "7.4.*",
+        "symfony/web-profiler-bundle": "7.4.*"
     },
     "config": {
         "allow-plugins": {
