@@ -34,9 +34,15 @@ clean:
 	cd docker && docker compose down -v
 	git clean -fdx -e .idea
 
+build:
+	cd docker && docker compose build --no-cache
+
 start:
 	cd docker && docker compose up -d
 	@echo "Open http://localhost:8080"
+
+stop:
+	cd docker && docker compose stop
 
 terminal:
 	cd docker && docker compose exec -it php-fpm bash

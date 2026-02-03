@@ -4,13 +4,14 @@ ARG HOST_UID=1000
 
 COPY ./scripts/* /usr/local/bin/
 
-RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS shadow \
+RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS shadow icu-dev \
     && apk add --no-cache bash \
       curl \
       wget \
       linux-headers \
       libpq-dev \
-    && docker-php-ext-install pdo pdo_pgsql \
+      icu-libs \
+    && docker-php-ext-install pdo pdo_pgsql intl \
     && pecl install xdebug \
     && docker-php-ext-enable xdebug \
     && usermod -u "${HOST_UID}" www-data \
