@@ -15,6 +15,7 @@ class TestController extends AbstractController
     public function index(EntityManagerInterface $entityManager): JsonResponse
     {
         $entityManager->getConnection()->connect();
+
         return $this->json([
             'message' => 'Welcome to your new controller!',
             'path' => 'src/Controller/TestController.php',
@@ -26,8 +27,7 @@ class TestController extends AbstractController
     public function math(MathService $math): Response
     {
         $sum = $math->add(2, 3);
+
         return new Response("2 + 3 = $sum");
     }
-
-
 }

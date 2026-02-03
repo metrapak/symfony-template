@@ -2,10 +2,10 @@
 
 namespace App\Service;
 
-class MathService {
-  public function add(int $a, int $b): int
-  {
-    return $a + $b;
-  }
-
+class MathService
+{
+    public function add(int $a, int $b): int
+    {
+        return $a + $b;
+    }
 }
