@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Model\Starship;
+use App\Model\StarshipStatusEnum;
 use Psr\Log\LoggerInterface;
 
 class StarshipRepository
@@ -13,22 +14,21 @@ class StarshipRepository
 
     public function findAll(): array
     {
-        $this->logger->info("Finding Starships");
+        $this->logger->info('Finding Starships');
+
         return [
-            new Starship(1, 'USS', 'Garden', 'Jon Doen', 'under construction'),
-
+            new Starship(1, 'USS', 'Garden', 'Jon Doen', StarshipStatusEnum::WAITING),
         ];
-
     }
 
     public function findById(int $id): ?Starship
     {
-
         foreach ($this->findAll() as $starship) {
             if ($starship->getId() === $id) {
                 return $starship;
             }
         }
-        return NULL;
+
+        return null;
     }
 }
