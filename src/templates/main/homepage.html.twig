@@ -25,7 +25,20 @@
                 <td>{{ ship.statusString }}</td>
             </tr>
 
-
+            <tr>
+                <th>Arrived at</th>
+                <td>{{ ship.arrivedAt|date }}</td>
+            </tr>
         </table>
+
+        <div>
+            <h1> Iss data</h1>
+            <p>
+                {{ issData.latitude }}
+            </p>
+            <p>
+                {{ issData.longitude }}
+            </p>
+        </div>
     </div>
 {% endblock %}

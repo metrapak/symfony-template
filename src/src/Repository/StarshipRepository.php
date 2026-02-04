@@ -17,7 +17,14 @@ class StarshipRepository
         $this->logger->info('Finding Starships');
 
         return [
-            new Starship(1, 'USS', 'Garden', 'Jon Doen', StarshipStatusEnum::WAITING),
+            new Starship(
+                1,
+                'USS',
+                'Garden',
+                'Jon Doen',
+                StarshipStatusEnum::WAITING,
+                new \DateTimeImmutable('-2 hours')
+            ),
         ];
     }
 
