@@ -15,7 +15,12 @@ install-docker-override:
 
 install-php-xdebug-ini:
 	cp -n ./docker/php-fpm/assets/xdebug.ini.example ./docker/php-fpm/assets/xdebug.ini
-	sed -i "s/XDEBUG_CLIENT_HOST/$(shell hostname -I | cut -d" " -f1)/" ./docker/php-fpm/assets/xdebug.ini
+	@if docker network inspect bridge >/dev/null 2>&1; then \
+		GATEWAY=$$(docker network inspect bridge | grep Gateway | cut -d'"' -f4); \
+		sed -i "s/XDEBUG_CLIENT_HOST/$$GATEWAY/" ./docker/php-fpm/assets/xdebug.ini; \
+	else \
+		sed -i "s/XDEBUG_CLIENT_HOST/172.17.0.1/" ./docker/php-fpm/assets/xdebug.ini; \
+	fi
 
 install-docker-php-fpm:
 	cd docker && \

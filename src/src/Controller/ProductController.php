@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Category;
 use App\Entity\Product;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -15,10 +16,15 @@ final class ProductController extends AbstractController
     public function createProduct(EntityManagerInterface $entityManager, ValidatorInterface $validator): Response
     {
         try {
+
+            $category = new Category();
+            $category->setName('Computer Peripherals');
+
             $product = new Product();
             $product->setName('Keyboard');
             $product->setPrice(1999);
             $product->setDescription('Ergonomic and stylish!');
+            $product->setCategory($category);
 
             $errors = $validator->validate($product);
             if (count($errors) > 0) {
@@ -29,6 +35,7 @@ final class ProductController extends AbstractController
                 return new Response(implode("\n", $messages), 400);
             }
 
+            $entityManager->persist($category);
             $entityManager->persist($product);
             $entityManager->flush();
 
@@ -64,7 +71,10 @@ final class ProductController extends AbstractController
                 );
             }
 
-            return new Response('Check out this great product: ' . $product->getName());
+            $category = $product->getCategory();
+            $category_name = $category->getName();
+
+            return new Response('Check out this great product: ' . $product->getName() . ' in ' . $category_name . ' category');
 
         }
     }
