@@ -15,6 +15,7 @@ class ProductRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Product::class);
     }
+
     /**
      * @return Product[]
      */
@@ -26,7 +27,7 @@ class ProductRepository extends ServiceEntityRepository
             'SELECT p
             FROM App\Entity\Product p
             WHERE p.price > :price
-            ORDER BY p.price ASC'
+            ORDER BY p.price ASC',
         )->setParameter('price', $price);
 
         return $query->getResult();
@@ -48,8 +49,8 @@ class ProductRepository extends ServiceEntityRepository
 
         return $query->execute(); // to get just one result:
         // $product = $query->setMaxResults(1)->getOneOrNullResult();
-
     }
+
     public function findAllGreaterThanPrice3(int $price): array
     {
         $conn = $this->getEntityManager()->getConnection();

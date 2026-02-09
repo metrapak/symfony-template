@@ -17,7 +17,7 @@ class ExceptionListener
         $message = sprintf(
             'My Error says: %s with code: %s',
             $exception->getMessage(),
-            $exception->getCode()
+            $exception->getCode(),
         );
 
         $response = new Response();

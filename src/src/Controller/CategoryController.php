@@ -17,14 +17,12 @@ class CategoryController extends AbstractController
         $categories = $repository->findAll();
 
         return $this->json($categories);
-
     }
 
     #[Route('/category/delete/{id}', name: 'category_delete')]
     public function delete(EntityManagerInterface $entityManager, int $id): Response
     {
         $category = $entityManager->find(Category::class, $id);
-
 
         if (!$category) {
             return new Response('Category not found', Response::HTTP_NOT_FOUND);
@@ -34,7 +32,5 @@ class CategoryController extends AbstractController
         $entityManager->flush();
 
         return new Response('Category deleted successfully', Response::HTTP_OK);
-
     }
-
 }

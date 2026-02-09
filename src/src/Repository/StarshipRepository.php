@@ -23,7 +23,7 @@ class StarshipRepository
                 'Garden',
                 'Jon Doen',
                 StarshipStatusEnum::WAITING,
-                new \DateTimeImmutable('-2 hours')
+                new \DateTimeImmutable('-2 hours'),
             ),
         ];
     }

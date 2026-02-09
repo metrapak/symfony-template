@@ -13,6 +13,7 @@ class StarshipController extends AbstractController
     public function show(int $id, StarshipRepository $repository): Response
     {
         $starship = $repository->findById($id);
+
         if (!$starship) {
             throw $this->createNotFoundException('Starship not found');
         }

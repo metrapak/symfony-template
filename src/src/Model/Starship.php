@@ -5,12 +5,12 @@ namespace App\Model;
 class Starship
 {
     public function __construct(
-        private int $id,
-        private string $name,
-        private string $class,
-        private string $captain,
-        private StarshipStatusEnum $status,
-        private \DateTimeImmutable $arrivedAt,
+        private readonly int $id,
+        private readonly string $name,
+        private readonly string $class,
+        private readonly string $captain,
+        private readonly StarshipStatusEnum $status,
+        private readonly \DateTimeImmutable $arrivedAt,
     ) {
     }
 

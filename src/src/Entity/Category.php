@@ -15,13 +15,13 @@ class Category
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $name = null;
 
     /**
      * @var Collection<int, Product>
      */
-    #[ORM\OneToMany(mappedBy: 'category', targetEntity: Product::class, orphanRemoval: true )]
+    #[ORM\OneToMany(mappedBy: 'category', targetEntity: Product::class, orphanRemoval: true)]
     private Collection $products;
 
     public function __construct()
@@ -39,7 +39,7 @@ class Category
         return $this->name;
     }
 
-    public function setName(string $name): static
+    public function setName(?string $name): static
     {
         $this->name = $name;
 
@@ -66,12 +66,7 @@ class Category
 
     public function removeProduct(Product $product): static
     {
-        if ($this->products->removeElement($product)) {
-            // set the owning side to null (unless already changed)
-            if ($product->getCategory() === $this) {
-                $product->setCategory(null);
-            }
-        }
+        $this->products->removeElement($product);
 
         return $this;
     }

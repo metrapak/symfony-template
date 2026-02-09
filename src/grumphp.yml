@@ -1,0 +1,19 @@
+grumphp:
+    stop_on_failure: false
+    tasks:
+        phpcsfixer:
+            config: '.php-cs-fixer.dist.php'
+            using_cache: true
+            cache_file: '.php-cs-fixer.cache'
+            triggered_by: ['php']
+
+        phpstan:
+            configuration: phpstan.dist.neon
+            triggered_by: ['php']
+            memory_limit: "1G"
+            use_grumphp_paths: false
+        yamllint:
+            whitelist_patterns:
+                - /^config\/(.*)/
+            ignore_patterns:
+                - vendor/

@@ -49,7 +49,7 @@ class TestController extends AbstractController
         $allAttributes = $request->attributes->all();
 
         return $this->json([
-            'Showing blog post: '.$slug,
+            'Showing blog post: ' . $slug,
         ]);
     }
 
@@ -60,10 +60,11 @@ class TestController extends AbstractController
         path: [
             'en' => '/blog/list',
             'nl' => '/blog/list-nl',
-            '/blog/list',
+            '_default' => '/blog/list',
         ],
         name: 'blog_list',
-        priority: 2)]
+        priority: 2,
+    )]
     public function list(): Response
     {
         $this->generateUrl('blog_show');

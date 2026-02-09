@@ -16,7 +16,6 @@ final class ProductController extends AbstractController
     public function createProduct(EntityManagerInterface $entityManager, ValidatorInterface $validator): Response
     {
         try {
-
             $category = new Category();
             $category->setName('Computer Peripherals');
 
@@ -27,22 +26,22 @@ final class ProductController extends AbstractController
             $product->setCategory($category);
 
             $errors = $validator->validate($product);
-            if (count($errors) > 0) {
+
+            if (\count($errors) > 0) {
                 $messages = [];
                 foreach ($errors as $error) {
                     $messages[] = $error->getPropertyPath() . ': ' . $error->getMessage();
                 }
+
                 return new Response(implode("\n", $messages), 400);
             }
 
             $entityManager->persist($category);
             $entityManager->persist($product);
             $entityManager->flush();
-
         } catch (\Exception $e) {
             return new Response('Error: ' . $e->getMessage());
         }
-
 
         return new Response('Saved new product with id ' . $product->getId());
     }
@@ -50,65 +49,56 @@ final class ProductController extends AbstractController
     #[Route('/product/{id<\d+>}', name: 'product_show')]
     public function show(EntityManagerInterface $entityManager, int $id): Response
     {
-        {
-            $repository = $entityManager->getRepository(Product::class);
+        $repository = $entityManager->getRepository(Product::class);
 
-            $product = $repository->find($id);
-//            $product = $repository->findOneBy(['name' => 'Keyboard']);
-//            $product = $repository->findOneBy([
-//                'name' => 'Keyboard',
-//                'price' => 1999,
-//            ]);
-//            $products = $repository->findBy(
-//                ['name' => 'Keyboard'],
-//                ['price' => 'ASC']
-//            );
+        $product = $repository->find($id);
+        //            $product = $repository->findOneBy(['name' => 'Keyboard']);
+        //            $product = $repository->findOneBy([
+        //                'name' => 'Keyboard',
+        //                'price' => 1999,
+        //            ]);
+        //            $products = $repository->findBy(
+        //                ['name' => 'Keyboard'],
+        //                ['price' => 'ASC']
+        //            );
 
-
-            if (!$product) {
-                throw $this->createNotFoundException(
-                    'No product found for id ' . $id
-                );
-            }
-
-            $category = $product->getCategory();
-            $category_name = $category->getName();
-
-            return new Response('Check out this great product: ' . $product->getName() . ' in ' . $category_name . ' category');
-
+        if (!$product) {
+            throw $this->createNotFoundException('No product found for id ' . $id);
         }
+
+        $category = $product->getCategory();
+        $category_name = $category->getName();
+
+        return new Response('Check out this great product: ' . $product->getName() . ' in ' . $category_name . ' category');
     }
 
     #[Route('/product/{id}/edit', name: 'product_edit')]
-    public function update(EntityManagerInterface $entityManager, int $id) : Response
+    public function update(EntityManagerInterface $entityManager, int $id): Response
     {
         $repository = $entityManager->getRepository(Product::class);
         $product = $repository->find($id);
 
-      if (!$product) {
-          throw $this->createNotFoundException(
-              'No product found'
-          );
-      }
+        if (!$product) {
+            throw $this->createNotFoundException('No product found');
+        }
 
         $product->setName('New product name!');
         $entityManager->flush();
+
         return $this->redirectToRoute('product_show', [
-            'id' => $product->getId()
+            'id' => $product->getId(),
         ]);
     }
 
     #[Route('/product/find ', name: 'product_find')]
-    public function find(EntityManagerInterface $entityManager) : Response
+    public function find(EntityManagerInterface $entityManager): Response
     {
         $repository = $entityManager->getRepository(Product::class);
         $minPrice = 1500;
         $products = $repository->findAllGreaterThanPrice2($minPrice);
 
         if (!$products) {
-            throw $this->createNotFoundException(
-                'No products found'
-            );
+            throw $this->createNotFoundException('No products found');
         }
 
         return $this->json($products);
