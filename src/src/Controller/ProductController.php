@@ -6,13 +6,33 @@ use App\Entity\Category;
 use App\Entity\Product;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class ProductController extends AbstractController
 {
-    #[Route('/product', name: 'create_product')]
+    #[Route('/products', name: 'product_list')]
+    public function list(Request $request, EntityManagerInterface $entityManager): Response
+    {
+        $page = max(1, (int) $request->query->get('page', 1));
+        $limit = 30;
+
+        $repo = $entityManager->getRepository(Product::class);
+        $paginator = $repo->findAllWithCategoryPaginated($page, $limit);
+
+        $totalItems = count($paginator);
+        $pagesCount = (int) ceil($totalItems / $limit);
+
+        return $this->render('product/list.html.twig', [
+            'products' => $paginator,
+            'currentPage' => $page,
+            'pagesCount' => $pagesCount,
+        ]);
+    }
+
+    #[Route('/product/create', name: 'create_product')]
     public function createProduct(EntityManagerInterface $entityManager, ValidatorInterface $validator): Response
     {
         try {
@@ -102,5 +122,21 @@ final class ProductController extends AbstractController
         }
 
         return $this->json($products);
+    }
+
+    #[Route('/product/{id}/delete', name: 'product_delete')]
+    public function delete(EntityManagerInterface $entityManager, int $id): Response
+    {
+        $repository = $entityManager->getRepository(Product::class);
+        $product = $repository->find($id);
+
+        if (!$product) {
+            throw $this->createNotFoundException('No product found');
+        }
+
+        $entityManager->remove($product);
+        $entityManager->flush();
+
+        return new Response('Deleted product with id ' . $id);
     }
 }
