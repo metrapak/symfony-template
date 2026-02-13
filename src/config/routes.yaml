@@ -1,5 +1,11 @@
-controllers:
-    resource:
-        path: ../src/Controller/
-        namespace: App\Controller
+products_controllers:
+    resource: '../src/Products/Infrastructure/Controller/'
+    type: attribute
+
+shared_controllers:
+    resource: '../src/Shared/Infrastructure/Controller/'
+    type: attribute
+
+starships_controllers:
+    resource: '../src/Starships/Infrastructure/Controller/'
     type: attribute

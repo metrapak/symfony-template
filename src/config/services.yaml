@@ -18,8 +18,8 @@ services:
     App\:
         resource: '../src/'
         exclude:
-            - '../src/DependencyInjection/'
-            - '../src/Entity/'
+            - '../src/**/Domain/Entity/'
+            - '../src/**/Domain/Enum/'
             - '../src/Kernel.php'
 #    App\EventListener\ExceptionListener:
 #        tags: [ kernel.event_listener ]
