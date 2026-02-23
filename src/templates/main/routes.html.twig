@@ -1,0 +1,12 @@
+<h3>Available Routes ({{ count_routes() }})</h3>
+
+<table class="table">
+    {% for name, route in get_all_routes() %}
+        <tr>
+            <td><strong>{{ name }}</strong></td>
+            <td><code>{{ route.path }}</code></td>
+            <td><small>{{ route.controller }}</small></td>
+        </tr>
+    {% endfor %}
+</table>
+

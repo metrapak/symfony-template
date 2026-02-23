@@ -2,14 +2,9 @@
 
 {% block body %}
     <div>
-
-        {% for label, messages in app.flashes %}
-            {% for message in messages %}
-                <div class="flash-{{ label }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endfor %}
+        {{ path('homepage') }}
+        {{ app_name }}
+        {{ include('main/flashes.html.twig') }}
 
         <h2 class="text-2xl">My ship</h2>
         <table>
@@ -52,17 +47,6 @@
                 </p>
             </div>
         {% endif %}
-
-        <h3>Available Routes ({{ count_routes() }})</h3>
-
-        <table class="table">
-            {% for name, route in get_all_routes() %}
-                <tr>
-                    <td><strong>{{ name }}</strong></td>
-                    <td><code>{{ route.path }}</code></td>
-                    <td><small>{{ route.controller }}</small></td>
-                </tr>
-            {% endfor %}
-        </table>
+        {{ include('main/routes.html.twig') }}
     </div>
 {% endblock %}
