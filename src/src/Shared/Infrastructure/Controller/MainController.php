@@ -11,6 +11,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -20,6 +21,7 @@ class MainController extends AbstractController
     #[Route('/', name: 'homepage')]
     public function homepage(
         Request $request,
+        SessionInterface $session,
         StarshipRepository $repository,
         HttpClientInterface $httpClient,
         CacheInterface $issLocationPool,
@@ -49,6 +51,14 @@ class MainController extends AbstractController
 
         $cookie = new Cookie('visited_homepage', 'visited_homepage', strtotime('+1 day'));
         $response->headers->setCookie($cookie);
+
+        $request->cookies->get('visited_homepage');
+
+        $session->set('visited_homepage', true);
+        $session->remove('visited_homepage');
+        if ($session->has('visited_homepage')) {
+            exit($session->get('visited_homepage'));
+        }
 
         return $response;
     }
