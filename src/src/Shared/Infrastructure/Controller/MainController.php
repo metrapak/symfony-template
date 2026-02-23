@@ -37,9 +37,13 @@ class MainController extends AbstractController
         //        });
         $issData = [];
 
+        $this->addFlash('success', 'Welcome to the homepage! (added as a success message)');
+        $this->addFlash('notice', 'Welcome to the homepage! (added as a notice message)');
+
         return $this->render('main/homepage.html.twig', [
             'ship' => $ship,
             'issData' => $issData,
+
         ]);
     }
 }
