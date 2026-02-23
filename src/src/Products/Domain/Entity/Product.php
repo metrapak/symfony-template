@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Products\Domain\Entity;
 
+use App\Products\Domain\Validator\Constraint\ContainsAlphanumeric;
 use App\Products\Infrastructure\Persistence\Doctrine\ProductRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -23,6 +24,7 @@ class Product
     private string $name;
 
     #[ORM\Column]
+    #[ContainsAlphanumeric(mode: 'loose')]
     private int $price;
 
     #[ORM\Column(type: Types::TEXT)]
