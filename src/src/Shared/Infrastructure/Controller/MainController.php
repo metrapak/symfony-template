@@ -3,6 +3,7 @@
 namespace App\Shared\Infrastructure\Controller;
 
 use App\Starships\Infrastructure\Persistence\StarshipRepository;
+use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Twig\Command\DebugCommand;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -18,6 +19,14 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class MainController extends AbstractController
 {
+    public function __construct(private LoggerInterface $logger)
+    {
+
+        $this->logger->info('MainController instantiated');
+        $this->logger->alert('alert from MainController constructor');
+
+    }
+
     #[Route('/', name: 'homepage')]
     public function homepage(
         Request $request,
@@ -59,6 +68,8 @@ class MainController extends AbstractController
         if ($session->has('visited_homepage')) {
             exit($session->get('visited_homepage'));
         }
+
+        $request->isXmlHttpRequest(); // Is it an AJAX request?
 
         return $response;
     }
