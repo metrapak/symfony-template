@@ -8,6 +8,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\HttpFoundation\Cookie;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\Cache\CacheInterface;
@@ -17,6 +19,7 @@ class MainController extends AbstractController
 {
     #[Route('/', name: 'homepage')]
     public function homepage(
+        Request $request,
         StarshipRepository $repository,
         HttpClientInterface $httpClient,
         CacheInterface $issLocationPool,
@@ -39,11 +42,14 @@ class MainController extends AbstractController
 
         $this->addFlash('success', 'Welcome to the homepage! (added as a success message)');
         $this->addFlash('notice', 'Welcome to the homepage! (added as a notice message)');
-
-        return $this->render('main/homepage.html.twig', [
+        $response = $this->render('main/homepage.html.twig', [
             'ship' => $ship,
             'issData' => $issData,
-
         ]);
+
+        $cookie = new Cookie('visited_homepage', 'visited_homepage', strtotime('+1 day'));
+        $response->headers->setCookie($cookie);
+
+        return $response;
     }
 }
