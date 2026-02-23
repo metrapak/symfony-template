@@ -2,6 +2,8 @@
 
 {% block body %}
     <div>
+        {{ app.user }}
+        {{ app.request.uri }}
         {{ path('homepage') }}
         {{ app_name }}
         {{ include('main/flashes.html.twig') }}
@@ -48,5 +50,7 @@
             </div>
         {% endif %}
         {{ include('main/routes.html.twig') }}
+
+        {{ render(controller('App\\Shared\\Infrastructure\\Controller\\MainController::mostPopularPosts')) }}
     </div>
 {% endblock %}

@@ -92,4 +92,14 @@ class MainController extends AbstractController
     {
         return $this->forward('App\Shared\Infrastructure\Controller\MainController::generateUrlCustom');
     }
+
+    #[Route('/most-popular-posts', name: 'most_popular_posts')]
+    public function mostPopularPosts(): Response
+    {
+        $posts = ['Post 1', 'Post 2', 'Post 3'];
+
+        return $this->render('main/most-popular-posts.html.twig', [
+            'posts' => $posts,
+        ]);
+    }
 }
