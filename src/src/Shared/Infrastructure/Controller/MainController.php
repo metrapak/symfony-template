@@ -16,6 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class MainController extends AbstractController
@@ -24,40 +25,20 @@ class MainController extends AbstractController
     {
 
         $this->logger->info('MainController instantiated');
-        $this->logger->alert('alert from MainController constructor');
-
     }
 
     #[Route('/', name: 'homepage')]
     public function homepage(
         Request $request,
         SessionInterface $session,
-        StarshipRepository $repository,
-        HttpClientInterface $httpClient,
-        CacheInterface $issLocationPool,
-        int $issLocationCacheTtl,
         #[Autowire(service: 'twig.command.debug')]
         DebugCommand $twigdebugCommand,
     ): Response {
         $output = new BufferedOutput();
         $twigdebugCommand->run(new ArrayInput([]), $output);
 
-        $starships = $repository->findAll();
-        $ship = reset($starships);
-
-        //        $issData = $issLocationPool->get('iss_location_data', function (ItemInterface $item) use ($httpClient) {
-        //            $response = $httpClient->request('GET', 'https://api.wheretheiss.at/v1/satellites/25544');
-        //
-        //            return $response->toArray();
-        //        });
-        $issData = [];
-
-        $this->addFlash('success', 'Welcome to the homepage! (added as a success message)');
-        $this->addFlash('notice', 'Welcome to the homepage! (added as a notice message)');
-        $response = $this->render('main/homepage.html.twig', [
-            'ship' => $ship,
-            'issData' => $issData,
-        ]);
+        $this->addFlash('success', 'Welcome to the homepage!');
+        $response = $this->render('main/homepage.html.twig');
 
         $cookie = new Cookie('visited_homepage', 'visited_homepage', strtotime('+1 day'));
         $response->headers->setCookie($cookie);
@@ -73,6 +54,37 @@ class MainController extends AbstractController
         $request->isXmlHttpRequest(); // Is it an AJAX request?
 
         return $response;
+    }
+
+    #[Route('/starships', name: 'starships')]
+    public function starships(
+        StarshipRepository $repository,
+        CacheInterface $issLocationPool,
+        HttpClientInterface $httpClient,
+    ): Response {
+        $starships = $repository->findAll();
+        $ship = reset($starships);
+
+
+        $issData = $issLocationPool->get('iss_location_data', function (ItemInterface $item) use ($httpClient) {
+            $response = $httpClient->request('GET', 'https://api.wheretheiss.at/v1/satellites/25544');
+
+            return $response->toArray();
+        });
+
+        $response = $this->render('starship/starships.html.twig', [
+            'ship' => $ship,
+            'issData' => $issData,
+        ]);
+
+        return $response;
+
+    }
+
+    #[Route('/available-routes', name: 'available_routes')]
+    public function availableRoutes(): Response
+    {
+        return $this->render('main/routes.html.twig');
     }
 
     #[Route('/generate-url/{param?}', name: 'generate_url')]

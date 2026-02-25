@@ -1,0 +1,49 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div>
+
+        <h2 class="text-2xl">My ship</h2>
+        <table>
+            <tr>
+                <th>Name</th>
+                <td>
+                    <a href="{{ path('app_starship_show', {id: ship.id }) }}">
+                        {{ ship.name }}
+                    </a>
+                </td>
+            </tr>
+            <tr>
+                <th>Class</th>
+                <td>{{ ship.class }}</td>
+            </tr>
+            <tr>
+                <th>Captain</th>
+                <td>{{ ship.captain|upper|lower|title }}</td>
+            </tr>
+            <tr>
+                <th>Status</th>
+                <td>{{ ship.statusString }}</td>
+            </tr>
+
+            <tr>
+                <th>Arrived at</th>
+                <td>{{ ship.arrivedAt|date }}</td>
+            </tr>
+        </table>
+
+
+        {% if issData %}
+            <div>
+                <h1> Iss data</h1>
+                <p>
+                    {{ issData.latitude }}
+                </p>
+                <p>
+                    {{ issData.longitude }}
+                </p>
+            </div>
+        {% endif %}
+
+    </div>
+{% endblock %}
