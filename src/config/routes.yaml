@@ -13,3 +13,7 @@ starships_controllers:
 to_do_list_controllers:
     resource: '../src/ToDoList/Controller/'
     type: attribute
+
+videos_controllers:
+    resource: '../src/Videos/Controller/'
+    type: attribute

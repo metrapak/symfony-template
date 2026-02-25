@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="{{ asset('videos/css/styles.css') }}">
+
+    <style>
+        .form-control {
+            background-color: #f8f5f5;
+        }
+    </style>
+
+    <link rel="stylesheet" href="{{ asset('videos/css/fontawesome.min.css') }}">
+
+    {% block customstylesheets %}
+    {% endblock %}
+
+    <title>{% block title %}Symfony 4 course app - video sharing service{% endblock %}</title>
+
+</head>
+
+<body class="text-center">
+<div class="container-fluid">
+    {% block menu %}
+        {{ include('videos/includes/_menu.html.twig') }}
+    {% endblock %}
+    {% block main %}
+    {% endblock %}
+    {% block footer_links %}
+        {{ include('videos/includes/_footer_links.html.twig') }}
+    {% endblock %}
+</div>
+{% block customjavascript %}
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="{{ asset('videos/js/jquery.js') }}"></script>
+    <script src="{{ asset('videos/js/popper.js') }}"></script>
+    <script src="{{ asset('videos/js/bootstrap.js') }}"></script>
+
+    <script>
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip()
+        })
+    </script>
+{% endblock %}
+</body>
+</html>
