@@ -25,6 +25,11 @@ doctrine:
                 type: attribute
                 dir: '%kernel.project_dir%/src/Starships/Domain/Entity'
                 prefix: 'App\Starships\Domain\Entity'
+            ToDoList:
+                is_bundle: false
+                type: attribute
+                dir: '%kernel.project_dir%/src/ToDoList/Entity'
+                prefix: 'App\ToDoList\Entity'
 
 when@test:
     doctrine:
