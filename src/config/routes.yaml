@@ -1,3 +1,6 @@
+controllers:
+    resource: '../src/Controller/'
+    type: attribute
 products_controllers:
     resource: '../src/Products/Infrastructure/Controller/'
     type: attribute
