@@ -2,15 +2,21 @@
 
 namespace App\Shared\Infrastructure\EventListener;
 
+use App\Shared\Infrastructure\Events\TestEvent;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
-#[AsEventListener]
 class ExceptionListener
 {
     public function __invoke(ExceptionEvent $event): void
+    {
+        //  it's called by default
+    }
+
+    #[AsEventListener(event: 'kernel.exception')]
+    public function onException(ExceptionEvent $event): void
     {
         // You get the exception object from the received event
         $exception = $event->getThrowable();
@@ -37,5 +43,11 @@ class ExceptionListener
 
         // sends the modified response object to the event
         //        $event->setResponse($response);
+    }
+
+    #[AsEventListener(event: TestEvent::class)]
+    public function onTest(TestEvent $event): void
+    {
+        $a = 0;
     }
 }

@@ -21,8 +21,11 @@ services:
             - '../src/**/Domain/Entity/'
             - '../src/**/Domain/Enum/'
             - '../src/Kernel.php'
-#    App\EventListener\ExceptionListener:
-#        tags: [ kernel.event_listener ]
+
+#    App\Shared\Infrastructure\EventListener\ExceptionListener:
+#        tags:
+#          - { name: 'kernel.event_listener', event: 'kernel.exception', method: 'onException' }
+#          - { name: 'kernel.event_listener', event: 'test.event', method: 'onTest' }
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

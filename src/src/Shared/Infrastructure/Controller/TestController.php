@@ -3,19 +3,22 @@
 namespace App\Shared\Infrastructure\Controller;
 
 use App\Shared\Domain\Service\MathService;
+use App\Shared\Infrastructure\Events\TestEvent;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class TestController extends AbstractController
 {
     #[Route('/test', name: 'app_test')]
-    public function index(EntityManagerInterface $entityManager): JsonResponse
+    public function index(EntityManagerInterface $entityManager, EventDispatcherInterface $dispatcher): JsonResponse
     {
         $entityManager->getConnection()->connect();
+        $dispatcher->dispatch(new TestEvent());
 
         return $this->json([
             'message' => 'Welcome to your new controller!',
