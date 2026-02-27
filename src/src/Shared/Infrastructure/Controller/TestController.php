@@ -4,9 +4,10 @@ namespace App\Shared\Infrastructure\Controller;
 
 use App\Shared\Domain\Service\MathService;
 use App\Shared\Infrastructure\Events\TestEvent;
+use App\Videos\Entity\Video;
+use App\Videos\Form\VideoFormType;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -15,15 +16,40 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 class TestController extends AbstractController
 {
     #[Route('/test', name: 'app_test')]
-    public function index(EntityManagerInterface $entityManager, EventDispatcherInterface $dispatcher): JsonResponse
+    public function index(EntityManagerInterface $entityManager, EventDispatcherInterface $dispatcher, Request $request): Response
     {
-        $entityManager->getConnection()->connect();
         $dispatcher->dispatch(new TestEvent());
 
-        return $this->json([
+        $videos = $entityManager->getRepository(Video::class)->findAll();
+        //        $video = $entityManager->getRepository(Video::class)->find(1);
+
+        $video = new Video();
+        $video->setTitle('Test Video');
+        $video->setCreatedAt(new \DateTime('tomorrow'));
+        $form = $this->createForm(VideoFormType::class, $video);
+
+        $form->handleRequest($request);
+        if ($form->isSubmitted() && $form->isValid()) {
+            $data = $form->getData();
+            $norm = $form->getNormData();
+            $view = $form->getViewData();
+
+            $file = $form->get('file')->getData();
+            $fileName = sha1(random_bytes(32)) . '.' . $file->guessExtension();
+            $file->move($this->getParameter('videos_directory'), $fileName);
+
+            $video->setFile($fileName);
+            $entityManager->persist($video);
+            $entityManager->flush();
+
+            return $this->redirectToRoute('app_test');
+        }
+
+        return $this->render('main/test.html.twig', [
             'message' => 'Welcome to your new controller!',
             'path' => 'src/Controller/TestController.php',
             'dbConnected' => $entityManager->getConnection()->isConnected(),
+            'form' => $form,
         ]);
     }
 
