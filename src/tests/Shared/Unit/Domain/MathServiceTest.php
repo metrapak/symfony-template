@@ -13,6 +13,14 @@ class MathServiceTest extends TestCase
         $this->assertEquals(5, $mathService->add(2, 3));
     }
 
+    public function testGetPromotionPercentage()
+    {
+        $mathService = new MathService();
+
+        $result = $mathService->getPromotionPercentage();
+        $this->assertEquals(20, $result);
+    }
+
     public function testCalculateDiscountedPrice()
     {
         $mathService = $this->getMockBuilder(MathService::class)
