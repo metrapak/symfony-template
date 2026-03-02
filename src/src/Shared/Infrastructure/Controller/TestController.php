@@ -10,6 +10,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -99,5 +101,24 @@ class TestController extends AbstractController
         $this->generateUrl('blog_show');
 
         return $this->json(['Showing blog list']);
+    }
+
+    #[Route('/send-email', name: 'send_email')]
+    public function sendTestEmail(MailerInterface $mailer): Response
+    {
+        $email = (new Email())
+            ->from('hello@example.com')
+            ->to('you@example.com')
+            // ->cc('cc@example.com')
+            // ->bcc('bcc@example.com')
+            // ->replyTo('fabien@example.com')
+            // ->priority(Email::PRIORITY_HIGH)
+            ->subject('Time for Symfony Mailer! test')
+            ->text('Sending emails is fun again!')
+            ->html('<p>See Twig integration for better HTML integration!</p>');
+
+        $mailer->send($email);
+
+        return $this->json('Email sent!');
     }
 }
