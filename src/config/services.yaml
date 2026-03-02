@@ -6,6 +6,11 @@
 parameters:
     iss_location_cache_ttl: 300
     videos_directory: '%kernel.project_dir%/public/uploads/videos'
+    app.supported_locales:
+        - en
+        - fr
+    app.locales_requirements: 'en|fr|'
+    app.default_locale: en
 
 services:
     # default configuration for services in *this* file

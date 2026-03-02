@@ -1,0 +1,3 @@
+homepage: "Homepage"
+welcome_test_app_message: "Welcome to your test application!"
+symfony.learning: "{0} I haven't started yet!|{1} I've been learning for one day!|]1,Inf[ I've been learning for %count% days!"

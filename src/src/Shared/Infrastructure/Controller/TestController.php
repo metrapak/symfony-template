@@ -14,12 +14,22 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
+#[Route(
+    '/{_locale}',
+    requirements: ['_locale' => '%app.locales_requirements%'],
+    defaults: ['_locale' => '%app.default_locale%'],
+)]
 class TestController extends AbstractController
 {
     #[Route('/test', name: 'app_test')]
-    public function index(EntityManagerInterface $entityManager, EventDispatcherInterface $dispatcher, Request $request): Response
-    {
+    public function index(
+        EntityManagerInterface $entityManager,
+        EventDispatcherInterface $dispatcher,
+        Request $request,
+        TranslatorInterface $translator,
+    ): Response {
         $dispatcher->dispatch(new TestEvent());
 
         $videos = $entityManager->getRepository(Video::class)->findAll();
@@ -47,8 +57,16 @@ class TestController extends AbstractController
             return $this->redirectToRoute('app_test');
         }
 
+        $welcomeMessage = $translator->trans('welcome_test_app_message');
+        $days = 5;
+
+        $symfony_learning = $translator->trans('symfony.learning', [
+            '%count%' => $days,
+        ]);
+
         return $this->render('main/test.html.twig', [
-            'message' => 'Welcome to your new controller!',
+            'message' => $welcomeMessage,
+            'symfony_learning' => $symfony_learning,
             'path' => 'src/Controller/TestController.php',
             'dbConnected' => $entityManager->getConnection()->isConnected(),
             'form' => $form,
