@@ -2,6 +2,8 @@
 
 namespace App\Videos\Controller;
 
+use App\Videos\Entity\Category;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -14,7 +16,7 @@ class FrontController extends AbstractController
         return $this->render('videos/front/index.html.twig');
     }
 
-    #[Route('/videos-list', name: 'videos_list')]
+    #[Route('/videos-list/category/{categoryname}', name: 'videos_list')]
     public function list(): Response
     {
         return $this->render('videos/front/video_list.html.twig');
@@ -54,5 +56,16 @@ class FrontController extends AbstractController
     public function payment(): Response
     {
         return $this->render('videos/front/payment.html.twig');
+    }
+
+    public function mainCategories(EntityManagerInterface $entityManager): Response
+    {
+        $categories = $entityManager
+            ->getRepository(Category::class)
+            ->findBy(['parent' => null], ['name' => 'ASC']);
+
+        return $this->render('videos/front/_main_categories.html.twig', [
+            'categories' => $categories,
+        ]);
     }
 }
