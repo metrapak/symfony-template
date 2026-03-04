@@ -7,6 +7,8 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: VideoRepository::class)]
+#[ORM\Table(name: 'videos')]
+#[ORM\Index(columns: ['title'], name: 'title_idx')]
 class Video
 {
     #[ORM\Id]
@@ -25,6 +27,15 @@ class Video
     #[ORM\Column(length: 255, nullable: true)]
     #[Assert\File(maxSize: '1024k', mimeTypes: ['video/mp4', 'video/mpeg', 'application/pdf'], mimeTypesMessage: 'Please upload a valid video file (MP4, MPEG, or PDF)')]
     private ?string $file = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $path = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $duration = null;
+
+    #[ORM\ManyToOne(inversedBy: 'videos')]
+    private ?Category $category = null;
 
     public function getId(): ?int
     {
@@ -63,6 +74,42 @@ class Video
     public function setfile(string $file): static
     {
         $this->file = $file;
+
+        return $this;
+    }
+
+    public function getPath(): ?string
+    {
+        return $this->path;
+    }
+
+    public function setPath(?string $path): static
+    {
+        $this->path = $path;
+
+        return $this;
+    }
+
+    public function getDuration(): ?int
+    {
+        return $this->duration;
+    }
+
+    public function setDuration(?int $duration): static
+    {
+        $this->duration = $duration;
+
+        return $this;
+    }
+
+    public function getCategory(): ?Category
+    {
+        return $this->category;
+    }
+
+    public function setCategory(?Category $category): static
+    {
+        $this->category = $category;
 
         return $this;
     }
