@@ -31,7 +31,9 @@ class AdminController extends AbstractController
     #[Route('/edit-category/{id}', name: 'edit_category')]
     public function editCategory(Category $category): Response
     {
-        return $this->render('videos/admin/edit_category.html.twig');
+        return $this->render('videos/admin/edit_category.html.twig', [
+            'category' => $category,
+        ]);
     }
 
     #[Route('/delete-category/{id}', name: 'delete_category')]
@@ -65,10 +67,11 @@ class AdminController extends AbstractController
 
     }
 
-    public function getCategoriesOptions(CategoryTree $categoryTree): Response
+    public function getCategoriesOptions(CategoryTree $categoryTree, Category $editedCategory = null): Response
     {
         return $this->render('videos/admin/includes/_categories_options.html.twig', [
             'categories' => $categoryTree->buildTree(),
+            'editedCategory' => $editedCategory,
         ]);
 
     }

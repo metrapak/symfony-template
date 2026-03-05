@@ -1,20 +1,22 @@
-{% macro category_options(categories, level = 0) %}
+{% macro category_options(categories, level = 0, editedCategory) %}
     {% import _self as macros %}
 
     {% for category in categories %}
-        <option value="{{ category.id }}">
+        {% set selected = (editedCategory and editedCategory.parent and editedCategory.parent.getId() == category.id) %}
+        <option {% if selected %} selected {% endif %} value="{{ category.id }}">
             {{ "--"|repeat(level) }} {{ category.name }}
         </option>
 
         {% if category.children is defined and category.children is not empty %}
-            {{ macros.category_options(category.children, level + 1) }}
+            {{ macros.category_options(category.children, level + 1, editedCategory) }}
         {% endif %}
     {% endfor %}
 {% endmacro %}
 
 {% import _self as macros %}
 
+<label for="inlineFormCustomSelect">Parent:</label>
 <select name="category" class="form-control">
-    <option value="0">No parent </option>
-    {{ macros.category_options(categories) }}
+    <option value="0" {{ editedCategory == null ? 'selected' : '' }}>No parent</option>
+    {{ macros.category_options(categories, 0, editedCategory) }}
 </select>
