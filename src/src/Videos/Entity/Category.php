@@ -6,9 +6,12 @@ use App\Videos\Repository\CategoryRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: CategoryRepository::class)]
 #[ORM\Table(name: 'categories')]
+#[UniqueEntity(fields: 'name')]
 class Category
 {
     #[ORM\Id]
@@ -17,6 +20,7 @@ class Category
     private ?int $id = null;
 
     #[ORM\Column(length: 255, unique: true, nullable: true)]
+    #[Assert\NotBlank(message: 'Category name should not be blank.')]
     private ?string $name = null;
 
     #[ORM\ManyToOne(targetEntity: self::class, inversedBy: 'subcategories')]

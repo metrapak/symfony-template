@@ -3,17 +3,17 @@
 {% block mainadmin %}
     <h2>Editing category</h2>
 
-    <form action="#" method="POST">
-        <input type="text" class="form-control is-invalid" id="validationServer01" placeholder="Category name"
-               value="{{ category.name }}"
-               required>
-        <br>
-            {{ render(controller('App\\Videos\\Controller\\AdminController::getCategoriesOptions', {'editedCategory': category})) }}
-        <div class="invalid-feedback">
-            Category already exists!
-        </div>
-        <button class="btn btn-primary mt-3" type="submit">Save</button>
+    {{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
 
-    </form>
+    {{ form_widget(form.name,  { 'translation_domain': false,'attr': {'class': 'form-control' ~ is_invalid, 'placeholder' : 'Category name', 'id': 'validationServer01'}}) }}
+
+    <br>
+    {{ render(controller('App\\Videos\\Controller\\AdminController::getCategoriesOptions', {'editedCategory': category})) }}
+    <div class="invalid-feedback">
+        {{ form_errors(form.name) }}
+    </div>
+    <button class="btn btn-primary mt-3" type="submit">Save</button>
+
+   {{ form_end(form) }}
 {% endblock %}
 
