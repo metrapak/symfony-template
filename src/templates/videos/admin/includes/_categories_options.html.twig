@@ -1,0 +1,20 @@
+{% macro category_options(categories, level = 0) %}
+    {% import _self as macros %}
+
+    {% for category in categories %}
+        <option value="{{ category.id }}">
+            {{ "--"|repeat(level) }} {{ category.name }}
+        </option>
+
+        {% if category.children is defined and category.children is not empty %}
+            {{ macros.category_options(category.children, level + 1) }}
+        {% endif %}
+    {% endfor %}
+{% endmacro %}
+
+{% import _self as macros %}
+
+<select name="category" class="form-control">
+    <option value="0">No parent </option>
+    {{ macros.category_options(categories) }}
+</select>

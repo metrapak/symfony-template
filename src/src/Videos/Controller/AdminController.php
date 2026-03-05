@@ -2,6 +2,9 @@
 
 namespace App\Videos\Controller;
 
+use App\Videos\Entity\Category;
+use App\Videos\Utils\CategoryTree;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -17,16 +20,27 @@ class AdminController extends AbstractController
     }
 
     #[Route('/categories', name: 'categories')]
-    public function categories(): Response
+    public function categories(CategoryTree $categoryTree): Response
     {
-        return $this->render('videos/admin/categories.html.twig');
+        return $this->render('videos/admin/categories.html.twig', [
+            'categories' => $categoryTree->buildTree(),
+        ]);
 
     }
 
-    #[Route('/edit-category', name: 'edit_category')]
-    public function editCategory(): Response
+    #[Route('/edit-category/{id}', name: 'edit_category')]
+    public function editCategory(Category $category): Response
     {
         return $this->render('videos/admin/edit_category.html.twig');
+    }
+
+    #[Route('/delete-category/{id}', name: 'delete_category')]
+    public function deleteCategory(Category $category, EntityManagerInterface $entityManager): Response
+    {
+        $entityManager->remove($category);
+        $entityManager->flush();
+
+        return $this->redirectToRoute('videos_admin_categories');
 
     }
 
@@ -48,6 +62,14 @@ class AdminController extends AbstractController
     public function users(): Response
     {
         return $this->render('videos/admin/users.html.twig');
+
+    }
+
+    public function getCategoriesOptions(CategoryTree $categoryTree): Response
+    {
+        return $this->render('videos/admin/includes/_categories_options.html.twig', [
+            'categories' => $categoryTree->buildTree(),
+        ]);
 
     }
 }

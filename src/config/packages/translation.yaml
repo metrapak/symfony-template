@@ -3,4 +3,4 @@ framework:
     enabled_locales: '%app.supported_locales%'
     translator:
         default_path: '%kernel.project_dir%/translations'
-        fallbacks: [ 'en' ]
+#        fallbacks: [ 'en' ]

@@ -12,54 +12,8 @@
 {% block title %}Admin panel - categories{% endblock %}
 {% block mainadmin %}
     <h2>Categories list</h2>
-
-    <ul class="fa-ul text-left">
-        <li><i class="fa-li fa fa-arrow-right"></i>Funny <a href="{{ path('videos_admin_edit_category') }}">edit</a> <a
-                    onclick="return confirm('Are you sure?');"
-                    href="#">delete</a></li>
-        <ul class="fa-ul text-left">
-            <li><i class="fa-li fa fa-arrow-right"></i>For kids <a href="{{ path('videos_admin_edit_category') }}">edit</a> <a
-                        onclick="return confirm('Are you sure?');"
-                        href="#">delete</a></li>
-            <li><i class="fa-li fa fa-arrow-right"></i>For adults <a href="#">edit</a> <a
-                        onclick="return confirm('Are you sure?');"
-                        href="#">delete</a></li>
-            <ul class="fa-ul text-left">
-                <li><i class="fa-li fa fa-arrow-right"></i>Strange <a href="#">edit</a> <a
-                            onclick="return confirm('Are you sure?');"
-                            href="#">delete</a></li>
-            </ul>
-        </ul>
-        <li><i class="fa-li fa fa-arrow-right"></i>Scary <a href="#">edit</a> <a
-                    onclick="return confirm('Are you sure?');"
-                    href="#">delete</a></li>
-        <li><i class="fa-li fa fa-arrow-right"></i>Unbelievable <a href="#">edit</a> <a
-                    onclick="return confirm('Are you sure?');"
-                    href="#">delete</a></li>
-        <li><i class="fa-li fa fa-arrow-right"></i>Inspirational <a href="#">edit</a> <a
-                    onclick="return confirm('Are you sure?');"
-                    href="#">delete</a></li>
-        <li><i class="fa-li fa fa-arrow-right"></i>Motivating <a href="#">edit</a> <a
-                    onclick="return confirm('Are you sure?');"
-                    href="#">delete</a></li>
-        <li><i class="fa-li fa fa-arrow-right"></i>Surprising <a href="#">edit</a> <a
-                    onclick="return confirm('Are you sure?');"
-                    href="#">delete</a></li>
-        <li><i class="fa-li fa fa-arrow-right"></i>Sad</li>
-        <ul class="fa-ul text-left">
-            <li><i class="fa-li fa fa-arrow-right"></i>Strange <a href="#">edit</a> <a
-                        onclick="return confirm('Are you sure?');"
-                        href="#">delete</a></li>
-            <ul class="fa-ul text-left">
-                <li><i class="fa-li fa fa-arrow-right"></i>Boring <a href="#">edit</a> <a
-                            onclick="return confirm('Are you sure?');"
-                            href="#">delete</a></li>
-            </ul>
-        </ul>
-        <li><i class="fa-li fa fa-arrow-right"></i>Relaxing <a href="#">edit</a> <a
-                    onclick="return confirm('Are you sure?');"
-                    href="#">delete</a></li>
-    </ul>
+    {% import 'videos/admin/includes/_category_macros.html.twig' as tree_utils %}
+    {{ tree_utils.display_admin_tree(categories) }}
 
     <form action="#" method="POST">
         <div class="col-md-4 mb-3">
@@ -69,14 +23,8 @@
                    required>
             <br>
             <label for="inlineFormCustomSelect">Parent:</label>
-            <select class="custom-select mr-sm-2" id="inlineFormCustomSelect">
-                <option value="1">Funny</option>
-                <option value="1">--For kids</option>
-                <option value="1">--For adults</option>
-                <option value="1">----For 60+</option>
-                <option value="2">Scary</option>
-                <option value="3">Motivating</option>
-            </select>
+            {{ render(controller('App\\Videos\\Controller\\AdminController::getCategoriesOptions')) }}
+
             <div class="invalid-feedback">
                 Category already exists!
             </div>

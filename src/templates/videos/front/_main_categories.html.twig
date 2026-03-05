@@ -1,4 +1,0 @@
-
-{% for category in categories %}
-<a class="p-2 text-dark" href="{{ path('videos_list', {categoryname: category.name|lower|slugify }) }}">{{ category.name }}</a>
-{% endfor %}

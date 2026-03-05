@@ -1,0 +1,22 @@
+{% macro display_admin_tree(categories) %}
+    {% import _self as macros %}
+
+    <ul class="fa-ul text-left">
+        {% for category in categories %}
+            <li>
+                <i class="fa-li fa fa-arrow-right"></i>
+                {{ category.name }}
+
+                <a href="{{ path('videos_admin_edit_category', {'id': category.id}) }}">Edit</a>
+
+                <a onclick="return confirm('Are you sure?');"
+                   href="{{ path('videos_admin_delete_category', {'id': category.id}) }}"
+                >Delete</a>
+
+                {% if category.children is defined and category.children is not empty %}
+                    {{ macros.display_admin_tree(category.children) }}
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% endmacro %}

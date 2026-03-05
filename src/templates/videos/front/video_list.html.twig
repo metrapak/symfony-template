@@ -6,8 +6,9 @@
 
         <section class="jumbotron text-center">
             <div class="container">
-
-                <h1 class="jumbotron-heading">Category - Funny</h1>
+                {% if current_category is not empty %}
+                <h1 class="jumbotron-heading">Category - {{ current_category.name }}</h1>
+                {% endif %}
                 <div class="btn-group">
                     <div class="dropdown ml-2">
                         <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton"
@@ -16,17 +17,15 @@
                             Subcategories
                         </button>
                         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                            <ul class="mr-5">
-                                <li><a href="#">Funny</a></li>
-                                <ul>
-                                    <li><a href="#">Surprising</a></li>
-                                    <li><a href="#">Exciting</a></li>
-                                    <ul>
-                                        <li><a href="#">Strange</a></li>
-                                        <li><a href="#">Relaxing</a></li>
-                                    </ul>
-                                </ul>
-                            </ul>
+                            {% import "videos/front/includes/_category_front_macros.html.twig" as category_macros %}
+                            <div class="category-menu">
+                                {% if main_category is not empty %}
+                                    <li class="category-item">
+                                        <a href="{{ main_category.url }}">{{ main_category.name }}</a>
+                                    </li>
+                                {% endif %}
+                                {{ category_macros.display_tree(subcategories) }}
+                            </div>
                         </div>
                     </div>
 

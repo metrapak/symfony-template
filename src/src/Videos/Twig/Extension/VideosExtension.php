@@ -12,6 +12,7 @@ class VideosExtension extends AbstractExtension
     {
         return [
             new TwigFilter('slugify', [VideosExtensionRuntime::class, 'slugify']),
+            new TwigFilter('repeat', [VideosExtensionRuntime::class, 'repeat']),
         ];
     }
 }
