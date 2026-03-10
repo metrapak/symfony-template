@@ -85,5 +85,10 @@ restart: stop start
 terminal:
 	cd docker && docker compose exec -it php-fpm bash
 
+test:
+	@echo "🧪 Running tests..."
+	cd docker && docker compose run --rm -T php-fpm php -dxdebug.mode=off bin/phpunit
+	@echo "✅ Tests completed!"
+
 db-seed:
-	cd docker && docker compose run --rm -T php-fpm php -dxdebug.mode=off artisan db:seed
+	cd docker && docker compose run --rm -T php-fpm php -dxdebug.mode=off bin/console doctrine:fixtures:load --no-interaction
