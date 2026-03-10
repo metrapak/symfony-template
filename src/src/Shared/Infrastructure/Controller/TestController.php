@@ -12,15 +12,15 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
-#[Route(
-    '/{_locale}',
-    requirements: ['_locale' => '%app.locales_requirements%'],
-    defaults: ['_locale' => '%app.default_locale%'],
-)]
+// #[Route(
+//    '/{_locale}',
+//    requirements: ['_locale' => '%app.locales_requirements%'],
+//    defaults: ['_locale' => '%app.default_locale%'],
+// )]
 class TestController extends AbstractController
 {
     #[Route('/test', name: 'app_test')]
