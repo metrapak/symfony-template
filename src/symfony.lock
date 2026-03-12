@@ -59,6 +59,9 @@
             "migrations/.gitignore"
         ]
     },
+    "knplabs/knp-paginator-bundle": {
+        "version": "v6.10.0"
+    },
     "php-cs-fixer/shim": {
         "version": "3.93",
         "recipe": {
