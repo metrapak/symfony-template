@@ -72,4 +72,17 @@ class CategoryTree
             ->executeQuery('SELECT * FROM categories ORDER BY name ASC')
             ->fetchAllAssociative();
     }
+
+    public function getChildIds(int $parentId): array
+    {
+        $ids = [];
+        foreach ($this->categories as $category) {
+            if ($category['parent_id'] === $parentId) {
+                $ids[] = $category['id'];
+                $ids = array_merge($ids, $this->getChildIds($category['id']));
+            }
+        }
+
+        return $ids;
+    }
 }

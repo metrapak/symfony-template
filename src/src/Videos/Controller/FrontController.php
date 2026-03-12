@@ -7,6 +7,7 @@ use App\Videos\Entity\Video;
 use App\Videos\Utils\CategoryTree;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -19,12 +20,14 @@ class FrontController extends AbstractController
     }
 
     #[Route('/videos-list/category/{name}/{id}/{page}', name: 'videos_list', requirements: ['page' => '\d+'], defaults: ['page' => 1])]
-    public function list(int $id, int $page, CategoryTree $categoryTree, EntityManagerInterface $entityManager): Response
+    public function list(int $id, int $page, CategoryTree $categoryTree, EntityManagerInterface $entityManager, Request $request): Response
     {
         $currentCategory = $entityManager->getRepository(Category::class)->find($id);
         $mainParent = $categoryTree->getMainParent($id);
         $subcategories = $categoryTree->buildTree($mainParent['id']);
-        $videos = $entityManager->getRepository(Video::class)->findAllPaginated($page);
+        $ids = $categoryTree->getChildIds($id);
+        $ids[] = $id;
+        $videos = $entityManager->getRepository(Video::class)->findByChildIds($ids, $page, $request->query->get('sortby'));
 
         return $this->render('videos/front/video_list.html.twig', [
             'current_category' => $currentCategory,

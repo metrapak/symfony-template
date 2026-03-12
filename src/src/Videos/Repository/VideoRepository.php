@@ -5,6 +5,7 @@ namespace App\Videos\Repository;
 use App\Videos\Entity\Video;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Knp\Component\Pager\Pagination\PaginationInterface;
 use Knp\Component\Pager\PaginatorInterface;
 
 /**
@@ -17,10 +18,13 @@ class VideoRepository extends ServiceEntityRepository
         parent::__construct($registry, Video::class);
     }
 
-    public function findAllPaginated(int $page)
+    public function findByChildIds(array $ids, int $page, ?string $sortMethod): PaginationInterface
     {
+        $sortMethod = 'rating' != $sortMethod ? $sortMethod : 'ASC';
         $queryBuilder = $this->createQueryBuilder('v')
-            ->orderBy('v.id', 'ASC');
+            ->andWhere('v.category IN (:ids)')
+            ->setParameter('ids', $ids)
+            ->orderBy('v.title', $sortMethod);
 
         return $this->paginator->paginate(
             $queryBuilder,
