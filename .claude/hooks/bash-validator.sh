@@ -57,7 +57,12 @@ fi
 
 # BLOCKED patterns - hard block (exit 2), truly destructive/irreversible
 BLOCKED_PATTERNS=(
-  "git[^;&|]*[[:space:]]push[^;&|]*(--force([^[:alnum:]]|$)|-f([[:space:]]|$))"
+  # The trailing class excludes "-" so the `--force-*` long options stay reachable:
+  # `--force-with-lease` and `--force-if-includes` both abort instead of overwriting
+  # when the remote moved since the last fetch, which makes them recoverable in the
+  # way a bare `--force` is not. `--force`, `--force=...` and `-f` are still blocked.
+  # This lifts only the hard block; AGENTS.md still requires explicit user consent.
+  "git[^;&|]*[[:space:]]push[^;&|]*(--force([^[:alnum:]-]|$)|-f([[:space:]]|$))"
   "git[[:space:]]+reset[[:space:]]+--hard"
   "git[[:space:]]+clean[[:space:]].*-f"
   "git[[:space:]]+branch[[:space:]]+-D"
