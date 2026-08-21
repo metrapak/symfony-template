@@ -667,23 +667,58 @@ No feature flag guards this work: it is the application's first real authenticat
 
 # Definition of Done (`.claude/DOD.md`, Standard tier)
 
-- [ ] `git diff --stat` reviewed
-- [ ] Task file naming follows the skill-prefix convention
-- [ ] No `.env` secrets read or committed — only `.env.example` keys added (`SESSION_IDLE_TTL`, `EMAIL_VERIFICATION_REQUIRED`)
-- [ ] `memory-bank/scripts/validate.py` passes; Project Brain validation passes
-- [ ] `composer validate --strict` passes
-- [ ] `php -l` clean on changed files
-- [ ] `make test` passes
-- [ ] `make cs-check` and `make stan` pass
-- [ ] `lint:container`, `debug:router`, `lint:yaml config`, `lint:twig templates` clean
-- [ ] `doctrine:schema:validate --skip-sync` in sync; migrations included and `down()` proven
-- [ ] Happy path and highest-risk failure path tested per flow
-- [ ] `Controller -> Service -> Repository` respected; no queries in controllers; no `Request` in services
-- [ ] Pragmatic SOLID review: only one interface introduced (`UserLoaderInterface`, a framework contract) — no pass-through layers
-- [ ] Validation at DTOs/forms; authorization via `access_control` and `user_checker`
-- [ ] OWASP review: enumeration, CSRF, session fixation, throttling, token single-use, no secrets logged
-- [ ] Self-reviewed against `.claude/GOLDEN-PRINCIPLES.md`
-- [ ] `specs/` updated (Step 17)
+- [x] `git diff --stat` reviewed — 107 files, +8402/-292
+- [x] Task file naming follows the skill-prefix convention
+- [x] No `.env` secrets read or committed — `.env` is git-ignored (`.gitignore:2`); only `.env.example` and `.env.test` are tracked. Both new keys resolve from container defaults (`config/services.yaml:19,26`), so the app boots without them; the example file's own contents could not be read under this session's permission rules — see note 4
+- [x] `memory-bank/scripts/validate.py` passes; Project Brain validation passes
+- [x] `composer validate --strict` passes — `name`/`description` added (`abed1c9`); the advisories this surfaced are cleared in `0a75c8c`
+- [x] `php -l` clean on changed files — 68 changed PHP files, 0 failures
+- [x] `make test` passes — 155 tests, 364 assertions
+- [x] `make cs-check` and `make stan` pass — 0 of 112 files fixable; no PHPStan errors
+- [x] `lint:container`, `debug:router`, `lint:yaml config` (28 files), `lint:twig templates` (50 files) clean
+- [x] `doctrine:schema:validate --skip-sync` in sync; migrations included and `down()` proven — all 3 epic migrations rolled back (18 queries) and re-applied against the `_test` database, leaving dev data untouched; R1's expand/contract split verified in that cycle
+- [x] Happy path and highest-risk failure path tested per flow — see note 3
+- [x] `Controller -> Service -> Repository` respected; no queries in controllers; no `Request` in services — one boundary leak found and fixed (note 1); note 2 accepted
+- [x] Pragmatic SOLID review: no pass-through layers introduced — see note 5
+- [x] Validation at DTOs/forms; authorization via `access_control` and `user_checker`
+- [x] OWASP review: enumeration, CSRF, session fixation, throttling, token single-use, no secrets logged
+- [x] Self-reviewed against `.claude/GOLDEN-PRINCIPLES.md` — all 10 principles, one nit (note 1)
+- [x] `specs/` updated (Step 17) — `specs/architect-architecture.md` present; `MANIFEST.md` row stamped 2026-08-21 and Key Decisions record session-based auth with no JSON API (verified: no `json_login` or `ApiLoginController` remains)
+
+## Review notes
+
+1. **Controller-level data access — fixed.** `EmailVerificationController::verify()` used to inject
+   `UserRepository` and call `$users->find($userId)` itself, resolving the id before handing a `User`
+   to the service. That lookup now lives in `EmailVerificationService::verify()`, whose signature took
+   `(string $signedUrl, User $user)` and now takes `(string $signedUrl, int $userId)`; the service
+   already had the repository injected, so nothing new was wired. The controller passes
+   `$request->query->getInt('id')` and keeps only its `AccountException` -> flash mapping.
+
+   A missing id now raises `VerificationLinkInvalid`, the same exception a tampered signature maps to.
+   That is deliberate — it already carried the exact message the controller used to hardcode
+   ('This verification link is not valid.'), so the 400 and the user-visible text are unchanged, and an
+   unknown id stays indistinguishable from a bad signature rather than becoming an id oracle.
+   `EmailVerificationTest::testUnknownUserIdIsRejected` covers it and still passes.
+2. **`Request` in a service.** `EmailVerificationService` builds `Request::create($signedUrl)` internally
+   (line 73) because the bundle's URL-string API is deprecated. No service *signature* accepts a
+   `Request`, and the reason is documented at the call site. Accepted.
+3. **Test-plan deviations.** The planned `ResetPasswordRequestRepositoryTest` was not written; its
+   concerns are covered functionally by `PasswordResetTest::testExpiredTokenIsRejected` and
+   `::testTokenCannotBeUsedTwice`. No `UserRoleTest`; role derivation is covered by
+   `UserTest::testGetRolesReturnsExactlyThePrimaryRolePlusRoleUser` and `RoleDashboardResolverTest`.
+   Substantively covered, structurally different from the plan.
+4. **Unverified sub-item.** Whether `SESSION_IDLE_TTL` and `EMAIL_VERIFICATION_REQUIRED` were added to
+   `.env.example` is the one thing in this list nobody confirmed — commands naming `.env*` are blocked
+   in this environment. Both parameters have defaults, so absence would be a documentation gap only.
+5. **Interface count.** The plan predicted one new interface (`UserLoaderInterface`, implemented not
+   declared). The code also declares the `AccountException` marker interface
+   (`src/Account/Exception/AccountException.php:14`), which the controllers catch to map failures to
+   messages. Idiomatic typed-exception marker, not a pass-through layer — the plan's wording is simply
+   out of date.
+6. **Still open from the plan's own risk table.** R2 (login throttling in filesystem `cache.app`, per-node
+   — needs a shared store before NFR-002's 1,000 concurrent users), R4 (mail is synchronous on `sync://`),
+   and R9 (G-15, trainer deactivation vs. their organization) — R9 is marked **must be resolved before
+   TASK-002**. `doctrine/cache` is also flagged abandoned by `composer audit`.
 
 # Open Questions Blocking Nothing But Shipping Defaults
 
