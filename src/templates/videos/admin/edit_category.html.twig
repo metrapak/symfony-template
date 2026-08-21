@@ -1,0 +1,19 @@
+{% extends 'videos/admin/base.html.twig' %}
+
+{% block mainadmin %}
+    <h2>Editing category</h2>
+
+    {{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+
+    {{ form_widget(form.name,  { 'translation_domain': false,'attr': {'class': 'form-control' ~ is_invalid, 'placeholder' : 'Category name', 'id': 'validationServer01'}}) }}
+
+    <br>
+    {{ render(controller('App\\Videos\\Controller\\AdminController::getCategoriesOptions', {'editedCategory': category})) }}
+    <div class="invalid-feedback">
+        {{ form_errors(form.name) }}
+    </div>
+    <button class="btn btn-primary mt-3" type="submit">Save</button>
+
+   {{ form_end(form) }}
+{% endblock %}
+

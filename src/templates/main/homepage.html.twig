@@ -1,0 +1,34 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div>
+        <h1> <b>Navigation:</b></h1>
+        <nav style="margin-top: 20px; margin-bottom: 50px">
+            <ul style="display: flex;gap: 10px;">
+                <li>
+                    <a href="{{ path('homepage') }}">
+                        {% trans %}
+                        homepage
+
+                    {% endtrans %}
+                    </a>
+                </li>
+                <li><a href="{{ path('available_routes') }}">Available routes</a></li>
+                <li><a href="{{ path('product_list') }}">Products</a></li>
+                <li><a href="{{ path('starships') }}">Starships</a></li>
+                <li><a href="{{ path('to_do_list') }}">To do list</a></li>
+                <li><a href="{{ path('videos_front') }}">Videos app</a></li>
+
+            </ul>
+        </nav>
+
+        {{ app.user }}
+        {{ app.request.uri }}
+        {{ path('homepage') }}
+        {{ app_name }}
+        {{ include('main/flashes.html.twig') }}
+
+        {{ render(controller('App\\Shared\\Infrastructure\\Controller\\MainController::mostPopularPosts')) }}
+
+    </div>
+{% endblock %}

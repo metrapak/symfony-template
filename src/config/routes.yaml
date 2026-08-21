@@ -1,0 +1,22 @@
+controllers:
+    resource: '../src/Controller/'
+    type: attribute
+products_controllers:
+    resource: '../src/Products/Infrastructure/Controller/'
+    type: attribute
+
+shared_controllers:
+    resource: '../src/Shared/Infrastructure/Controller/'
+    type: attribute
+
+starships_controllers:
+    resource: '../src/Starships/Infrastructure/Controller/'
+    type: attribute
+
+to_do_list_controllers:
+    resource: '../src/ToDoList/Controller/'
+    type: attribute
+
+videos_controllers:
+    resource: '../src/Videos/Controller/'
+    type: attribute

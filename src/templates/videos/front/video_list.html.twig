@@ -1,0 +1,47 @@
+{% extends 'videos/base.html.twig' %}
+{% block main %}
+    <main role="main">
+
+        <section class="jumbotron text-center">
+            <div class="container">
+                {% if current_category is not empty %}
+                <h1 class="jumbotron-heading">Category - {{ current_category.name }}</h1>
+                {% endif %}
+                <div class="btn-group">
+                    <div class="dropdown ml-2">
+                        <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton"
+                                data-toggle="dropdown"
+                                aria-haspopup="true" aria-expanded="false">
+                            Subcategories
+                        </button>
+                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                            {% import "videos/front/includes/_category_front_macros.html.twig" as category_macros %}
+                            <div class="category-menu">
+                                {% if main_category is not empty %}
+                                    <li class="category-item">
+                                        <a href="{{ main_category.url }}">{{ main_category.name }}</a>
+                                    </li>
+                                {% endif %}
+                                {{ category_macros.display_tree(subcategories) }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row align-items-center ml-3">
+                        {% include 'videos/front/includes/_sort.html.twig' %}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="album py-5 bg-light">
+            <div class="container">
+                {% include 'videos/front/includes/_videos.html.twig' with {'videos': videos} %}
+
+            </div>
+        </div>
+        {{ knp_pagination_render(videos) }}
+
+
+    </main>
+{% endblock %}

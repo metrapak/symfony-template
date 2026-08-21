@@ -1,0 +1,43 @@
+#name: ${COMPOSE_PROJECT_NAME:? Can't find ".env" file}
+
+services:
+  nginx:
+    image: nginx:1.23.2-alpine
+    container_name: ${COMPOSE_PROJECT_NAME}_nginx
+    volumes:
+      - ../src:/app
+    networks:
+      - net
+
+  php-fpm:
+    build:
+      context: ./php-fpm
+      dockerfile: ./Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME}_php_fpm
+    user: www-data
+    volumes:
+      - ../src:/app
+    working_dir: /app
+    networks:
+      - net
+
+  postgres:
+    image: postgres:15.3-alpine3.18
+    container_name: ${COMPOSE_PROJECT_NAME}_postgres
+    environment:
+      POSTGRES_USER     : ${SQL_USERNAME:?It seems you forgot to edit your .env file (SQL_* section)}
+      POSTGRES_DB       : ${SQL_DATABASE:?It seems you forgot to edit your .env file (SQL_* section)}
+      POSTGRES_PASSWORD : ${SQL_ROOTPASS:?It seems you forgot to edit your .env file (SQL_* section)}
+      POSTGRES_HOST_AUTH_METHOD: password
+    networks:
+      - net
+    volumes:
+      - pgsql_data:/var/lib/postgresql/data
+
+volumes:
+  pgsql_data:
+    name: ${COMPOSE_PROJECT_NAME}_pgsql_data
+
+networks:
+  net:
+    name: ${COMPOSE_PROJECT_NAME}_net

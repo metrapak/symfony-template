@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Products</title></head>
+<body>
+<h1>Products</h1>
+
+<ul>
+    {% for product in products %}
+        <li>{{ product.getId() }} — {{ product.getName() }}
+            {% if product.getCategory() %} ({{ product.getCategory().getName() }}){% endif %}
+        </li>
+    {% else %}
+        <li>No products found</li>
+    {% endfor %}
+</ul>
+
+<nav>
+    {% if currentPage > 1 %}
+        <a href="?page={{ currentPage - 1 }}">Prev</a>
+    {% endif %}
+
+    {% for i in 1..pagesCount %}
+        {% if i == currentPage %}
+            <strong>{{ i }}</strong>
+        {% else %}
+            <a href="?page={{ i }}">{{ i }}</a>
+        {% endif %}
+    {% endfor %}
+
+    {% if currentPage < pagesCount %}
+        <a href="?page={{ currentPage + 1 }}">Next</a>
+    {% endif %}
+</nav>
+</body>
+</html>

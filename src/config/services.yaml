@@ -1,0 +1,40 @@
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
+parameters:
+    iss_location_cache_ttl: 300
+    videos_directory: '%kernel.project_dir%/public/uploads/videos'
+    app.supported_locales:
+        - en
+        - fr
+    app.locales_requirements: 'en|fr|'
+    app.default_locale: en
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        bind:
+            int $issLocationCacheTtl: '%iss_location_cache_ttl%'
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/**/Domain/Entity/'
+            - '../src/**/Domain/Enum/'
+            - '../src/Kernel.php'
+
+#    App\Shared\Infrastructure\EventListener\ExceptionListener:
+#        tags:
+#          - { name: 'kernel.event_listener', event: 'kernel.exception', method: 'onException' }
+#          - { name: 'kernel.event_listener', event: 'test.event', method: 'onTest' }
+
+    # add more service definitions when explicit configuration is needed
+    # please note that last definitions always *replace* previous ones
+    App\Shared\Infrastructure\Controller\MainController:
+        bind:
+            $logger: '@monolog.logger.doctrine'
