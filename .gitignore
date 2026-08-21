@@ -3,3 +3,13 @@
 /docker/*override.yml
 coverage
 *.ini
+
+# BEGIN ACCELERATOR MANAGED ENTRIES
+.worktrees/
+.DS_Store
+.idea/
+__pycache__/
+*.py[cod]
+memory-bank/local/
+.cursor/rules/working-memory.mdc
+# END ACCELERATOR MANAGED ENTRIES
