@@ -90,5 +90,10 @@ test:
 	cd docker && docker compose run --rm -T php-fpm php -dxdebug.mode=off bin/phpunit
 	@echo "✅ Tests completed!"
 
+migrate:
+	@echo "🗄️  Running database migrations..."
+	cd docker && docker compose run --rm -T php-fpm php -dxdebug.mode=off bin/console doctrine:migrations:migrate --no-interaction
+	@echo "✅ Migrations completed!"
+
 db-seed:
 	cd docker && docker compose run --rm -T php-fpm php -dxdebug.mode=off bin/console doctrine:fixtures:load --no-interaction
