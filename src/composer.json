@@ -1,4 +1,6 @@
 {
+    "name": "metrapak/symfony-template",
+    "description": "A robust Symfony 7.4 application template following Domain-Driven Design (DDD) principles.",
     "type": "project",
     "license": "proprietary",
     "minimum-stability": "stable",
