@@ -1,1 +1,16 @@
-[]
+[
+  {
+    "id": "85270119-d371-44ba-a61c-dd5433e7485c",
+    "path": "project-brain/dynamic/tasks/85270119-d371-44ba-a61c-dd5433e7485c.md",
+    "revision": 5,
+    "status": "active",
+    "type": "task"
+  },
+  {
+    "id": "edfb5925-cd1a-4949-9ea2-e716a899b46f",
+    "path": "project-brain/dynamic/tasks/edfb5925-cd1a-4949-9ea2-e716a899b46f.md",
+    "revision": 2,
+    "status": "active",
+    "type": "task"
+  }
+]
