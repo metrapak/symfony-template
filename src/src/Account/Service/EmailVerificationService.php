@@ -59,12 +59,22 @@ final readonly class EmailVerificationService
      * must be a no-op rather than an error.
      *
      * @param string $signedUrl the absolute URL the user clicked, signature included
+     * @param int $userId the account id carried in the link's signed `id` parameter
      *
      * @throws VerificationLinkInvalid
      * @throws VerificationLinkExpired
      */
-    public function verify(string $signedUrl, User $user): void
+    public function verify(string $signedUrl, int $userId): void
     {
+        $user = 0 === $userId ? null : $this->users->find($userId);
+
+        if (!$user instanceof User) {
+            // Deliberately the same exception the bundle's rejections map to: an id that
+            // never existed must be indistinguishable from a tampered signature, or the
+            // route becomes an oracle for which account ids are real.
+            throw VerificationLinkInvalid::create();
+        }
+
         try {
             // The bundle validates against a Request rather than a URL string; its
             // URL-string API is deprecated. Rebuilding a Request from the signed URL keeps

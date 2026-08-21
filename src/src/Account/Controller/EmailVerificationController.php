@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace App\Account\Controller;
 
 use App\Account\Dto\ResendVerificationInput;
-use App\Account\Entity\User;
 use App\Account\Exception\AccountException;
 use App\Account\Form\ResendVerificationFormType;
-use App\Account\Repository\UserRepository;
 use App\Account\Service\EmailVerificationService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,18 +26,10 @@ final class EmailVerificationController extends AbstractController
     #[Route('/verify/email', name: 'account_verify_email', methods: ['GET'])]
     public function verify(
         Request $request,
-        UserRepository $users,
         EmailVerificationService $emailVerificationService,
     ): Response {
-        $userId = $request->query->getInt('id');
-        $user = 0 === $userId ? null : $users->find($userId);
-
-        if (!$user instanceof User) {
-            return $this->renderFailure('This verification link is not valid.');
-        }
-
         try {
-            $emailVerificationService->verify($request->getUri(), $user);
+            $emailVerificationService->verify($request->getUri(), $request->query->getInt('id'));
         } catch (AccountException $e) {
             return $this->renderFailure($e->getMessage());
         }
