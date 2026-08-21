@@ -669,7 +669,7 @@ No feature flag guards this work: it is the application's first real authenticat
 
 - [x] `git diff --stat` reviewed — 107 files, +8402/-292
 - [x] Task file naming follows the skill-prefix convention
-- [x] No `.env` secrets read or committed — `.env` is git-ignored (`.gitignore:2`); only `.env.example` and `.env.test` are tracked. Both new keys resolve from container defaults (`config/services.yaml:19,26`), so the app boots without them; the example file's own contents could not be read under this session's permission rules — see note 4
+- [ ] No `.env` secrets read or committed — **first clause passes, second fails.** `.env` is git-ignored (`.gitignore:2`) and only `.env.example`/`.env.test` are tracked, so no secret was committed. But the two new keys were never added to `.env.example`: git history shows that file has been touched exactly once, by `19d77ff` (the initial template commit, predating this epic), and `b96d000` did not modify it — see note 4
 - [x] `memory-bank/scripts/validate.py` passes; Project Brain validation passes
 - [x] `composer validate --strict` passes — `name`/`description` added (`abed1c9`); the advisories this surfaced are cleared in `0a75c8c`
 - [x] `php -l` clean on changed files — 68 changed PHP files, 0 failures
@@ -707,9 +707,27 @@ No feature flag guards this work: it is the application's first real authenticat
    `::testTokenCannotBeUsedTwice`. No `UserRoleTest`; role derivation is covered by
    `UserTest::testGetRolesReturnsExactlyThePrimaryRolePlusRoleUser` and `RoleDashboardResolverTest`.
    Substantively covered, structurally different from the plan.
-4. **Unverified sub-item.** Whether `SESSION_IDLE_TTL` and `EMAIL_VERIFICATION_REQUIRED` were added to
-   `.env.example` is the one thing in this list nobody confirmed — commands naming `.env*` are blocked
-   in this environment. Both parameters have defaults, so absence would be a documentation gap only.
+4. **`.env.example` is missing both new keys — open.** `SESSION_IDLE_TTL` and
+   `EMAIL_VERIFICATION_REQUIRED` were never documented in `src/.env.example`. Settled from git history
+   rather than by reading the file (this environment blocks reads of `.env*`): the file has exactly one
+   commit in the whole repo, `19d77ff` "Add Symfony DDD project template", which predates Epic-01, and
+   the epic commit `b96d000` does not touch it.
+
+   Impact is documentation only, which is why nothing failed: both parameters carry in-container
+   defaults (`config/services.yaml:19,26`), so the container resolves them whether or not the env vars
+   exist. The cost is discoverability — an operator reading `.env.example` cannot tell that a 7-day
+   session window and a login-blocking verification gate are tunable. Lines to add:
+
+   ```dotenv
+   ###> app/session ###
+   # Authenticated session idle window in seconds. Default: 604800 (7 days).
+   SESSION_IDLE_TTL=604800
+   # Whether an unverified email blocks login for players and coaches. Default: true.
+   EMAIL_VERIFICATION_REQUIRED=true
+   ###< app/session ###
+   ```
+
+   Not applied here: this session's permission settings deny writes to that path.
 5. **Interface count.** The plan predicted one new interface (`UserLoaderInterface`, implemented not
    declared). The code also declares the `AccountException` marker interface
    (`src/Account/Exception/AccountException.php:14`), which the controllers catch to map failures to
