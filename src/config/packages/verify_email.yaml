@@ -1,0 +1,4 @@
+symfonycasts_verify_email:
+    # BR-003: an email verification link is valid for 24 hours. Expiry lives in the
+    # signature itself, so there is no token table and nothing to garbage-collect.
+    lifetime: 86400

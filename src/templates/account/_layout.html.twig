@@ -1,0 +1,18 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <main id="main-content">
+        {# Flash messages announce themselves to assistive tech without stealing focus. #}
+        <div role="status" aria-live="polite">
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <p class="flash flash-{{ label }}">{{ message }}</p>
+                {% endfor %}
+            {% endfor %}
+        </div>
+
+        <h1>{% block heading %}{% endblock %}</h1>
+
+        {% block account_content %}{% endblock %}
+    </main>
+{% endblock %}

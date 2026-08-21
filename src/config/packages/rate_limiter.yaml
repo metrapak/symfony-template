@@ -1,0 +1,9 @@
+framework:
+    rate_limiter:
+        # The verification resend endpoint is reachable anonymously and sends mail to any
+        # address given to it, so without a limit it is a mail-flooding tool. Keyed by client
+        # IP; the bundle's own per-user throttle already covers password reset.
+        verification_resend:
+            policy: 'sliding_window'
+            limit: 3
+            interval: '15 minutes'

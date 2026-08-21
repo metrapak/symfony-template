@@ -1,0 +1,13 @@
+{% extends 'account/_layout.html.twig' %}
+
+{% block title %}{{ verified ? 'Email confirmed' : 'Confirmation failed' }}{% endblock %}
+{% block heading %}{{ verified ? 'Email confirmed' : 'Confirmation failed' }}{% endblock %}
+
+{% block account_content %}
+    {% if verified %}
+        <p><a href="{{ path('app_login') }}">Sign in</a></p>
+    {% else %}
+        <p>This link cannot be used. Links expire 24 hours after they are sent.</p>
+        <p><a href="{{ path('account_verify_resend') }}">Send me a new confirmation link</a></p>
+    {% endif %}
+{% endblock %}
