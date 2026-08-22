@@ -31,6 +31,12 @@ An AI-assisted development accelerator for Symfony 7.4 LTS and Symfony 8.1 proje
 - A use of an invitation is claimed by one conditional UPDATE, never read-then-write, so concurrent redemptions of a single-use link cannot all succeed.
 - Membership correctness lives in the schema: unique (organization, player) associations, and a **partial** unique index enforcing one active coach assignment per coach.
 - Player profiles store a birth date and derive age, because a stored age is correct on the day it is typed and wrong every year after.
+- Availability belongs to a person, not to a (person, trainer) pair: one grid per player or coach, read by every trainer they train with (G-07).
+- Availability times are minutes since midnight in one configured platform time zone, so `24:00` is expressible and a recurring pattern does not move with DST (G-29).
+- A week of availability is saved as a whole value — normalized, then delete-and-insert in one transaction — never slot by slot.
+- Availability matching asks whether a declared range *covers* the window, not whether it overlaps it; adjacent ranges are merged on save so that stays a single-row comparison.
+- Declared unavailability is a stored row, so "said no" is distinguishable from "said nothing": undeclared people are counted separately and never produce a conflict warning.
+- Availability is advisory everywhere: a conflict yields a warning plus a reason-bearing override record, and no code path can refuse a scheduling action on availability grounds.
 
 ## Tech Stack
 

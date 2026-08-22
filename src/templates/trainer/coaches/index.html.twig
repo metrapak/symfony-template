@@ -28,6 +28,12 @@
                 <td>{{ invitation.link.createdAt|date('Y-m-d') }}</td>
                 <td>
                     <div class="actions">
+                        {% if invitation.assignment is not null %}
+                            {# FR-085: the check a trainer runs before scheduling this coach. Only
+                               for a coach who actually joined — an invitation nobody accepted has
+                               no availability to check. #}
+                            <a href="{{ path('trainer_coach_availability_check', {id: invitation.assignment.coach.id}) }}">Check availability</a>
+                        {% endif %}
                         {% if invitation.canBeResent %}
                             {{ include('admin/_confirm_form.html.twig', {
                                 action_path: path('trainer_coaches_invite_resend', {id: invitation.link.id}),

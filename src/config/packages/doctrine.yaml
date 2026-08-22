@@ -20,6 +20,11 @@ doctrine:
                 type: attribute
                 dir: '%kernel.project_dir%/src/Account/Entity'
                 prefix: 'App\Account\Entity'
+            Availability:
+                is_bundle: false
+                type: attribute
+                dir: '%kernel.project_dir%/src/Availability/Entity'
+                prefix: 'App\Availability\Entity'
             Membership:
                 is_bundle: false
                 type: attribute

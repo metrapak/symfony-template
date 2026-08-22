@@ -1,0 +1,15 @@
+{#
+    The "Best Times: Mon 5-8pm, Wed 6-9pm" line for a player card (FR-083, spec §9).
+
+    Parameters: `summary` (the string `AvailabilitySummarizer` produced), and optional
+    `declared`.
+
+    A partial rather than three templates repeating the label, because this line appears on the
+    trainer's availability view, on the family's own grid, and — when Epic-02 lands — beside a
+    session's attendee list. The sentence itself is built in `AvailabilitySummarizer`; all this
+    owns is the label and the fact that "nothing declared" is muted rather than alarming: a family
+    who has not filled the grid in has done nothing wrong.
+#}
+<p class="best-times{{ declared is defined and not declared ? ' muted' : '' }}">
+    <span class="label">Best Times:</span> {{ summary }}
+</p>

@@ -21,6 +21,15 @@ enum AuditAction: string
     case ImpersonationStarted = 'impersonation.started';
     case ImpersonationEnded = 'impersonation.ended';
 
+    /**
+     * A trainer scheduled a coach outside their stated availability (FR-086, BR-085).
+     *
+     * Audited as well as recorded on `coach_availability_override`, because NFR-X02 lists an
+     * override beside impersonation and deletion: the override row is the trainer's explanation,
+     * the audit entry is the platform's independent trace of who did it and when.
+     */
+    case CoachAvailabilityOverridden = 'coach_availability.overridden';
+
     public function label(): string
     {
         return match ($this) {
@@ -31,6 +40,7 @@ enum AuditAction: string
             self::UserAnonymized => 'User deleted (anonymized)',
             self::ImpersonationStarted => 'Impersonation started',
             self::ImpersonationEnded => 'Impersonation ended',
+            self::CoachAvailabilityOverridden => 'Coach availability overridden',
         };
     }
 }

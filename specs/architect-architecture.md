@@ -219,6 +219,8 @@ structure that would need rewriting:
 |:---------|:----------------|:----------------|
 | Must email verification precede first login? | Yes for player and coach, no for trainer and super admin | `EMAIL_VERIFICATION_REQUIRED`, then `AccountStatusChecker::requiresVerifiedEmail()` |
 | Session timeout duration? | 7-day idle window | `SESSION_IDLE_TTL` |
+| How long is one availability block (G-27)? | 60 minutes | `AVAILABILITY_SLOT_MINUTES` (must divide 1440) |
+| Which time zone are stored availability times in (G-29)? | `UTC`, printed on every grid | `AVAILABILITY_TIMEZONE` |
 
 Both are container parameters in `config/services.yaml` carrying their own defaults and reading an
 environment variable through the `default:` env processor. Consequence: an existing deployment boots
@@ -300,6 +302,57 @@ refuses, so the behaviour follows `EMAIL_VERIFICATION_REQUIRED` rather than assu
 Object-level authorization for the trainer side is `ShareLinkVoter`: `^/trainer` is `ROLE_TRAINER`, which
 every trainer holds, so the role rule protects nothing once a URL carries an id.
 
+## Component: Weekly Availability
+
+**Status**: Implemented (Epic-01 TASK-005)
+
+One `availability_slot` table holds players and coaches alike, discriminated by `subject_type`. The two are
+the same fact about different people — a weekday, a window, and whether the person can attend — so two
+tables would duplicate one query shape and both of its indexes. The cost is that `subject_id` can carry no
+foreign key: it points at `player_profile` for a player and at `"user"` for a coach. The pairing is
+enforced instead by `AvailabilitySubject`, the only thing that can construct one.
+
+**Availability is per person, not per (person, trainer)** — G-07 answered. US-01.03's "per trainer" reading
+is not implemented: a player who trains with two academies does not become free at different hours for
+each, and a per-trainer schema would ask a family to fill the same grid once per trainer and then let the
+copies disagree. Every trainer of a player therefore reads the same declared times, and BR-087 governs
+*who may read them*, not how many copies exist.
+
+**Times are minutes since midnight**, not `TIME` columns. `24:00` has to be expressible as an end, and a
+recurring weekly pattern must not move when the clocks do. Two smallint columns also make the matching
+predicate two comparisons an index can serve end to end.
+
+**Coverage, not overlap.** "Is this person available 18:00-20:00?" is answered by a *containing* range, not
+an intersecting one: somebody free until 19:00 cannot attend a session that runs to 20:00. That works as a
+single-row comparison only because a saved week is normalized — adjacent ranges merge before they are
+written, so 16:00-18:00 plus 18:00-21:00 is one row. `WeeklySchedule` owns that normalization, and a week is
+saved as a **whole value**: delete-and-insert in one transaction, never a per-day write.
+
+**Three states, not two.** A declared refusal ("never on Wednesdays") is stored as a whole-day
+`is_available = false` row, so it is distinguishable from silence. That distinction is load-bearing three
+times: the trainer's "15 of 20" reports undeclared players separately rather than counting them as busy; a
+coach who has declared nothing produces **no conflict warning**, because warning about absent data teaches
+trainers to click through warnings; and a coach who declared a refusal does produce one.
+
+**Availability never constrains (FR-088, BR-083).** `CoachAvailabilityChecker` — the interface Epic-02's
+assignment flow will call — returns a verdict and has no way to refuse. A conflict yields FR-085's warning
+and, past it, a required reason recorded by `ConflictOverrideRecorder` on `coach_availability_override`,
+together with an audit entry in the same transaction (NFR-X02).
+
+Coach assignment itself is Epic-02's. What ships here is the check either side of it, reachable as a
+trainer's pre-assignment screen at `/trainer/coaches/{id}/availability-check`. The verdict is recomputed on
+the confirming submit, so a coach who opened their times up between the warning and the confirmation does
+not get an override filed against a conflict that no longer exists.
+
+Trainer-facing reads take their candidate list from `OrganizationRosterProvider` — declared in
+`Availability`, implemented in `Membership` — and no matching method accepts an unscoped list. BR-087 is
+therefore structural rather than a `WHERE` clause somebody has to remember.
+
+The grid is a real `<table>` of native checkboxes with per-cell labels ("Monday 5:00 PM to 6:00 PM,
+available"), submittable with JavaScript disabled; drag-to-select and the running count are enhancements on
+top (NFR-081). Rows are days and columns are hours, which is what lets the same markup reflow into a
+day-by-day list at 320px (NFR-082).
+
 ## Cross-Cutting Requirements
 
 - CSRF on every state-changing form. Stateless CSRF is configured (`config/packages/csrf.yaml`) with form token id `submit`.
@@ -321,12 +374,18 @@ every trainer holds, so the role rule protects nothing once a URL carries an id.
 | R5 | NFR-041's 100-concurrent-redemption target is proven by constraint and sequentially, not by a parallel load test — DAMA's per-test transaction is invisible to a second connection | Load harness |
 | G-19 | FR-025 requires "photo → default avatar"; there is no photo column until profiles land | Epic-01 TASK-004 |
 | Q-01.02 | Age groups are undefined. TASK-003 stores a **birth date** and derives age, so the answer stays a presentation decision | Epic-01 TASK-004 |
-| G-07 | Availability is specified both per-profile and per-(profile, trainer) | Epic-01 TASK-005 |
-| G-29 | No time zone is defined anywhere, yet weekly availability stores local times | Epic-01 TASK-005 |
+| G-07 | *Answered by TASK-005.* Availability is per profile; the per-trainer reading is not implemented. The spec text still says both | Spec correction |
+| G-29 | *Assumed by TASK-005.* One platform time zone, configured and displayed. Per-user zones would mean converting a recurring pattern across DST — still unanswered by the client | Client decision |
+| G-27 | *New (TASK-005).* Slot granularity was specified as "hourly blocks or custom ranges". Fixed blocks ship, configurable; arbitrary minute boundaries are not offered | Client decision |
+| G-28 | *New (TASK-005).* Availability has no date dimension — no "away next week" exceptions. Deliberately deferred; real scheduling will need it | Epic-02 |
+| G-30 | *New (TASK-005).* FR-087's "coach can request a change" has no recipient, state, notification or UI anywhere in the spec, so it is not implemented. The coach *sees* every override recorded against them | Client decision |
+| Q-01.06 | Whether a coach is actively notified of an override is unanswered, so nothing is sent. The record is on the coach's own page | Client decision |
+| R6 | `coach_availability_override.event_id` is a nullable, unconstrained integer: Epic-02 owns events and none exist. The foreign key belongs to Epic-02's first migration | Epic-02 |
 
 ---
 
 *Sources: `specs/Epic-01_User_Management_Authentication_SPEC.md`, `tasks/TASK-001/architect-architecture.md`,
+`tasks/TASK-005/architect-architecture.md`,
 `tasks/TASK-001/writing-plans-plan.md`, `tasks/TASK-002/architect-architecture.md`,
 `tasks/TASK-002/writing-plans-plan.md`, `tasks/TASK-003/architect-architecture.md`,
 `tasks/TASK-003/writing-plans-plan.md`.*

@@ -1,0 +1,139 @@
+{#
+    Checking a coach against their stated times, and overriding the conflict (FR-085, FR-086,
+    FR-088, BR-084, BR-085).
+
+    Coach assignment itself belongs to Epic-02, which has no events yet — so this is the check a
+    trainer runs while planning, and the place the override is recorded. Epic-02's assignment
+    screen will call the same services with an event id; nothing on this page has to change for
+    that to happen.
+
+    The warning is FR-085's sentence verbatim, and the reason field beside it is required by the
+    `override` validation group rather than by anything in this template: a blank reason comes back
+    as a validation error and nothing is recorded. Availability never blocks — the "Continue
+    anyway" button is always there once a conflict is shown (FR-088).
+#}
+{% extends 'trainer/_layout.html.twig' %}
+{% form_theme form 'account/_form_theme.html.twig' %}
+
+{% block title %}Availability check — {{ coach.displayName }}{% endblock %}
+{% block heading %}Availability check: {{ coach.displayName }}{% endblock %}
+
+{% block trainer_content %}
+    <p class="muted">
+        Check whether {{ coach.displayName }} has said they are free before you schedule them.
+        Their times are a guide: you can schedule them anyway, with a reason on file.
+        {{ grid.timezoneNotice }}
+    </p>
+
+    {% if not active %}
+        <p class="warning">This coach's assignment to your organization has ended.</p>
+    {% endif %}
+
+    <div class="card">
+        <h2>What {{ coach.displayName }} has declared</h2>
+        {{ include('availability/_summary.html.twig', {summary: summary}) }}
+        {% if weekLines is not empty %}
+            <ul class="week-lines">
+                {% for line in weekLines %}<li>{{ line }}</li>{% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+
+    {{ form_start(form) }}
+        {{ include('account/_error_summary.html.twig', {form: form}) }}
+
+        <fieldset>
+            <legend>Session you are planning</legend>
+            <div class="actions">
+                {{ form_row(form.day) }}
+                {{ form_row(form.startMinute) }}
+                {{ form_row(form.endMinute) }}
+            </div>
+        </fieldset>
+
+        {% if verdict is not null %}
+            {% if verdict.conflict %}
+                {# role="alert" so the warning is announced the moment the page comes back, which
+                   is the only way a screen-reader user learns the answer changed. #}
+                <div class="conflict" role="alert">
+                    <p><strong>{{ verdict.warning(coach.displayName) }}</strong></p>
+                    <p class="muted">{{ verdict.declaredSummary }}</p>
+                </div>
+
+                {{ form_row(form.reason) }}
+            {% elseif verdict.declared %}
+                {% do form.reason.setRendered %}
+                <p class="no-conflict" role="status">
+                    {{ coach.displayName }} is available {{ verdict.day.label }}
+                    {{ verdict.window.format }} — no conflict.
+                </p>
+            {% else %}
+                {% do form.reason.setRendered %}
+                <p class="no-conflict" role="status">
+                    {{ coach.displayName }} has not set their times yet, so there is nothing to
+                    conflict with. Schedule them as you see fit.
+                </p>
+            {% endif %}
+        {% else %}
+            {# Nothing has been checked yet, so there is nothing to explain and nothing to
+               override. Marked rendered so `form_rest()` does not append the field anyway. #}
+            {% do form.reason.setRendered %}
+        {% endif %}
+
+        <div class="actions">
+            {{ form_widget(form.check) }}
+            {% if verdict is not null and verdict.conflict %}
+                {{ form_widget(form.confirm) }}
+            {% else %}
+                {# FR-088 is about what the *server* does, not about a hidden button: there is
+                   nothing to continue past until a conflict has been shown. #}
+                {% do form.confirm.setRendered %}
+            {% endif %}
+            <a href="{{ path('trainer_coaches_index') }}">Back to coaches</a>
+        </div>
+
+        {{ form_rest(form) }}
+    {{ form_end(form, {render_rest: false}) }}
+
+    <h2>Overrides recorded for this coach</h2>
+
+    {% if overrides is empty %}
+        <p class="muted">None yet.</p>
+    {% else %}
+        <table>
+            <caption class="visually-hidden">Availability overrides recorded for {{ coach.displayName }}</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Recorded</th>
+                    <th scope="col">Session time</th>
+                    <th scope="col">By</th>
+                    <th scope="col">Reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for override in overrides %}
+                    <tr>
+                        <td>{{ override.createdAt|date('Y-m-d H:i') }}</td>
+                        <td>{{ override.dayOfWeek.label }} {{ override.window.format }}</td>
+                        <td>{{ override.overriddenBy.displayName }}</td>
+                        <td>{{ override.reason }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    <style>
+        .trainer fieldset { border: 0; padding: 0; margin: 0 0 1rem; }
+        .trainer legend { font-weight: 600; padding: 0 0 .5rem; }
+        .trainer .card { border: 1px solid #d4d4d4; border-radius: .5rem; padding: 1rem; margin-bottom: 1rem; }
+        .trainer .muted { color: #525252; }
+        /* The message says everything; the border only draws the eye to it (NFR-X04). */
+        .trainer .conflict { border-left: 4px solid #b45309; background: #fffbeb; padding: .5rem .75rem; margin-bottom: 1rem; }
+        .trainer .no-conflict { border-left: 4px solid #15803d; background: #f0fdf4; padding: .5rem .75rem; }
+        .trainer .warning { border-left: 4px solid #b45309; background: #fffbeb; padding: .5rem .75rem; }
+        .week-lines { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: .5rem 1rem; }
+        .week-lines li { border: 1px solid #d4d4d4; border-radius: .25rem; padding: .1rem .5rem; }
+        .best-times .label { font-weight: 600; }
+    </style>
+{% endblock %}

@@ -1,0 +1,46 @@
+{#
+    Styles for the availability grid, shared by the player and coach pages (NFR-081, NFR-082).
+
+    Plain CSS in the template like every other shell in this epic, reading the `--brand` custom
+    property `_branding.html.twig` sets, so a trainer's colour reaches the grid without anything
+    here knowing whose colour it is.
+
+    Two rules carry requirements rather than taste:
+
+      * the checkbox is scaled up to a 1.4rem touch target inside a cell that is at least 2.2rem
+        tall, which is what makes a 168-cell grid usable with a thumb (NFR-082);
+      * below 48rem the table stops being a table: each day becomes a block with its hour written
+        beside every box, so the grid becomes the day-by-day list a phone can show without
+        sideways scrolling. Selection is never carried by colour alone — a ticked box is a ticked
+        box (NFR-X04).
+#}
+<style>
+    .availability-grid { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 1rem 0; }
+    .availability-grid caption { text-align: left; padding-bottom: .5rem; color: #525252; }
+    .availability-grid th, .availability-grid td { border: 1px solid #d4d4d4; text-align: center; }
+    .availability-grid th.hour { font: 400 .75rem/1 system-ui, sans-serif; padding: .25rem 0; background: #f5f5f5; }
+    .availability-grid th.day { text-align: left; padding: .25rem .5rem; background: #f5f5f5; white-space: nowrap; }
+    .availability-grid td.cell { padding: 0; height: 2.2rem; }
+    .availability-grid input[type="checkbox"] { width: 1.4rem; height: 1.4rem; margin: .2rem; cursor: pointer; accent-color: var(--brand); }
+    .availability-grid input[type="checkbox"]:focus-visible { outline: 3px solid var(--brand); outline-offset: 1px; }
+    .availability-grid tfoot th { text-align: left; padding: .5rem; }
+    .availability-grid .unavailable-days { display: flex; flex-wrap: wrap; gap: .75rem; list-style: none; margin: 0; padding: .5rem; }
+    .availability-grid .unavailable-days li { display: flex; align-items: center; gap: .25rem; }
+    .grid-summary { min-height: 1.5rem; font-weight: 600; }
+    .best-times .label { font-weight: 600; }
+    .week-lines { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: .5rem 1rem; }
+    .week-lines li { border: 1px solid #d4d4d4; border-radius: .25rem; padding: .1rem .5rem; }
+
+    /* NFR-082: a day-by-day list at 320px, not a table with a scrollbar. */
+    @media (max-width: 48rem) {
+        .availability-grid, .availability-grid tbody, .availability-grid tfoot,
+        .availability-grid tr, .availability-grid td, .availability-grid th { display: block; width: auto; }
+        .availability-grid thead { display: none; }
+        .availability-grid tbody tr { border: 1px solid #d4d4d4; border-radius: .5rem; margin-bottom: .75rem; padding: .25rem; }
+        .availability-grid tbody tr { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; }
+        .availability-grid th.day { flex: 1 0 100%; border: 0; background: transparent; font-weight: 600; }
+        .availability-grid td.cell { border: 1px solid #d4d4d4; border-radius: .25rem; height: auto; padding: .1rem .3rem; display: flex; align-items: center; gap: .2rem; }
+        /* The hour has to be visible once the column headings are gone. */
+        .availability-grid td.cell::after { content: attr(data-hour); font: 400 .75rem/1 system-ui, sans-serif; }
+    }
+</style>

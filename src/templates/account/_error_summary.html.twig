@@ -7,12 +7,15 @@
             {% for error in form.vars.errors %}
                 <li>{{ error.message }}</li>
             {% endfor %}
+            {# `errors` is defaulted because a submit button's view does not carry one: a form with
+               a button in it would otherwise fail to render the very summary that explains why it
+               was rejected. #}
             {% for child in form %}
-                {% for error in child.vars.errors %}
+                {% for error in child.vars.errors|default([]) %}
                     <li><a href="#{{ child.vars.id }}">{{ error.message }}</a></li>
                 {% endfor %}
                 {% for grandchild in child %}
-                    {% for error in grandchild.vars.errors %}
+                    {% for error in grandchild.vars.errors|default([]) %}
                         <li><a href="#{{ grandchild.vars.id }}">{{ error.message }}</a></li>
                     {% endfor %}
                 {% endfor %}

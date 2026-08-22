@@ -1,0 +1,106 @@
+{#
+    The weekly availability grid (FR-080, FR-082, NFR-081, NFR-082).
+
+    Parameters: `form` (a WeeklyAvailabilityFormType view), `days`, `grid` (TimeGrid).
+
+    **A real table of real checkboxes.** NFR-081 is the hardest accessibility requirement in the
+    epic — a 7-day toggle grid is the classic screen-reader failure — and it is answered
+    structurally rather than with ARIA:
+
+      * `<table>` with `<th scope="col">` on the hour headings and `<th scope="row">` on the day
+        names, so a screen reader can place any cell;
+      * every cell is a native `<input type="checkbox">` with a `<label>` whose text is the whole
+        spoken name — "Monday 5:00 PM to 6:00 PM, available" — because a reader that lands
+        mid-table announces the label, not the headers it was rendered under;
+      * keyboard operation and submission are native. Tab reaches every cell, space toggles it,
+        and the form posts with JavaScript disabled. `assets/availability-grid.js` adds
+        drag-to-select, "copy Monday to weekdays" and the running total *on top of* a control
+        that already works without any of it.
+
+    The inputs are written out by hand rather than through `form_widget()`, and each is marked
+    rendered so `form_rest()` still emits the CSRF token. The project's form theme is Bootstrap's,
+    which wraps a checkbox in its own label markup — that would give every cell two labels, one of
+    them visible, and a 168-cell grid of visible labels is not a grid.
+
+    Rows are days and columns are hours, which is what makes NFR-082 a stylesheet change: at
+    narrow widths each row becomes its own block, so the grid turns into a day-by-day list with
+    the hour written beside every box and nothing reachable only by scrolling sideways.
+#}
+<table class="availability-grid" data-availability-grid>
+    <caption>
+        Tick the times that suit. {{ grid.timezoneNotice }}
+        <span class="visually-hidden">Each box is one {{ grid.slotMinutes }} minute slot on one day.</span>
+    </caption>
+    <thead>
+        <tr>
+            <th scope="col"><span class="visually-hidden">Day</span></th>
+            {% for block in grid.blocks %}
+                <th scope="col" class="hour">
+                    <span aria-hidden="true">{{ grid.columnLabel(block) }}</span>
+                    <span class="visually-hidden">{{ block.formatSpoken }}</span>
+                </th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for day in days %}
+            {% set dayForm = attribute(form, day.key) %}
+            <tr>
+                <th scope="row" class="day">
+                    <span aria-hidden="true">{{ day.shortLabel }}</span>
+                    <span class="visually-hidden">{{ day.label }}</span>
+                </th>
+                {% for block in grid.blocks %}
+                    {# Expanded choice children are named by their position in the choice list,
+                       not by their value, so the cell is found by index. The list is
+                       `TimeGrid::blocks()` in order, which is the list being iterated here. #}
+                    {% set cell = dayForm.slots[loop.index0] %}
+                    <td class="cell" data-day="{{ day.key }}" data-hour="{{ block.formatCompact }}">
+                        <input
+                            type="checkbox"
+                            id="{{ cell.vars.id }}"
+                            name="{{ cell.vars.full_name }}"
+                            value="{{ cell.vars.value }}"
+                            {% if cell.vars.checked %}checked{% endif %}
+                            data-availability-cell
+                        >
+                        {# The visible grid is the box; the name is for anybody not looking at it. #}
+                        <label for="{{ cell.vars.id }}" class="visually-hidden">{{ cell.vars.label }}</label>
+                    </td>
+                    {% do cell.setRendered %}
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </tbody>
+    <tfoot>
+        <tr>
+            <th scope="row">Not available</th>
+            <td colspan="{{ grid.blocks|length }}">
+                <ul class="unavailable-days">
+                    {% for day in days %}
+                        {% set dayForm = attribute(form, day.key) %}
+                        {% set box = dayForm.unavailable %}
+                        <li>
+                            <input
+                                type="checkbox"
+                                id="{{ box.vars.id }}"
+                                name="{{ box.vars.full_name }}"
+                                value="1"
+                                {% if box.vars.checked %}checked{% endif %}
+                                data-availability-unavailable="{{ day.key }}"
+                            >
+                            {# Visible here, unlike the cells: this is the only control on the
+                               page whose meaning is not obvious from its position. #}
+                            <label for="{{ box.vars.id }}">{{ day.shortLabel }}<span class="visually-hidden">: {{ box.vars.label }}</span></label>
+                        </li>
+                        {% do box.setRendered %}
+                    {% endfor %}
+                </ul>
+            </td>
+        </tr>
+    </tfoot>
+</table>
+
+{# The running summary the enhancement writes into. Empty and polite, so a screen reader
+   announces a change without interrupting, and silent when JavaScript is absent. #}
+<p class="grid-summary" role="status" aria-live="polite" data-availability-summary></p>

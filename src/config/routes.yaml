@@ -2,6 +2,10 @@ account_controllers:
     resource: '../src/Account/Controller/'
     type: attribute
 
+availability_controllers:
+    resource: '../src/Availability/Controller/'
+    type: attribute
+
 membership_controllers:
     resource: '../src/Membership/Controller/'
     type: attribute
