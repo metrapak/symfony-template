@@ -42,6 +42,35 @@ final readonly class AccountMailer
     }
 
     /**
+     * The invitation a Super Admin's newly created trainer receives (FR-022, US-01.01).
+     *
+     * The temporary password travels in the message body. That is a deliberate, bounded
+     * exposure: the credential is single-use in practice — `mustChangePassword` forces a
+     * change at first login — and the alternative the spec offers ("OR sends invite email
+     * with setup link") is the password-reset flow, which this account cannot use until it
+     * has a password to reset. Q-01.04 has not answered which of the two the client wants;
+     * switching to a setup link is a change to this method and its template, not to the
+     * creation workflow.
+     */
+    public function sendTrainerInvitation(User $user, string $temporaryPassword, string $loginUrl, string $businessName): void
+    {
+        // The recipient is passed into the context as plain strings rather than as the
+        // entity: the other templates in this directory take no `user` variable, and a
+        // template that could reach through an entity is a template that can render a field
+        // nobody meant to email.
+        $this->send($user, 'Your trainer account is ready', 'trainer_invitation', [
+            'name' => $user->getDisplayName(),
+            // Not `email`: Symfony's BodyRenderer overwrites that key with its own
+            // WrappedTemplatedEmail, so a context entry by that name never reaches the
+            // template.
+            'recipientEmail' => $user->getEmail(),
+            'temporaryPassword' => $temporaryPassword,
+            'loginUrl' => $loginUrl,
+            'businessName' => $businessName,
+        ]);
+    }
+
+    /**
      * @param array<string, mixed> $context
      */
     private function send(User $user, string $subject, string $template, array $context): void

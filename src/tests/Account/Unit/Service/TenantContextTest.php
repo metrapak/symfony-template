@@ -89,7 +89,7 @@ class TenantContextTest extends TestCase
 
     private function user(UserRole $role): User
     {
-        return new User('user@example.com', $role, new \DateTimeImmutable('2026-08-21 09:00:00'));
+        return new User('user@example.com', 'Test User', $role, new \DateTimeImmutable('2026-08-21 09:00:00'));
     }
 
     private function organizationWithId(User $owner, int $id): Organization

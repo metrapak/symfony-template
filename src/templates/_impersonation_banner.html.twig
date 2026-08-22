@@ -1,0 +1,47 @@
+{#
+    FR-029 — visible on every page while a Super Admin is viewing the platform as someone else.
+
+    Included from both template roots (base.html.twig and videos/base.html.twig) rather than
+    injected by a response listener, so it is markup in a layout and not HTML assembled in the
+    HTTP layer.
+
+    `IS_IMPERSONATOR` is Symfony's own attribute for "this token is a switched one", so the
+    banner cannot disagree with the firewall about whether a switch is active.
+
+    Accessibility: role="status" announces it without stealing focus, and the state is carried
+    by the words "Viewing as" as well as by the colour — colour alone would say nothing to a
+    screen reader or to a red-green colour-blind operator (NFR-X04, NFR-023).
+#}
+{% if is_granted('IS_IMPERSONATOR') %}
+    <div class="impersonation-banner" role="status">
+        <strong>Viewing as {{ app.user.displayName }}</strong>
+        <span>({{ app.user.email }})</span>
+        <a href="{{ path('admin_impersonation_exit') }}">Exit impersonation</a>
+    </div>
+    <style>
+        .impersonation-banner {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            flex-wrap: wrap;
+            gap: .75rem;
+            align-items: center;
+            padding: .6rem 1rem;
+            background: #b91c1c;
+            color: #fff;
+            font: 500 .95rem/1.4 system-ui, sans-serif;
+        }
+
+        .impersonation-banner a {
+            margin-left: auto;
+            color: #fff;
+            text-decoration: underline;
+        }
+
+        .impersonation-banner a:focus-visible {
+            outline: 3px solid #fff;
+            outline-offset: 2px;
+        }
+    </style>
+{% endif %}

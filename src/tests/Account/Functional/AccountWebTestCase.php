@@ -66,10 +66,11 @@ abstract class AccountWebTestCase extends WebTestCase
         bool $verified = true,
         bool $mustChangePassword = false,
         string $password = self::PASSWORD,
+        string $name = 'Test User',
     ): User {
         $hasher = static::getContainer()->get(UserPasswordHasherInterface::class);
 
-        $user = new User($email, $role, new \DateTimeImmutable());
+        $user = new User($email, $name, $role, new \DateTimeImmutable());
         $user->setStatus($status);
         $user->setMustChangePassword($mustChangePassword);
         $user->setPassword($hasher->hashPassword($user, $password));

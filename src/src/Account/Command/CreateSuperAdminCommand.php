@@ -11,6 +11,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\Style\SymfonyStyle;
@@ -34,7 +35,8 @@ final class CreateSuperAdminCommand extends Command
     {
         $this
             ->addArgument('email', InputArgument::REQUIRED, 'Email address to sign in with')
-            ->addArgument('password', InputArgument::OPTIONAL, 'Password; prompted for (hidden) when omitted');
+            ->addArgument('password', InputArgument::OPTIONAL, 'Password; prompted for (hidden) when omitted')
+            ->addOption('name', null, InputOption::VALUE_REQUIRED, 'Display name; defaults to the email local part');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -49,6 +51,12 @@ final class CreateSuperAdminCommand extends Command
 
             return Command::FAILURE;
         }
+
+        // An option rather than a third argument: `create-super-admin <email> <password>` is
+        // the documented invocation, and inserting a positional between the two would silently
+        // read an existing script's password as a name.
+        $name = (string) ($input->getOption('name') ?? '');
+        $name = '' !== trim($name) ? trim($name) : ucfirst(strstr($email, '@', true) ?: $email);
 
         $password = $input->getArgument('password');
 
@@ -72,7 +80,7 @@ final class CreateSuperAdminCommand extends Command
         }
 
         try {
-            $user = $this->superAdminCreator->create($email, $password);
+            $user = $this->superAdminCreator->create($email, $name, $password);
         } catch (EmailAlreadyRegistered $e) {
             $io->error($e->getMessage());
 

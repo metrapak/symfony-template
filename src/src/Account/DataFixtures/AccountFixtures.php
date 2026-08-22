@@ -69,7 +69,11 @@ class AccountFixtures extends Fixture
 
     private function createUser(string $email, UserRole $role, \DateTimeImmutable $now, bool $verified = true): User
     {
-        $user = new User($email, $role, $now);
+        // Fixture names carry no meaning of their own; deriving them from the address keeps
+        // every fixture user distinguishable in the directory without a second constant.
+        $name = ucfirst(strstr($email, '@', true) ?: $email);
+
+        $user = new User($email, $name, $role, $now);
         $user->setPassword($this->passwordHasher->hashPassword($user, self::PASSWORD));
 
         if ($verified) {

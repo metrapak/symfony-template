@@ -43,6 +43,14 @@ TASK-001 ──┬── TASK-002
 TASK-002 and TASK-003 can run in parallel once TASK-001 lands. TASK-005 and TASK-006 can run in
 parallel once TASK-004 lands.
 
+## Delivery Status
+
+| Task | Status | Branch |
+|:-----|:-------|:-------|
+| TASK-001 | Merged | `feat/epic-01-user-management-auth` (PR #2) |
+| TASK-002 | Implemented, awaiting review | `feat/epic-01-task-002-admin-user-management` |
+| TASK-003…006 | Not started | — |
+
 ## Existing Codebase Baseline
 
 Verified in `src/` before analysis:
@@ -81,8 +89,12 @@ open questions carried forward.
 - [ ] **G-11** — Spec says "specific security implementations decided by development team". Package selection for password reset, email verification, image resizing, and rate limiting is therefore an open architecture decision, not a requirement.
 - [ ] **G-12** — Spec §9 requires permissions "enforced on both frontend (UI) and backend (API)", but D-02 scopes delivery to server-rendered Twig. Decide whether the existing `ApiLoginController` / `json_login` firewall stays, is removed, or is deferred to a later epic.
 - [ ] **G-13** — WCAG 2.1 AA is required in §13 but appears in **no** epic-level acceptance criterion. Accessibility is currently untestable as a gate.
-- [ ] **G-14** — "Impersonation session expires after 1 hour": Symfony's `switch_user` has **no native expiry**. Requires a custom mechanism (TASK-002). Confirm whether expiry means forced exit-to-admin or full logout.
-- [ ] **G-15** — No requirement covers what happens to a **trainer's** organization data when the trainer themself is deactivated or GDPR-deleted (US-01.12 / US-01.13 are written for players). Do their players, coaches, ShareLinks, and branding survive?
+- [x] **G-14** — *Resolved 2026-08-22 (TASK-002).* Expiry means **exit to the admin view**, not logout. Implemented as a `kernel.request` subscriber reading the open audit row; window is `IMPERSONATION_TTL`, default 3600s.
+- [ ] **G-15** — No requirement covers what happens to a **trainer's** organization data when the trainer themself is deactivated or GDPR-deleted (US-01.12 / US-01.13 are written for players). Do their players, coaches, ShareLinks, and branding survive? *Unchanged by TASK-002; carried to TASK-003/004.*
+- [x] **G-17** — *Resolved 2026-08-22 (TASK-002).* Self-deactivation, self-deletion, and removal or demotion of the last active Super Admin are all blocked in the services.
+- [x] **G-18** — *Resolved 2026-08-22 (TASK-002).* Per-action audit logging is required and implemented; `impersonator_id` is stamped on every entry written during a switch.
+- [ ] **G-16** — *Answered by TASK-002, still open with legal.* The deletion compliance record stores a SHA-256 digest of the original address instead of the cleartext address and data snapshot FR-027 asks for.
+- [ ] **G-19** — *New (TASK-002).* FR-025's "photo → default avatar" has no column to clear until profiles land in TASK-004.
 
 ### Spec's own open questions (carried forward)
 

@@ -1,0 +1,24 @@
+{% extends 'admin/_layout.html.twig' %}
+{# Same accessible form theme the account pages use: errors linked to inputs via aria-describedby. #}
+{% form_theme form 'account/_form_theme.html.twig' %}
+
+{% block title %}Edit {{ user.displayName }}{% endblock %}
+{% block heading %}Edit {{ user.displayName }}{% endblock %}
+
+{% block admin_content %}
+    <dl>
+        <dt>Status</dt><dd>{{ status_label(user.status) }}</dd>
+        <dt>Created</dt><dd>{{ user.createdAt|date('Y-m-d H:i') }}</dd>
+        <dt>Last sign-in</dt><dd>{{ user.lastLoginAt ? user.lastLoginAt|date('Y-m-d H:i') : 'Never' }}</dd>
+    </dl>
+
+    {{ form_start(form) }}
+        {{ include('account/_error_summary.html.twig', {form: form}) }}
+        {{ form_row(form.name) }}
+        {{ form_row(form.email) }}
+        {{ form_row(form.phone) }}
+        {{ form_row(form.role) }}
+        <button type="submit">Save changes</button>
+        <a href="{{ path('admin_users_index') }}">Cancel</a>
+    {{ form_end(form) }}
+{% endblock %}

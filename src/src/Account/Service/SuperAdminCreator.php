@@ -34,7 +34,7 @@ final readonly class SuperAdminCreator
     /**
      * @throws EmailAlreadyRegistered
      */
-    public function create(string $email, string $plainPassword): User
+    public function create(string $email, string $name, string $plainPassword): User
     {
         if (null !== $this->users->findOneByEmail($email)) {
             throw EmailAlreadyRegistered::forEmail($email);
@@ -42,7 +42,7 @@ final readonly class SuperAdminCreator
 
         $now = $this->clock->now();
 
-        $user = new User($email, UserRole::SuperAdmin, $now);
+        $user = new User($email, $name, UserRole::SuperAdmin, $now);
         $user->setStatus(UserStatus::Active);
         $user->setPassword($this->passwordHasher->hashPassword($user, $plainPassword));
         $user->markEmailVerified($now);

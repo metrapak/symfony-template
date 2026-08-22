@@ -123,40 +123,44 @@ with a full audit trail.
 | `Admin\AuditController` | `GET /admin/audit/impersonations` | Compliance report |
 
 ### Backend Tasks
-- [ ] Migration: CREATE `impersonation_session`, `user_deletion_record`, `audit_log_entry`; index on `(actor_id, occurred_at)` and `(target_user_id, started_at)`
-- [ ] Migration: index `"user"` on `(role, status)` and `email` for directory filtering (NFR-020)
-- [ ] Entities above
-- [ ] Enable `switch_user` in `security.yaml` with a restricted role
-- [ ] Voter: `ImpersonateVoter` — denies Super Admin targets (FR-030), denies non-Super-Admin actors
-- [ ] Event subscriber: impersonation expiry listener (FR-031)
-- [ ] Event subscriber: inject `impersonatorId` into every audit entry written while impersonating
-- [ ] Request DTO + validator: `CreateTrainerRequest` (unique email, required business name/name/email/phone), `EditUserRequest`, `DeleteUserRequest` (reason required)
-- [ ] Services above + DI wiring
-- [ ] Repository: `UserRepository::searchForDirectory` with KnpPaginator; `ImpersonationSessionRepository::findOpenForAdmin`
-- [ ] Temporary password generator (cryptographically random) + `mustChangePassword` flag
-- [ ] Mailer: trainer invitation email
-- [ ] **Audit** every history-bearing FK to `user` for `ON DELETE CASCADE` and remove it (FR-026)
-- [ ] Twig extension or global: render a user as "Deleted User" consistently wherever a name is displayed
+
+**Status: delivered on `feat/epic-01-task-002-admin-user-management`.** Where the implementation departs
+from an item below, the reason is recorded in `tasks/TASK-002/writing-plans-plan.md` under "Deviations".
+
+- [x] Migration: CREATE `impersonation_session`, `user_deletion_record`, `audit_log_entry`; index on `(actor_id, occurred_at)` and `(target_user_id, started_at)`
+- [x] Migration: index `"user"` on `(role, status)` and `email` for directory filtering (NFR-020)
+- [x] Entities above
+- [x] Enable `switch_user` in `security.yaml` with a restricted role
+- [x] Voter: `ImpersonateVoter` — denies Super Admin targets (FR-030), denies non-Super-Admin actors
+- [x] Event subscriber: impersonation expiry listener (FR-031)
+- [x] Event subscriber: inject `impersonatorId` into every audit entry written while impersonating
+- [x] Request DTO + validator: `CreateTrainerRequest` (unique email, required business name/name/email/phone), `EditUserRequest`, `DeleteUserRequest` (reason required)
+- [x] Services above + DI wiring
+- [x] Repository: `UserRepository::searchForDirectory` with KnpPaginator; `ImpersonationSessionRepository::findOpenForAdmin`
+- [x] Temporary password generator (cryptographically random) + `mustChangePassword` flag
+- [x] Mailer: trainer invitation email
+- [x] **Audit** every history-bearing FK to `user` for `ON DELETE CASCADE` and remove it (FR-026) — the only cascade found was `reset_password_request.user_id`, which holds transient recovery tokens, not history; nothing aggregates over it, so it is left as is. Every new FK is `RESTRICT`.
+- [x] Twig extension or global: render a user as "Deleted User" consistently wherever a name is displayed
 
 ### Frontend Tasks (server-rendered)
-- [ ] Templates: users list (filters + pagination), create-user form, edit-user form, impersonation banner partial, impersonation history report
-- [ ] Progressive enhancement: confirmation dialogs for deactivate/delete/impersonate using a Stimulus controller — **no `window.confirm`**; server-side POST + CSRF remains the source of truth
-- [ ] Impersonation banner rendered in the base layout, above all content, `position: sticky`
-- [ ] Accessibility: dialogs are `role="dialog"` with focus trap and Escape to close; destructive actions have descriptive accessible names ("Delete user Jane Doe"), not just "Delete"; banner announced via `role="status"`
+- [x] Templates: users list (filters + pagination), create-user form, edit-user form, impersonation banner partial, impersonation history report
+- [x] Progressive enhancement: confirmation dialogs for deactivate/delete/impersonate — **no `window.confirm`**; server-side POST + CSRF remains the source of truth. Built on the native `<dialog>` element rather than Stimulus, which is not installed in this project (Deviation 2).
+- [x] Impersonation banner rendered in the base layout, above all content, `position: sticky`
+- [x] Accessibility: dialogs are `role="dialog"` with focus trap and Escape to close; destructive actions have descriptive accessible names ("Delete user Jane Doe"), not just "Delete"; banner announced via `role="status"`
 
 ### Testing Tasks
-- [ ] Integration: directory pagination, filtering by role and status, search scoping
-- [ ] Integration: trainer creation happy path; duplicate email error; missing required fields
-- [ ] Integration: created trainer can log in and is forced to change password
-- [ ] Integration: deactivate → login refused; reactivate → login succeeds
-- [ ] Integration: delete → PII anonymized to exact spec values; user cannot log in; cannot be reactivated
-- [ ] Integration: **historical integrity** — create history rows, delete the user, assert rows still exist, render as "Deleted User", and aggregate totals are unchanged (FR-026)
-- [ ] Integration: impersonation switches visible data; banner present; exit restores admin
-- [ ] Integration: impersonating a Super Admin returns 403 (FR-030)
-- [ ] Integration: expired impersonation session returns operator to admin view
-- [ ] Integration: non-Super-Admin roles get 403 on every `/admin/*` route
-- [ ] Unit: `UserAnonymizer` field-by-field output; temporary password generator entropy; duration calculation
-- [ ] Browser/E2E: impersonate → observe target's dashboard → exit
+- [x] Integration: directory pagination, filtering by role and status, search scoping
+- [x] Integration: trainer creation happy path; duplicate email error; missing required fields
+- [x] Integration: created trainer can log in and is forced to change password
+- [x] Integration: deactivate → login refused; reactivate → login succeeds
+- [x] Integration: delete → PII anonymized to exact spec values; user cannot log in; cannot be reactivated
+- [x] Integration: **historical integrity** — create history rows, delete the user, assert rows still exist, render as "Deleted User", and aggregate totals are unchanged (FR-026)
+- [x] Integration: impersonation switches visible data; banner present; exit restores admin
+- [x] Integration: impersonating a Super Admin returns 403 (FR-030)
+- [x] Integration: expired impersonation session returns operator to admin view
+- [x] Integration: non-Super-Admin roles get 403 on every `/admin/*` route
+- [x] Unit: `UserAnonymizer` field-by-field output; temporary password generator entropy; duration calculation
+- [x] Browser/E2E: impersonate → observe target's dashboard → exit — covered by functional tests driving the real firewall (`ImpersonationTest`) rather than a browser; there is no browser-test harness in this project and the assertions do not need one.
 
 ## Validation Completeness
 
@@ -170,11 +174,15 @@ with a full audit trail.
 
 ## Gap Analysis
 
-- [ ] **G-16 (new)** — FR-025 erases PII while FR-027 retains original email and a full data snapshot. Retention period, encryption at rest, and who may read `UserDeletionRecord` are unspecified. As written this may not satisfy a GDPR erasure request. **Needs legal input.**
-- [ ] **G-14** — Impersonation expiry has no native Symfony support; confirm expiry semantics (exit to admin vs full logout).
-- [ ] **G-15** — Deactivating or deleting a **trainer** is undefined: what happens to their players, coaches, ShareLinks, events, and branding? US-01.12/13 are written from a player's perspective only.
-- [ ] **G-17 (new)** — Can a Super Admin deactivate or delete *themselves*, or the last remaining Super Admin? Unspecified; recommend blocking both.
-- [ ] **G-18 (new)** — "Actions taken (optional detailed log)" in §8 is optional. Decide now: without it, "all actions during impersonation logged with admin_id context" (US-01.07 security requirement) is not satisfiable.
+Four of these were put to the requester on 2026-08-22 and answered; the answers are implemented and
+recorded in `tasks/TASK-002/architect-architecture.md`.
+
+- [ ] **G-16 (new)** — **Answered, and still open with legal.** Decision: a *minimal* deletion record — original user id, actor, reason, timestamp, and a SHA-256 digest of the original address. No cleartext email, no data snapshot, because storing either would re-create the personal data the erasure just removed. This is a documented deviation from FR-027 and needs legal sign-off; reverting is a migration plus a service change.
+- [x] **G-14** — **Answered.** Expiry means *exit to the admin view*, not logout: the operator keeps their own session and only the borrowed identity is handed back. Implemented in `ImpersonationExpirySubscriber`; window is `IMPERSONATION_TTL`, default one hour.
+- [ ] **G-15** — Deactivating or deleting a **trainer** is undefined: what happens to their players, coaches, ShareLinks, events, and branding? US-01.12/13 are written from a player's perspective only. **Unchanged by this task** — the guards added here concern Super Admins. Carried to TASK-003/004.
+- [x] **G-17 (new)** — **Answered.** Both blocked: nobody may deactivate or delete their own account, and the last active Super Admin may not be deactivated, deleted, or demoted. Enforced in the services, so a console or fixture caller is covered too.
+- [x] **G-18 (new)** — **Answered.** Per-action logging is required for state-changing operations. `AuditLogger` writes them and stamps `impersonator_id` from `ImpersonationContext`. Note: no audited action is reachable by an impersonable role *yet* (every audited operation is `/admin`-only), so the stamping is unit-tested rather than covered end to end — see Deviation 5.
+- [ ] **G-19 (new)** — FR-025 requires "photo → default avatar". There is no photo column until profiles land in TASK-004, so this clause is satisfied vacuously today and must be revisited then.
 - [ ] **Q-01.04 (P1)** — Trainer invitation email content and the full transactional email list.
 - [ ] Spec does not say whether Super Admin can create Coach or Player accounts directly (only Trainer is specified). Assuming **no** — coaches and players arrive via ShareLink (TASK-003).
 - [ ] "Deleted" users appear in the directory or are filtered out? Unspecified; assuming filterable, hidden by default.

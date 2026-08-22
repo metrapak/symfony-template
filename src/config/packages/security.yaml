@@ -50,12 +50,21 @@ security:
             # Activate different ways to authenticate:
             # https://symfony.com/doc/current/security.html#the-firewall
 
+            # FR-028…032. The listener answers `?_switch_user=` on any URL, which is why the
+            # rules that matter (no Super Admin target, audit record, expiry) live in
+            # App\Account\Security\SwitchUserAuditSubscriber and not in the controller that
+            # renders the button.
             # https://symfony.com/doc/current/security/impersonating_user.html
-            # switch_user: true
+            switch_user: { role: ROLE_ALLOWED_TO_SWITCH }
 
-    # D3: deliberately no hierarchy between the four business roles. A Super Admin inheriting
+    # D3: deliberately no hierarchy between the four *business* roles. A Super Admin inheriting
     # ROLE_TRAINER would be routed into organization-scoped views with no organization.
-    role_hierarchy: []
+    #
+    # ROLE_ALLOWED_TO_SWITCH is not a business role — it is the capability grant `switch_user`
+    # checks (FR-028). Granting it here rather than adding it to User::getRoles() keeps the
+    # invariant that a user's roles are derived from exactly one stored enum value.
+    role_hierarchy:
+        ROLE_SUPER_ADMIN: [ROLE_ALLOWED_TO_SWITCH]
 
     # Note: Only the *first* matching rule is applied — public routes must come first.
     # FR-010: authorization lives here (and in voters), never in a hidden Twig link.
@@ -64,6 +73,9 @@ security:
         - { path: ^/password/forgot, roles: PUBLIC_ACCESS }
         - { path: ^/password/reset, roles: PUBLIC_ACCESS }
         - { path: ^/verify, roles: PUBLIC_ACCESS }
+        # Reachable while impersonating, when the operator holds the target's roles rather
+        # than their own. The route only redirects into Symfony's own exit handling.
+        - { path: ^/impersonation/exit, roles: ROLE_USER }
         - { path: ^/admin, roles: ROLE_SUPER_ADMIN }
         # Pre-existing admin UI: category create/edit/delete, the last of which happens on a
         # GET. It predates this epic and was reachable by anyone who guessed the URL. Now that

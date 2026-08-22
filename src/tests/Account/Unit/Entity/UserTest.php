@@ -125,6 +125,6 @@ class UserTest extends TestCase
 
     private function createUser(string $email, UserRole $role): User
     {
-        return new User($email, $role, new \DateTimeImmutable('2026-08-21 09:00:00'));
+        return new User($email, 'Example User', $role, new \DateTimeImmutable('2026-08-21 09:00:00'));
     }
 }

@@ -1,0 +1,124 @@
+{% extends 'admin/_layout.html.twig' %}
+
+{% block title %}Users{% endblock %}
+{% block heading %}Users{% endblock %}
+
+{% block admin_content %}
+    <p><a href="{{ path('admin_users_new') }}">Create user</a></p>
+
+    {#
+        GET, so a filtered view is a URL an operator can bookmark and share. No CSRF token:
+        this form changes nothing.
+    #}
+    <form method="get" action="{{ path('admin_users_index') }}" class="filters" role="search">
+        <div>
+            <label for="filter-q">Search users</label>
+            {# FR-020: searches users only. Not a platform-wide search. #}
+            <input type="search" id="filter-q" name="q" value="{{ filter.term }}" placeholder="Name or email">
+        </div>
+
+        <div>
+            <label for="filter-role">Role</label>
+            <select id="filter-role" name="role">
+                <option value="">All roles</option>
+                {% for role in roles %}
+                    <option value="{{ role.value }}" {{ filter.role == role ? 'selected' : '' }}>{{ role_label(role) }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="filter-status">Status</label>
+            <select id="filter-status" name="status">
+                <option value="">Active and inactive</option>
+                {% for status in statuses %}
+                    <option value="{{ status.value }}" {{ filter.status == status ? 'selected' : '' }}>{{ status_label(status) }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        {# Carried through so applying a filter does not silently reset the chosen column. #}
+        {% if filter.sort %}
+            <input type="hidden" name="sort" value="{{ filter.sort }}">
+            <input type="hidden" name="direction" value="{{ filter.direction }}">
+        {% endif %}
+
+        <button type="submit">Apply</button>
+        <a href="{{ path('admin_users_index') }}">Reset</a>
+    </form>
+
+    <p>{{ users.getTotalItemCount }} user{{ users.getTotalItemCount == 1 ? '' : 's' }} found.</p>
+
+    <table>
+        <caption class="visually-hidden">Platform users, {{ users.getTotalItemCount }} in total</caption>
+        <thead>
+            <tr>
+                <th scope="col">{{ knp_pagination_sortable(users, 'Name', 'u.name') }}</th>
+                <th scope="col">{{ knp_pagination_sortable(users, 'Email', 'u.email') }}</th>
+                <th scope="col">{{ knp_pagination_sortable(users, 'Role', 'u.role') }}</th>
+                <th scope="col">{{ knp_pagination_sortable(users, 'Status', 'u.status') }}</th>
+                <th scope="col">{{ knp_pagination_sortable(users, 'Created', 'u.createdAt') }}</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for user in users %}
+            <tr class="status-{{ user.status.value }}">
+                <td>{{ user.displayName }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ role_label(user.role) }}</td>
+                {# FR-024: an inactive user is still listed, marked rather than hidden. #}
+                <td>{{ status_label(user.status) }}</td>
+                <td>{{ user.createdAt|date('Y-m-d') }}</td>
+                <td>
+                    <div class="actions">
+                        <a href="{{ path('admin_users_edit', {id: user.id}) }}">
+                            <span aria-hidden="true">Edit</span>
+                            <span class="visually-hidden">Edit {{ user.displayName }}</span>
+                        </a>
+
+                        {% if user.status.value == 'active' %}
+                            {{ include('admin/_confirm_form.html.twig', {
+                                action_path: path('admin_users_deactivate', {id: user.id}),
+                                label: 'Deactivate',
+                                accessible_name: 'Deactivate ' ~ user.displayName,
+                                message: user.displayName ~ ' will not be able to log in. All historical data will be preserved for analytics and compliance. Continue?',
+                                confirm_label: 'Deactivate account',
+                            }) }}
+                        {% elseif user.status.value == 'inactive' %}
+                            {{ include('admin/_confirm_form.html.twig', {
+                                action_path: path('admin_users_reactivate', {id: user.id}),
+                                label: 'Reactivate',
+                                accessible_name: 'Reactivate ' ~ user.displayName,
+                                message: user.displayName ~ ' will be able to log in again. Continue?',
+                                confirm_label: 'Reactivate account',
+                            }) }}
+                        {% endif %}
+
+                        {% if is_granted('ACCOUNT_IMPERSONATE', user) %}
+                            {{ include('admin/_confirm_form.html.twig', {
+                                action_path: path('admin_users_impersonate', {id: user.id}),
+                                label: 'Impersonate',
+                                accessible_name: 'Impersonate ' ~ user.displayName,
+                                message: 'View platform as ' ~ user.displayName ~ ' (' ~ role_label(user.role) ~ ')?',
+                                confirm_label: 'View as this user',
+                            }) }}
+                        {% endif %}
+
+                        {% if user.status.value != 'deleted' %}
+                            <a href="{{ path('admin_users_delete', {id: user.id}) }}">
+                                <span aria-hidden="true">Delete</span>
+                                <span class="visually-hidden">Delete {{ user.displayName }}</span>
+                            </a>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+        {% else %}
+            <tr><td colspan="6">No users match these filters.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    {{ knp_pagination_render(users) }}
+{% endblock %}

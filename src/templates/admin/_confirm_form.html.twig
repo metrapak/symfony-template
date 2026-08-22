@@ -1,0 +1,22 @@
+{#
+    A destructive action, expressed as a form (FR-024, FR-028).
+
+    The form is the action. `confirm-dialog.js` upgrades it with a native <dialog>; with
+    JavaScript off, the submit button submits and the POST + CSRF token behind it is unchanged.
+    The dialog is a courtesy to the operator, never the security boundary.
+
+    `label` is the visible button text; `accessible_name` is what a screen reader announces, so
+    a page of buttons all reading "Delete" is instead a page of "Delete user Jane Doe"
+    (NFR-023).
+
+    Params: action_path, label, accessible_name, message, confirm_label, variant
+#}
+<form method="post" action="{{ action_path }}"
+      data-confirm="{{ message }}"
+      data-confirm-label="{{ confirm_label|default(label) }}">
+    <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+    <button type="submit" class="action action-{{ variant|default('neutral') }}">
+        <span aria-hidden="true">{{ label }}</span>
+        <span class="visually-hidden">{{ accessible_name }}</span>
+    </button>
+</form>

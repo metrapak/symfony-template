@@ -47,7 +47,7 @@ class AdminControllerCategoriesTest extends WebTestCase
 
     public function testASignedInNonAdminIsRefused(): void
     {
-        $trainer = new User('trainer@example.com', UserRole::Trainer, new \DateTimeImmutable());
+        $trainer = new User('trainer@example.com', 'Trainer', UserRole::Trainer, new \DateTimeImmutable());
         $trainer->setPassword('irrelevant-for-this-test');
         $this->entityManager->persist($trainer);
         $this->entityManager->flush();
@@ -139,7 +139,7 @@ class AdminControllerCategoriesTest extends WebTestCase
 
     private function createSuperAdmin(): User
     {
-        $user = new User('videos-admin@example.com', UserRole::SuperAdmin, new \DateTimeImmutable());
+        $user = new User('videos-admin@example.com', 'Videos Admin', UserRole::SuperAdmin, new \DateTimeImmutable());
         $user->setPassword('irrelevant-for-this-test');
         $user->markEmailVerified(new \DateTimeImmutable());
 

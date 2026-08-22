@@ -1,0 +1,39 @@
+{% extends 'admin/_layout.html.twig' %}
+{# Same accessible form theme the account pages use: errors linked to inputs via aria-describedby. #}
+{% form_theme form 'account/_form_theme.html.twig' %}
+
+{% block title %}Delete {{ user.displayName }}{% endblock %}
+{% block heading %}Delete {{ user.displayName }}{% endblock %}
+
+{% block admin_content %}
+    {#
+        FR-025 asks for a warning before an irreversible action. This is a page rather than a
+        dialog because the reason is a required, validated field — it has to be able to
+        re-render with an error, which a confirmation popup cannot do.
+    #}
+    <div role="alert">
+        <h2>This cannot be undone</h2>
+        <p>
+            Personal information will be removed: the name becomes “{{ anonymous_name }}”, the email address
+            becomes <code>deleted_{{ user.id }}@example.com</code>, and the phone number is erased.
+        </p>
+        <p>
+            Historical records are kept and will show “{{ anonymous_name }}” — attendance, payments and
+            analytics totals are unchanged. The account cannot be reactivated afterwards.
+        </p>
+        <p>If you only want to stop this person signing in, <a href="{{ path('admin_users_index') }}">deactivate them instead</a>.</p>
+    </div>
+
+    <dl>
+        <dt>Name</dt><dd>{{ user.displayName }}</dd>
+        <dt>Email</dt><dd>{{ user.email }}</dd>
+        <dt>Role</dt><dd>{{ role_label(user.role) }}</dd>
+    </dl>
+
+    {{ form_start(form) }}
+        {{ include('account/_error_summary.html.twig', {form: form}) }}
+        {{ form_row(form.reason) }}
+        <button type="submit">Delete personal information</button>
+        <a href="{{ path('admin_users_index') }}">Cancel</a>
+    {{ form_end(form) }}
+{% endblock %}

@@ -12,6 +12,8 @@
         {% endblock %}
     </head>
     <body>
+        {# FR-029: above all content, on every page that uses this layout. #}
+        {{ include('_impersonation_banner.html.twig') }}
         <img src="{{ asset('main/images/red-pin.svg') }}" alt="Red pin">
         {% block body %}{% endblock %}
     </body>
