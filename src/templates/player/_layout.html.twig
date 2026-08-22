@@ -1,0 +1,72 @@
+{#
+    Shell for the pages a *player* uses — including a child login (FR-090, FR-093, FR-095).
+
+    Separate from `family/_layout.html.twig` on purpose. That shell's navigation is a parent's:
+    player profiles, adding children, spending settings. A child login holds `ROLE_PLAYER` exactly
+    like their parent and would reach every one of those links, and every one of them would answer
+    403 (FR-068, `ChildActionVoter`). Offering somebody a menu of refusals is not navigation.
+
+    So the links here are the ones both a parent and a child may actually follow, and the
+    parent-only entries are behind the same capability check that guards the routes — the check is
+    the route's, this only decides whether to draw the link.
+
+    Plain CSS in the layout, like every other shell in this epic; the brand colour arrives through
+    the `--brand` custom property that `_branding.html.twig` sets.
+#}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <main id="main-content" class="player">
+        <nav aria-label="Sections">
+            <ul class="player-nav">
+                <li><a href="{{ path('account_dashboard') }}">Dashboard</a></li>
+                <li><a href="{{ path('player_reservations') }}">My reservations</a></li>
+                <li><a href="{{ path('availability_index') }}">Best Times</a></li>
+                <li><a href="{{ path('account_profile') }}">My profile</a></li>
+                <li>{{ include('_notification_indicator.html.twig') }}</li>
+                {% if is_granted('ACCOUNT_MANAGE_PAYMENT_METHODS') %}
+                    <li><a href="{{ path('family_approvals') }}">Approvals</a></li>
+                {% endif %}
+                <li><a href="{{ logout_path() }}">Sign out</a></li>
+            </ul>
+        </nav>
+
+        {{ include('_context_switcher.html.twig') }}
+
+        {# Flash messages announce themselves without stealing focus. #}
+        <div role="status" aria-live="polite">
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <p class="flash flash-{{ label }}">{{ message }}</p>
+                {% endfor %}
+            {% endfor %}
+        </div>
+
+        <h1>{% block heading %}{% endblock %}</h1>
+
+        {% block player_content %}{% endblock %}
+    </main>
+
+    <style>
+        .player { max-width: 60rem; margin: 0 auto; padding: 1rem; font: 400 1rem/1.5 system-ui, sans-serif; }
+        .player-nav { display: flex; flex-wrap: wrap; gap: 1rem; list-style: none; padding: 0; }
+        .player h1, .player h2 { color: var(--brand); }
+        .player .flash-error { color: #b91c1c; }
+        .player .flash-warning { color: #b45309; }
+        .player :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+        .player button, .player input, .player select, .player textarea { min-height: 2.75rem; font: inherit; }
+        .player .muted { color: #525252; }
+        .player .card { border: 1px solid #d4d4d4; border-radius: .5rem; padding: 1rem; margin-bottom: 1rem; }
+        .player .actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+        .form-error-summary { border-left: 4px solid #b91c1c; padding: .5rem .75rem; background: #fef2f2; }
+        .visually-hidden {
+            position: absolute;
+            width: 1px; height: 1px;
+            margin: -1px; padding: 0; border: 0;
+            clip-path: inset(50%);
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        {{ include('approval/_status_styles.html.twig') }}
+    </style>
+{% endblock %}

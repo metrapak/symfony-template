@@ -37,6 +37,13 @@ An AI-assisted development accelerator for Symfony 7.4 LTS and Symfony 8.1 proje
 - Availability matching asks whether a declared range *covers* the window, not whether it overlaps it; adjacent ranges are merged on save so that stays a single-row comparison.
 - Declared unavailability is a stored row, so "said no" is distinguishable from "said nothing": undeclared people are counted separately and never produce a conflict warning.
 - Availability is advisory everywhere: a conflict yields a warning plus a reason-bearing override record, and no code path can refuse a scheduling action on availability grounds.
+- Whether a child purchase needs a parent's approval is decided from the profile, never the role, and USD is never waivable; the per-child token waiver is the only exception the rule admits.
+- Payment execution sits behind a `PaymentProcessor` port with a recording fake, so the approval workflow ships complete and Epic-05 is one container alias.
+- One approval takes one payment: an optimistic-lock version column is flushed before the processor is called, so a concurrent second approval loses the race before any money.
+- The approval state machine lives on the entity as a transition table rather than in Symfony Workflow, which is not installed; a purchase that needed no approval is its own final state, not a fake approval.
+- Approval expiry is a cron-driven sweep dispatching one message per due request, because the only configured transport is synchronous and a delayed message would fire immediately.
+- In-app notifications are a module-scoped table, not a platform service: a child login's address is undeliverable by construction, so in-app is the only channel a child has.
+- Money is integer minor units plus a currency, with tokens modelled as a zero-scale currency; amounts of different currencies refuse to add rather than being converted.
 
 ## Tech Stack
 

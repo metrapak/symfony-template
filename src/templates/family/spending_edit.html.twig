@@ -1,0 +1,44 @@
+{#
+    One child's token-spending switch (FR-092, BR-090, BR-091, G-32).
+
+    A checkbox and a submit, with the two things the checkbox cannot say written beside it,
+    because both are things a parent would otherwise reasonably assume wrongly:
+
+      - turning this on does **not** let the child spend dollars unasked (BR-090);
+      - turning it on does **not** decide a request that is already waiting (G-32) — no
+        requirement covers what should happen to a pending request when the rule changes under
+        it, and silently approving one would mean a settings change spending money.
+#}
+{% extends 'family/_layout.html.twig' %}
+{% form_theme form 'account/_form_theme.html.twig' %}
+
+{% block title %}Token spending for {{ child.displayName }}{% endblock %}
+{% block heading %}Token spending for {{ child.displayName }}{% endblock %}
+
+{% block family_content %}
+    <div class="card">
+        <p>
+            Right now, {{ child.displayName }}
+            {% if setting.allowsTokenSpendingWithoutApproval %}
+                <strong>can spend tokens without asking you</strong>.
+            {% else %}
+                <strong>needs your approval to spend tokens</strong>{% if not setting.wasChosen %} — this is the default, and nobody has changed it{% endif %}.
+            {% endif %}
+        </p>
+        <p class="muted">Dollar purchases always need your approval, whatever you choose here.</p>
+    </div>
+
+    {{ form_start(form) }}
+        {{ include('account/_error_summary.html.twig', {form: form}) }}
+
+        {{ form_row(form.allowTokenSpendingWithoutApproval) }}
+
+        <div class="actions">
+            <button type="submit">
+                <span aria-hidden="true">Save</span>
+                <span class="visually-hidden">Save token spending setting for {{ child.displayName }}</span>
+            </button>
+            <a href="{{ path('family_spending') }}">Cancel</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

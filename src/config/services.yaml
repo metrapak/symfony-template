@@ -53,6 +53,20 @@ parameters:
     app.availability_timezone_default: 'UTC'
     app.availability_timezone: '%env(default:app.availability_timezone_default:AVAILABILITY_TIMEZONE)%'
 
+    # FR-096 / NFR-091 — how long a child's purchase waits for a parent before it auto-denies,
+    # in hours. The spec fixes this at 48; it is a parameter so an environment can shorten the
+    # window for testing, and so answering it differently later is configuration rather than a
+    # migration. Read by App\Approval\Service\ApprovalRequestFactory.
+    app.approval_window_hours_default: 48
+    app.approval_window_hours: '%env(int:default:app.approval_window_hours_default:APPROVAL_WINDOW_HOURS)%'
+
+    # The absolute base URL links in outgoing mail are built from. A request supplies its own
+    # host, so this only matters where there is no request — the approval expiry sweep runs from
+    # cron (see App\Approval\Command\ExpireApprovalRequestsCommand) and its mail would otherwise
+    # carry relative, unusable links. Set APP_BASE_URL per environment.
+    app.base_url_default: 'http://localhost:8080'
+    app.base_url: '%env(default:app.base_url_default:APP_BASE_URL)%'
+
     # Sender identity for transactional account mail. Override per environment with the
     # MAILER_SENDER_ADDRESS / MAILER_SENDER_NAME environment variables.
     app.mailer_sender_address_default: 'no-reply@example.com'
@@ -75,6 +89,7 @@ services:
             string $uploadRoot: '%app.upload_root%'
             int $availabilitySlotMinutes: '%app.availability_slot_minutes%'
             string $availabilityTimezone: '%app.availability_timezone%'
+            int $approvalWindowHours: '%app.approval_window_hours%'
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
     App\:
@@ -94,6 +109,14 @@ services:
             - '../src/Membership/ValueObject/'
             - '../src/Profile/Entity/'
             - '../src/Profile/Enum/'
+            - '../src/Approval/Entity/'
+            - '../src/Approval/Enum/'
+            - '../src/Approval/Exception/'
+            - '../src/Approval/Message/'
+            - '../src/Approval/ValueObject/'
+            - '../src/Approval/Payment/PaymentInstruction.php'
+            - '../src/Approval/Payment/PaymentReceipt.php'
+            - '../src/Approval/Payment/PaymentFailed.php'
             - '../src/Kernel.php'
 
 #    App\Shared\Infrastructure\EventListener\ExceptionListener:
@@ -106,3 +129,9 @@ services:
     App\Shared\Infrastructure\Controller\MainController:
         bind:
             $logger: '@monolog.logger.doctrine'
+
+    # FR-097 / decision D-04 — the payment port and the stand-in behind it. Epic-05 replaces this
+    # single alias with its real processor and no workflow code changes, which is the acceptance
+    # criterion. The same shape as App\Profile\Service\UpcomingReservationCanceller, aliased to
+    # its own honest no-op until the epic that owns the behaviour exists.
+    App\Approval\Payment\PaymentProcessor: '@App\Approval\Payment\FakePaymentProcessor'

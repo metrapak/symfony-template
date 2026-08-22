@@ -1,0 +1,11 @@
+{# FR-095 — denied, and nothing was charged. Said plainly, because that is the part that matters. #}
+<p>Hello {{ recipientName }},</p>
+
+<p>
+    <strong>{{ purchaseDescription }}</strong> for <strong>{{ childName }}</strong> was not
+    approved. Nothing has been charged.
+</p>
+
+{% if parentNotes %}
+    <p><strong>Note:</strong> {{ parentNotes }}</p>
+{% endif %}

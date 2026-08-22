@@ -30,6 +30,19 @@ enum AuditAction: string
      */
     case CoachAvailabilityOverridden = 'coach_availability.overridden';
 
+    /**
+     * A parent decided a child's purchase, or changed what a child may spend without asking
+     * (FR-095, FR-092, NFR-X02).
+     *
+     * NFR-X02 lists approval beside impersonation, deletion and override, and these are the
+     * three writes that spend or authorize spending somebody else's money. Expiry has no case of
+     * its own on purpose: nobody performs it, and an audit entry has to name an actor — the
+     * request row carries its own `expired` status and response timestamp instead.
+     */
+    case ChildPurchaseApproved = 'child_purchase.approved';
+    case ChildPurchaseDenied = 'child_purchase.denied';
+    case ChildTokenSpendingSettingChanged = 'child_spending_setting.changed';
+
     public function label(): string
     {
         return match ($this) {
@@ -41,6 +54,9 @@ enum AuditAction: string
             self::ImpersonationStarted => 'Impersonation started',
             self::ImpersonationEnded => 'Impersonation ended',
             self::CoachAvailabilityOverridden => 'Coach availability overridden',
+            self::ChildPurchaseApproved => 'Child purchase approved',
+            self::ChildPurchaseDenied => 'Child purchase denied',
+            self::ChildTokenSpendingSettingChanged => 'Child token spending setting changed',
         };
     }
 }

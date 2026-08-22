@@ -1,0 +1,14 @@
+{#
+    FR-096 — nobody answered within the window, so the request denied itself.
+
+    Says who could not answer and what to do next, because "expired" without either is a message
+    that only reports a failure.
+#}
+<p>Hello {{ recipientName }},</p>
+
+<p>
+    <strong>{{ purchaseDescription }}</strong> for <strong>{{ childName }}</strong> expired after
+    48 hours with no answer, so it was denied automatically. Nothing has been charged.
+</p>
+
+<p>If {{ childName }} still wants it, they can ask again.</p>

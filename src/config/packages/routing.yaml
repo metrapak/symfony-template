@@ -4,7 +4,12 @@ framework:
 
         # Configure how to generate URLs in non-HTTP contexts, such as CLI commands.
         # See https://symfony.com/doc/current/routing.html#generating-urls-in-commands
-        #default_uri: http://localhost
+        #
+        # Needed by the approval expiry sweep (FR-096): it runs from cron, so there is no request
+        # to take a host from, and the links in the mail it sends would otherwise be relative.
+        # A request still supplies its own host — this is the fallback, not an override. Set
+        # APP_BASE_URL per environment; see app.base_url in services.yaml.
+        default_uri: '%app.base_url%'
 
 when@prod:
     framework:

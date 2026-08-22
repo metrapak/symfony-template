@@ -95,5 +95,11 @@ migrate:
 	cd docker && docker compose run --rm -T php-fpm php -dxdebug.mode=off bin/console doctrine:migrations:migrate --no-interaction
 	@echo "✅ Migrations completed!"
 
+# FR-096 / NFR-091 — the child purchase approvals whose 48 hours have run out. Safe to run at
+# any time and idempotent; production schedules it from cron (see
+# App\Approval\Command\ExpireApprovalRequestsCommand for the suggested interval).
+approvals-expire:
+	cd docker && docker compose run --rm -T php-fpm php -dxdebug.mode=off bin/console app:approvals:expire
+
 db-seed:
 	cd docker && docker compose run --rm -T php-fpm php -dxdebug.mode=off bin/console doctrine:fixtures:load --no-interaction

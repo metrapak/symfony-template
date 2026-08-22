@@ -1,0 +1,24 @@
+{#
+    FR-093 — the parent is asked to decide.
+
+    Carries the four facts the requirement names — which child, which purchase, how much, and how
+    it would be paid — so a parent reading this on a phone knows what they are being asked before
+    they sign in. The deadline is here too, because FR-096 makes silence an answer.
+#}
+<p>Hello {{ recipientName }},</p>
+
+<p>
+    <strong>{{ childName }}</strong> would like to buy <strong>{{ purchaseDescription }}</strong>
+    for <strong>{{ amount }}</strong>, paid with {{ paymentType|lower }}.
+</p>
+
+<p><a href="{{ reviewUrl }}">Approve or deny this purchase</a></p>
+
+{% if expiresAt %}
+    <p>
+        If nobody answers by <strong>{{ expiresAt|date('j M Y, H:i') }}</strong> the request is
+        denied automatically and nothing is charged.
+    </p>
+{% endif %}
+
+<p>Nothing has been paid for yet.</p>

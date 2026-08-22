@@ -1,3 +1,7 @@
+approval_controllers:
+    resource: '../src/Approval/Controller/'
+    type: attribute
+
 account_controllers:
     resource: '../src/Account/Controller/'
     type: attribute

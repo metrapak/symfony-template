@@ -1,0 +1,31 @@
+{#
+    The in-app notification indicator (FR-093, G-33).
+
+    **The count is in the link's text, not only in a coloured dot.** A badge that conveys "you
+    have three" by being red and round conveys nothing to a screen reader and nothing to a reader
+    who cannot distinguish it from decoration (NFR-094, WCAG 1.4.1). So the number is written out,
+    the visible badge is `aria-hidden`, and the accessible name says what the number counts.
+
+    Two different things are counted, because they are two different facts: unread messages, and
+    purchases actually waiting on this parent. A parent who has read every email still has
+    decisions to make, and an indicator that conflated them would go quiet while three children
+    waited.
+
+    Renders as a plain link when there is nothing outstanding — never disappears, so the inbox
+    stays reachable from every page rather than only from the pages that happen to have news.
+#}
+{% set unread = unread_notification_count() %}
+{% set pending = is_granted('ACCOUNT_MANAGE_PAYMENT_METHODS') ? pending_approval_count() : 0 %}
+
+<a href="{{ path('notifications_index') }}">
+    Notifications
+    {% if unread > 0 %}
+        <span class="badge" aria-hidden="true">{{ unread }}</span>
+        <span class="visually-hidden">
+            — {{ unread }} unread{% if pending > 0 %}, {{ pending }} purchase{{ pending == 1 ? '' : 's' }} waiting for your approval{% endif %}
+        </span>
+    {% elseif pending > 0 %}
+        <span class="badge" aria-hidden="true">{{ pending }}</span>
+        <span class="visually-hidden">— {{ pending }} purchase{{ pending == 1 ? '' : 's' }} waiting for your approval</span>
+    {% endif %}
+</a>

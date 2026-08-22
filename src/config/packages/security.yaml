@@ -93,6 +93,14 @@ security:
         # App\Availability\Security\AvailabilityVoter against the profiles the caller manages.
         - { path: ^/availability, roles: ROLE_PLAYER }
         - { path: ^/family, roles: ROLE_PLAYER }
+        # FR-090/FR-095. Every parent and every child login holds ROLE_PLAYER, so this rule only
+        # keeps strangers out; whose reservations a page shows is resolved per request from the
+        # profiles the viewer is or manages, and whose purchase a URL names is decided by
+        # App\Approval\Security\ApprovalVoter.
+        - { path: ^/reservations, roles: ROLE_PLAYER }
+        # FR-093. The inbox has no id in any route — both actions work on the current user's own
+        # rows — so this rule is the whole of its authorization.
+        - { path: ^/notifications, roles: ROLE_USER }
         # FR-069/FR-070. Any signed-in user may *ask* to switch context; which contexts they
         # actually hold is decided per request by TrainingContextResolver against their own
         # associations, and a pair they do not hold is a 403 there. A role rule cannot express

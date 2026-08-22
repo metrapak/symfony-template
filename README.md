@@ -124,6 +124,41 @@ list.
 
 ---
 
+## 💳 Purchase Approvals (child spending)
+
+### Scheduled expiry — required in every environment
+
+A child's purchase request auto-denies 48 hours after it is made (FR-096). Nothing in the application
+schedules that: it needs one cron entry, and without it pending requests never expire.
+
+```cron
+*/15 * * * *  cd /path/to/app && php bin/console app:approvals:expire
+```
+
+The interval is yours to choose — it is the bound on how late an expiry can be. The command is
+idempotent, takes only requests that are actually due, and stays quiet when there is nothing to do, so
+it is safe to run as often as you like and safe to run by hand:
+
+```bash
+make approvals-expire
+```
+
+### No payments are taken yet
+
+Payment execution sits behind `App\Approval\Payment\PaymentProcessor` and the implementation that
+ships is `FakePaymentProcessor`: it records the intent, writes a warning to the application log, and
+succeeds. Approvals, denials, expiry, notifications and the audit trail are all real; **no money
+moves**. Replacing it when the payments epic lands is one alias in `src/config/services.yaml`.
+
+### Configuration
+
+| Variable | Default | Effect |
+|:---------|:--------|:-------|
+| `APPROVAL_WINDOW_HOURS` | `48` | How long a purchase waits for a parent before it auto-denies. |
+| `APP_BASE_URL` | `http://localhost:8080` | Absolute base for links in outgoing mail. Only used where there is no HTTP request to take a host from — which is exactly the expiry cron above, so set it wherever that runs. |
+
+---
+
 ## 🐳 Docker Services
 
 - **Nginx**: Web server (port 8080)

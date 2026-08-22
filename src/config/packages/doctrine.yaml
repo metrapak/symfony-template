@@ -20,6 +20,11 @@ doctrine:
                 type: attribute
                 dir: '%kernel.project_dir%/src/Account/Entity'
                 prefix: 'App\Account\Entity'
+            Approval:
+                is_bundle: false
+                type: attribute
+                dir: '%kernel.project_dir%/src/Approval/Entity'
+                prefix: 'App\Approval\Entity'
             Availability:
                 is_bundle: false
                 type: attribute

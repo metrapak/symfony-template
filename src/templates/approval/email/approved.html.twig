@@ -1,0 +1,12 @@
+{# FR-095 — the outcome, to whoever did not make the decision. #}
+<p>Hello {{ recipientName }},</p>
+
+<p>
+    <strong>{{ purchaseDescription }}</strong> for <strong>{{ childName }}</strong> was approved.
+    The payment of <strong>{{ amount }}</strong> has gone through and {{ childName }} is
+    registered.
+</p>
+
+{% if parentNotes %}
+    <p><strong>Note:</strong> {{ parentNotes }}</p>
+{% endif %}
