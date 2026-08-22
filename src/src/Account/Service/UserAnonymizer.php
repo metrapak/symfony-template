@@ -27,6 +27,11 @@ use Symfony\Component\Clock\ClockInterface;
  * erasure, and each of them renders "Deleted User" because they all read `getDisplayName()`.
  * A `DELETE` — or a cascade — would take the history with it and quietly change last quarter's
  * revenue figure.
+ *
+ * The personal *media* — photographs, a coach's bio, the family's emergency contacts — is
+ * cleared through `PersonalDataEraser`, which is the resolution of G-19: when this service was
+ * written there were no such columns, and TASK-004 added them. The files themselves are unlinked
+ * after the commit, because an unlink is the one step in an erasure that cannot be rolled back.
  */
 final readonly class UserAnonymizer
 {
@@ -37,6 +42,7 @@ final readonly class UserAnonymizer
         private UserRepository $users,
         private UserDeletionRecordRepository $deletionRecords,
         private AuditLogger $auditLogger,
+        private PersonalDataEraser $dataEraser,
         private EntityManagerInterface $entityManager,
         private ClockInterface $clock,
     ) {
@@ -69,8 +75,11 @@ final readonly class UserAnonymizer
         $anonymizedEmail = \sprintf(self::ANONYMOUS_EMAIL_FORMAT, $userId);
         $now = $this->clock->now();
 
-        return $this->entityManager->wrapInTransaction(
-            function () use ($target, $actor, $reason, $userId, $originalEmail, $anonymizedEmail, $now): UserDeletionRecord {
+        /** @var list<string> $orphanedFiles */
+        $orphanedFiles = [];
+
+        $record = $this->entityManager->wrapInTransaction(
+            function () use ($target, $actor, $reason, $userId, $originalEmail, $anonymizedEmail, $now, &$orphanedFiles): UserDeletionRecord {
                 $target->setName(self::ANONYMOUS_NAME);
                 $target->setEmail($anonymizedEmail);
                 $target->setPhone(null);
@@ -84,6 +93,12 @@ final readonly class UserAnonymizer
 
                 $target->markEmailUnverified();
                 $target->setMustChangePassword(false);
+
+                // FR-025's "photo → default avatar" and "personal identifiers → NULL", for the
+                // columns TASK-004 added (G-19). Inside the transaction: an erasure that
+                // anonymized the name and committed without the photograph would report success
+                // while leaving the most identifying file on disk.
+                $orphanedFiles = $this->dataEraser->erasePersonalDataFor($target);
 
                 // Ends every live session the deleted user had, through the same mechanism a
                 // password change uses (User::isEqualTo compares this stamp).
@@ -113,5 +128,12 @@ final readonly class UserAnonymizer
                 return $record;
             },
         );
+
+        // After the commit, never before: the rows that referenced these files have been
+        // anonymized, so nothing points at them any more. Deleting first would destroy a
+        // photograph that a rolled-back transaction still expected to be there.
+        $this->dataEraser->deleteOrphanedFiles(...$orphanedFiles);
+
+        return $record;
     }
 }

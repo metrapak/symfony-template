@@ -1,0 +1,91 @@
+{#
+    Self-service profile editing, for every role (FR-060, FR-061).
+
+    The read-only block is text, not disabled inputs. FR-060 lists email, role, skill level and
+    the creation date as read-only, and a disabled input is still a field in the DOM that a
+    crafted POST can name — these are not in the form or the DTO at all, so there is nothing to
+    submit. Rendering them as a description list says the same thing to a screen reader.
+
+    The role-specific fields are rendered by testing whether the form has them, rather than by
+    branching on the role. `UpdateProfileFormType` has already decided which fields exist for this
+    role, and asking the form is the only way that cannot drift from it.
+#}
+{% extends 'account/_layout.html.twig' %}
+{% form_theme form 'account/_form_theme.html.twig' %}
+
+{% block title %}Your profile{% endblock %}
+{% block heading %}Your profile{% endblock %}
+
+{% block account_content %}
+    <section aria-labelledby="readonly-heading">
+        <h2 id="readonly-heading">Account details</h2>
+        <dl>
+            <dt>Email</dt>
+            <dd>{{ user.email }}</dd>
+            <dt>Role</dt>
+            <dd>{{ user.role.value }}</dd>
+            <dt>Member since</dt>
+            <dd>{{ user.createdAt|date('j M Y') }}</dd>
+            {% if playerProfile %}
+                <dt>Skill level</dt>
+                {# Trainer-assessed (BR-067). Shown so a player knows what it says, never editable. #}
+                <dd>{{ playerProfile.skillLevel ?? 'Not assessed yet' }}</dd>
+            {% endif %}
+        </dl>
+        <p class="muted">
+            These cannot be changed here. Your email and role are managed by an administrator, and
+            your skill level is set by your trainer.
+        </p>
+    </section>
+
+    {% set currentPhoto = photoOwner == 'profile'
+        ? player_photo_url(playerProfile, false)
+        : account_photo_url(user, false) %}
+
+    {% if currentPhoto %}
+        <p><img class="avatar" src="{{ currentPhoto }}" alt="Your current profile photo"></p>
+    {% endif %}
+
+    {{ form_start(form, {attr: {enctype: 'multipart/form-data'}}) }}
+        {{ include('account/_error_summary.html.twig', {form: form}) }}
+
+        {{ form_row(form.name) }}
+        {{ form_row(form.phone) }}
+        {{ form_row(form.photo) }}
+        {% if currentPhoto %}
+            {{ form_row(form.removePhoto) }}
+        {% endif %}
+
+        {# Player (FR-061) #}
+        {% if form.school is defined %}{{ form_row(form.school) }}{% endif %}
+        {% if form.jerseyNumber is defined %}{{ form_row(form.jerseyNumber) }}{% endif %}
+
+        {# Coach (FR-061) #}
+        {% if form.bio is defined %}{{ form_row(form.bio) }}{% endif %}
+        {% if form.credentials is defined %}{{ form_row(form.credentials) }}{% endif %}
+        {% if form.certifications is defined %}{{ form_row(form.certifications) }}{% endif %}
+        {% if form.publicProfile is defined %}{{ form_row(form.publicProfile) }}{% endif %}
+
+        {# Trainer (FR-061) #}
+        {% if form.businessName is defined %}{{ form_row(form.businessName) }}{% endif %}
+        {% if form.address is defined %}{{ form_row(form.address) }}{% endif %}
+        {% if form.website is defined %}{{ form_row(form.website) }}{% endif %}
+        {% if form.description is defined %}{{ form_row(form.description) }}{% endif %}
+
+        {# Super Admin (FR-061) #}
+        {% if form.notifyOnTrainerCreated is defined %}{{ form_row(form.notifyOnTrainerCreated) }}{% endif %}
+        {% if form.notifyOnAccountErasure is defined %}{{ form_row(form.notifyOnAccountErasure) }}{% endif %}
+
+        <div class="actions">
+            <button type="submit">Save</button>
+            <a href="{{ path('account_dashboard') }}">Back to dashboard</a>
+        </div>
+    {{ form_end(form) }}
+
+    <style>
+        .avatar { width: 6rem; height: 6rem; border-radius: 50%; object-fit: cover; }
+        .muted { color: #525252; }
+        .actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+        .form-error-summary { border-left: 4px solid #b91c1c; padding: .5rem .75rem; background: #fef2f2; }
+    </style>
+{% endblock %}

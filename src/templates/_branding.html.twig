@@ -1,0 +1,38 @@
+{#
+    The viewer's brand colours, as CSS custom properties (FR-071, FR-072, NFR-065).
+
+    Two things about this block are deliberate and should not be "simplified":
+
+    1. The values come from `HexColor`, which has already proved each one is exactly `#rrggbb`.
+       A `<style>` element is the one place in a Twig template where HTML escaping is the *wrong*
+       escaping, so the defence is a value that cannot carry a payload, not an escape at the
+       point of use.
+
+       They are printed **raw on purpose**, and `|e('css')` must not be added back. Twig's CSS
+       escaper rewrites `#` as the escape sequence `\23 `, which is legal CSS but changes the
+       token's *type*: `\23 7c3aed` parses as an identifier, not as a hash token, so
+       `color: var(--brand)` becomes invalid at computed-value time and the declaration is
+       dropped. Verified in Chrome — the escaped form computes to `rgb(0, 0, 0)` with
+       `outline-style: none`, meaning every trainer's colour silently reverted to black and the
+       branded focus outline disappeared with it. Escaping here does not cost nothing; it costs
+       the whole of FR-071, FR-072 and the focus ring NFR-064 asks for.
+
+       What keeps this safe is the type: `ResolvedBranding` carries `HexColor`, whose only
+       constructor path is a `^[0-9a-f]{6}$` match, so no value reaching this template can carry
+       a `;`, a `}` or a `<`. If that ever stops being true, the fix is in `HexColor` — not an
+       escape filter here.
+    2. `--brand-fg` is computed server-side from the WCAG relative luminance of `--brand`
+       (NFR-065). Deriving it in CSS is not possible, and guessing it in the template would make
+       unreadable text a rendering detail rather than a validated property.
+
+    FR-072's "visible immediately to everyone in the organization" needs nothing here: the
+    branding is resolved per request from the viewer's active context (G-26), so the next page
+    anybody loads already carries the new colour.
+#}
+{% set branding = viewer_branding() %}
+<style>
+    :root {
+        --brand: {{ branding.primaryColor.value|raw }};
+        --brand-fg: {{ branding.foreground.value|raw }};
+    }
+</style>

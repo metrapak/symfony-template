@@ -13,12 +13,15 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * A person who trains: the account holder themself, or one of their children.
  *
- * **This is TASK-004's entity, seeded here.** TASK-003 shipped first and cannot associate a
- * player with a trainer without something to associate, so this carries only the fields the
- * invitation flow actually writes (spec §8: name, birth date, gender, "is this a child
- * profile?", link to the parent account). Skill level, school, jersey number, photo and
- * emergency contact belong to TASK-004 and are deliberately absent rather than nullable
- * placeholders.
+ * Seeded by TASK-003 with the fields the invitation flow writes; completed by TASK-004, which
+ * added the profile screens and with them school, jersey number, photo and skill level
+ * (spec §8, FR-061). Emergency contact stayed out: it belongs to the *parent account*, not to
+ * one player, so it is its own entity rather than columns repeated across a family's rows.
+ *
+ * Skill level is stored but never self-editable (BR-067) — a trainer assesses it, and no
+ * screen in this epic writes it. It is a nullable string rather than an enum because Q-01.01
+ * is unanswered; the values are the client's to define, and inventing four of them now would
+ * make the wrong four authoritative.
  *
  * Two users hang off a profile and they answer different questions:
  *
@@ -27,8 +30,15 @@ use Doctrine\ORM\Mapping as ORM;
  *    reads this column, and BR-046 — a child may not add a trainer — is meaningful only
  *    because it exists.
  *  - `account` is the login the profile *signs in as*, and is null for a child who has no
- *    login of their own. TASK-004 fills it in when it ships child accounts; TASK-003 needs
- *    it to answer "is the user in front of me a child?" (FR-048).
+ *    login of their own. TASK-004's `ChildLoginManager` is the only thing that fills it in,
+ *    and FR-048 turns on it: it is how "is the user in front of me a child?" is answered.
+ *
+ * There is deliberately no `parent_child_link` table and no `loginEnabled` column, though the
+ * task breakdown lists both. `owner` already *is* the parent link — a join table repeating
+ * `(parent_user_id, child_profile_id)` would store the same fact twice and let the two
+ * disagree — and "has a login" is `account !== null`, while "may currently use it" is that
+ * account's own `UserStatus`. A third boolean saying either thing again is a column that can
+ * contradict the row it lives in.
  */
 #[ORM\Entity(repositoryClass: PlayerProfileRepository::class)]
 #[ORM\Table(name: 'player_profile')]
@@ -69,6 +79,40 @@ class PlayerProfile
 
     #[ORM\Column(options: ['default' => false])]
     private bool $child = false;
+
+    /**
+     * FR-061's player-specific fields. Optional throughout: FR-063 makes only name, age and
+     * gender required, and a parent adding a child mid-season should not have to invent a
+     * jersey number to save the form.
+     */
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $school = null;
+
+    /**
+     * A string, not an int. Jersey numbers are worn, not counted: "07" and "7" are different
+     * shirts, and a squad that uses "00" would lose it to an integer column.
+     */
+    #[ORM\Column(length: 8, nullable: true)]
+    private ?string $jerseyNumber = null;
+
+    /**
+     * Where the stored photo lives, relative to the private upload root — never a URL.
+     *
+     * NFR-066 keeps uploads out of the web root, so nothing can link to a file directly; the
+     * path is resolved by a controller that checks who is asking. Storing a URL here would
+     * bake the serving strategy into every row.
+     */
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $photoPath = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $photoThumbnailPath = null;
+
+    /**
+     * Trainer-assessed, never self-edited (BR-067). Nullable string pending Q-01.01.
+     */
+    #[ORM\Column(length: 32, nullable: true)]
+    private ?string $skillLevel = null;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $createdAt;
@@ -176,6 +220,114 @@ class PlayerProfile
     public function isManagedByAnotherAccount(): bool
     {
         return $this->account?->getId() !== $this->owner->getId();
+    }
+
+    public function getSchool(): ?string
+    {
+        return $this->school;
+    }
+
+    public function setSchool(?string $school, \DateTimeImmutable $now): static
+    {
+        $this->school = self::blankToNull($school);
+        $this->updatedAt = $now;
+
+        return $this;
+    }
+
+    public function getJerseyNumber(): ?string
+    {
+        return $this->jerseyNumber;
+    }
+
+    public function setJerseyNumber(?string $jerseyNumber, \DateTimeImmutable $now): static
+    {
+        $this->jerseyNumber = self::blankToNull($jerseyNumber);
+        $this->updatedAt = $now;
+
+        return $this;
+    }
+
+    public function getPhotoPath(): ?string
+    {
+        return $this->photoPath;
+    }
+
+    public function getPhotoThumbnailPath(): ?string
+    {
+        return $this->photoThumbnailPath;
+    }
+
+    public function hasPhoto(): bool
+    {
+        return null !== $this->photoPath;
+    }
+
+    /**
+     * Both paths move together, because a thumbnail of a photo that is no longer here is a
+     * broken image nobody can explain. A processor that could not produce a thumbnail passes
+     * null and the full photo is used in its place.
+     */
+    public function setPhoto(?string $photoPath, ?string $thumbnailPath, \DateTimeImmutable $now): static
+    {
+        $this->photoPath = $photoPath;
+        $this->photoThumbnailPath = null !== $photoPath ? $thumbnailPath : null;
+        $this->updatedAt = $now;
+
+        return $this;
+    }
+
+    public function getSkillLevel(): ?string
+    {
+        return $this->skillLevel;
+    }
+
+    /**
+     * Trainer-set (BR-067). No self-service screen calls this; it exists so the column has a
+     * writer when the trainer's assessment screens arrive, and so nothing is tempted to reach
+     * into the property.
+     */
+    public function setSkillLevel(?string $skillLevel, \DateTimeImmutable $now): static
+    {
+        $this->skillLevel = self::blankToNull($skillLevel);
+        $this->updatedAt = $now;
+
+        return $this;
+    }
+
+    /**
+     * Gives this profile its own login (FR-067, G-23).
+     *
+     * Guarded rather than a plain setter: a profile that already signs in as somebody must not
+     * be silently repointed at a second account, because the first one would keep its session
+     * and its associations while no longer being reachable from the family it belongs to.
+     *
+     * @throws \LogicException when the profile already has a login, or is not a child
+     */
+    public function attachLogin(User $account, \DateTimeImmutable $now): static
+    {
+        if (null !== $this->account) {
+            throw new \LogicException('This profile already has a login.');
+        }
+
+        if (!$this->child) {
+            throw new \LogicException('Only a child profile is given a login separately from its owner.');
+        }
+
+        $this->account = $account;
+        $this->updatedAt = $now;
+
+        return $this;
+    }
+
+    public function hasOwnLogin(): bool
+    {
+        return null !== $this->account;
+    }
+
+    private static function blankToNull(?string $value): ?string
+    {
+        return null === $value || '' === trim($value) ? null : trim($value);
     }
 
     public function getCreatedAt(): \DateTimeImmutable

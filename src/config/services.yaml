@@ -31,6 +31,13 @@ parameters:
     app.impersonation_ttl_default: 3600
     app.impersonation_ttl: '%env(int:default:app.impersonation_ttl_default:IMPERSONATION_TTL)%'
 
+    # NFR-066 — where uploaded images are written. Deliberately under var/ and not under
+    # public/: nothing in this directory is reachable by URL, so every stored photo and logo is
+    # served by a controller that has already decided who may see it. Override per environment
+    # with the UPLOAD_ROOT environment variable.
+    app.upload_root_default: '%kernel.project_dir%/var/uploads'
+    app.upload_root: '%env(default:app.upload_root_default:UPLOAD_ROOT)%'
+
     # Sender identity for transactional account mail. Override per environment with the
     # MAILER_SENDER_ADDRESS / MAILER_SENDER_NAME environment variables.
     app.mailer_sender_address_default: 'no-reply@example.com'
@@ -50,6 +57,7 @@ services:
             int $impersonationTtl: '%app.impersonation_ttl%'
             string $senderAddress: '%app.mailer_sender_address%'
             string $senderName: '%app.mailer_sender_name%'
+            string $uploadRoot: '%app.upload_root%'
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
     App\:

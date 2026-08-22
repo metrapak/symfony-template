@@ -1,0 +1,72 @@
+{#
+    "+ Add Child" (FR-063, FR-064).
+
+    The duplicate-name warning is rendered as part of the page, above the form, with the parent's
+    data still in the fields and a hidden acknowledgement set. Submitting again goes through. That
+    is FR-063's "warning, not a rejection" done in a way the server can guarantee: a JavaScript
+    `confirm()` would be a rule the client is free to skip.
+
+    FR-064's trainer branch needs nothing here — the field is the same `organizationIds` either
+    way, and `CreateChildFormType` chooses the yes/no wording or the checklist wording from how
+    many trainers the parent has.
+#}
+{% extends 'family/_layout.html.twig' %}
+{% form_theme form 'account/_form_theme.html.twig' %}
+
+{% block title %}Add a child{% endblock %}
+{% block heading %}Add a child{% endblock %}
+
+{% block family_content %}
+    {{ form_start(form, {attr: {enctype: 'multipart/form-data'}}) }}
+        {{ include('account/_error_summary.html.twig', {form: form}) }}
+
+        {% if lookalikes is not empty %}
+            {# `role="alert"` so the warning is announced on the round trip that produced it,
+               rather than being something a screen-reader user has to go looking for. #}
+            <div class="warning" role="alert">
+                <h2>Is this someone you have already added?</h2>
+                <p>
+                    You already have
+                    {% for lookalike in lookalikes %}
+                        <strong>{{ lookalike.displayName }}</strong>{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                    at the same age. If this is a different child, submit again to continue.
+                </p>
+            </div>
+        {% endif %}
+
+        {{ form_row(form.name) }}
+        {{ form_row(form.age) }}
+        {{ form_row(form.gender) }}
+        {{ form_row(form.school) }}
+        {{ form_row(form.photo) }}
+
+        {% if form.organizationIds is defined %}
+            <fieldset>
+                {# The legend carries FR-064's question. With one trainer the form type words it as
+                   "Will they also train with X?"; with several, as a choice between them. #}
+                <legend>{{ form.organizationIds.vars.label }}</legend>
+                {{ form_widget(form.organizationIds) }}
+                {{ form_errors(form.organizationIds) }}
+            </fieldset>
+        {% else %}
+            <p class="muted">
+                You are not training with anyone yet, so there is no trainer to add them to. You
+                can do that later from the player profiles page.
+            </p>
+        {% endif %}
+
+        {# Set only when a warning has been shown, so a first submit can never carry an
+           acknowledgement of a warning the parent has not seen. #}
+        {% if lookalikes is not empty %}
+            {{ form_widget(form.acknowledgedDuplicate, {value: '1'}) }}
+        {% else %}
+            {{ form_widget(form.acknowledgedDuplicate, {value: ''}) }}
+        {% endif %}
+
+        <div class="actions">
+            <button type="submit">{{ lookalikes is not empty ? 'Yes, add them anyway' : 'Add child' }}</button>
+            <a href="{{ path('family_index') }}">Cancel</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

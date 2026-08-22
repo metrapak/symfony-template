@@ -89,6 +89,15 @@ security:
         - { path: ^/trainer, roles: ROLE_TRAINER }
         - { path: ^/coach, roles: ROLE_COACH }
         - { path: ^/family, roles: ROLE_PLAYER }
+        # FR-069/FR-070. Any signed-in user may *ask* to switch context; which contexts they
+        # actually hold is decided per request by TrainingContextResolver against their own
+        # associations, and a pair they do not hold is a 403 there. A role rule cannot express
+        # that — a parent and a child both hold ROLE_PLAYER.
+        - { path: ^/context, roles: ROLE_USER }
+        # NFR-066. Stored images are outside the web root and reach a browser only through
+        # MediaController, which authorizes each one with the voter that owns the subject. This
+        # rule only establishes that an anonymous visitor never gets that far.
+        - { path: ^/media, roles: ROLE_USER }
         - { path: ^/account, roles: ROLE_USER }
         - { path: ^/dashboard, roles: ROLE_USER }
         # No catch-all rule: the pre-existing public pages (/videos, /products, /starships)

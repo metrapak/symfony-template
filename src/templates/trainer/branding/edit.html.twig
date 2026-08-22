@@ -1,0 +1,91 @@
+{#
+    Trainer portal branding (FR-071, FR-072, NFR-064, NFR-065).
+
+    The colour control is a text field for the hex code with a native colour picker beside it, and
+    the two are bound to each other by `branding-picker.js`. NFR-064 requires the text input, and
+    it is the field that submits: with JavaScript off the picker is simply absent and the text
+    field still works. The reverse arrangement — a colour input as the source of truth — cannot be
+    emptied, which would make FR-072's reset unreachable.
+
+    The preview shows the *resolved* colours, including the foreground the server computed from
+    the WCAG luminance of the brand (NFR-065). A trainer sees the pairing their members will see,
+    not a swatch that looks fine on its own.
+#}
+{% extends 'trainer/_layout.html.twig' %}
+{% form_theme form 'account/_form_theme.html.twig' %}
+
+{% block title %}Portal branding{% endblock %}
+{% block heading %}Portal branding{% endblock %}
+
+{% block trainer_content %}
+    <p>
+        Your logo and colour appear for everyone who trains with {{ organization.name }} — your
+        players, their parents, and your coaches. Changes are visible immediately.
+    </p>
+
+    <section class="brand-preview" aria-labelledby="preview-heading">
+        <h2 id="preview-heading">Preview</h2>
+        <div class="brand-bar">
+            {% set logoUrl = branding_logo_url(branding) %}
+            {% if logoUrl %}
+                <img class="brand-logo" src="{{ logoUrl }}" alt="{{ organization.name }} logo">
+            {% endif %}
+            <strong>{{ organization.name }}</strong>
+        </div>
+        <p class="muted">
+            Colour in use: {{ branding.primaryColor.value }}
+            {% if usesDefaultColor %}(the platform default){% endif %}
+        </p>
+    </section>
+
+    {{ form_start(form, {attr: {enctype: 'multipart/form-data', 'data-controller-hint': 'branding'}}) }}
+        {{ include('account/_error_summary.html.twig', {form: form}) }}
+
+        {{ form_row(form.logo) }}
+        {% if branding.hasLogo %}
+            {{ form_row(form.removeLogo) }}
+        {% endif %}
+
+        <div class="colour-field">
+            {{ form_row(form.primaryColorHex, {attr: {'data-brand-hex': 'true'}}) }}
+            {#
+                Unlabelled and hidden from assistive technology on purpose: it is a second way to
+                fill the field above, not a second field. A screen-reader user gets the text input,
+                which is the one NFR-064 asks for; announcing both would imply two values.
+
+                Ships `hidden` and is revealed by `branding-picker.js`, which also removes it in a
+                browser that degrades `type="color"` to a text box. It carries no `name`, so it
+                never submits anything — the hex field is the value.
+            #}
+            <input type="color" class="colour-picker" aria-hidden="true" tabindex="-1" hidden
+                   data-brand-picker="true"
+                   value="{{ branding.primaryColor.value }}">
+        </div>
+
+        <div class="actions">
+            <button type="submit">Save branding</button>
+            <a href="{{ path('trainer_dashboard') }}">Cancel</a>
+        </div>
+    {{ form_end(form) }}
+
+    {% if not usesDefaultColor %}
+        <form method="post" action="{{ path('trainer_branding_reset') }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+            <button type="submit">Reset colour to the default</button>
+        </form>
+    {% endif %}
+
+    <style>
+        .brand-preview { border: 1px solid #d4d4d4; border-radius: .5rem; padding: 1rem; margin-bottom: 1rem; }
+        .brand-bar {
+            display: flex; align-items: center; gap: .75rem;
+            padding: .75rem 1rem; border-radius: .375rem;
+            background: var(--brand); color: var(--brand-fg);
+        }
+        .brand-logo { height: 2.5rem; width: auto; }
+        .colour-field { display: flex; align-items: flex-end; gap: .5rem; }
+        .colour-picker { width: 3rem; min-height: 2.75rem; padding: 0; border: 1px solid #d4d4d4; }
+        .muted { color: #525252; }
+        .form-error-summary { border-left: 4px solid #b91c1c; padding: .5rem .75rem; background: #fef2f2; }
+    </style>
+{% endblock %}

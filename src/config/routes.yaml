@@ -6,6 +6,10 @@ membership_controllers:
     resource: '../src/Membership/Controller/'
     type: attribute
 
+profile_controllers:
+    resource: '../src/Profile/Controller/'
+    type: attribute
+
 products_controllers:
     resource: '../src/Products/Infrastructure/Controller/'
     type: attribute

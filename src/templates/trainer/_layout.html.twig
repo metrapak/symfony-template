@@ -1,6 +1,8 @@
 {#
     Shell for the trainer tools. Deliberately plain, like the admin shell: this epic ships
-    behaviour, and the trainer's own branding arrives with US-01.14 in TASK-004.
+    behaviour. The trainer's own colour now reaches these pages through the `--brand` custom
+    property that `_branding.html.twig` sets (US-01.14), so the styles below read it rather than
+    hard-coding an accent.
 #}
 {% extends 'base.html.twig' %}
 
@@ -11,6 +13,8 @@
                 <li><a href="{{ path('trainer_dashboard') }}">Dashboard</a></li>
                 <li><a href="{{ path('trainer_share_links_index') }}">Player links</a></li>
                 <li><a href="{{ path('trainer_coaches_index') }}">Coaches</a></li>
+                <li><a href="{{ path('trainer_branding') }}">Branding</a></li>
+                <li><a href="{{ path('account_profile') }}">My profile</a></li>
                 <li><a href="{{ logout_path() }}">Sign out</a></li>
             </ul>
         </nav>
@@ -38,7 +42,7 @@
         .trainer .flash-error { color: #b91c1c; }
         .trainer .flash-warning { color: #b45309; }
         .trainer .actions { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
-        .trainer :focus-visible { outline: 3px solid #1d4ed8; outline-offset: 2px; }
+        .trainer :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
         .trainer button, .trainer input[type="text"], .trainer input[type="email"] { min-height: 2.75rem; }
         /* Status is carried by the text; the colour is an extra, never the message (NFR-X04). */
         .trainer .status-expired { color: #b45309; }

@@ -27,27 +27,75 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     }
 
     /**
-     * Emails are stored normalized, so logging in as `Foo@Bar.com` must find `foo@bar.com`.
+     * Resolves a login identifier: an email address, or a child's username (FR-067, G-23).
      *
+     * Emails are stored normalized, so logging in as `Foo@Bar.com` must find `foo@bar.com`.
      * Only the *input* is normalized, never the column: `LOWER(u.email) = :identifier` would
      * make UNIQ_IDENTIFIER_EMAIL unusable and turn every login attempt — the one query an
      * attacker can trigger at will — into a sequential scan of the whole table. Comparing the
      * column directly is safe because stored addresses are already canonical: User::setEmail()
      * is the only write path and normalizes, and Version20260821160000 lowercased the rows
      * that predate it after refusing to run on any case-only collision.
+     *
+     * The two columns are queried **separately rather than with an `OR`**, dispatching on the
+     * presence of `@`. That keeps the property above: each branch is a single equality against
+     * a unique index, and neither can degrade into a scan. It is unambiguous because a username
+     * may not contain `@` (`ChildLoginInput` enforces the character set), so an identifier
+     * belongs to exactly one column and a username can never shadow somebody's address.
      */
     public function loadUserByIdentifier(string $identifier): ?User
     {
+        $normalized = self::normalizeEmail($identifier);
+
+        if (!str_contains($normalized, '@')) {
+            return $this->findOneByLoginUsername($normalized);
+        }
+
         return $this->createQueryBuilder('u')
             ->andWhere('u.email = :identifier')
-            ->setParameter('identifier', self::normalizeEmail($identifier))
+            ->setParameter('identifier', $normalized)
             ->getQuery()
             ->getOneOrNullResult();
     }
 
+    /**
+     * A child login by its username (FR-067).
+     *
+     * Usernames are normalized on write by `User::setLoginUsername()`, so — as with email — the
+     * input is folded and the column is compared directly, keeping UNIQ_USER_LOGIN_USERNAME
+     * usable.
+     */
+    public function findOneByLoginUsername(string $username): ?User
+    {
+        $normalized = mb_strtolower(trim($username));
+
+        if ('' === $normalized) {
+            return null;
+        }
+
+        return $this->createQueryBuilder('u')
+            ->andWhere('u.loginUsername = :username')
+            ->setParameter('username', $normalized)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /**
+     * Strictly an address lookup, and deliberately not an alias for `loadUserByIdentifier()`
+     * any more.
+     *
+     * Registration and the profile editor call this to ask "is this email taken?", and the
+     * answer must be about the `email` column alone: routing a value with no `@` into the
+     * username lookup would report an address as taken because a child happens to have that
+     * username, or — worse — report it free because the username branch found nothing.
+     */
     public function findOneByEmail(string $email): ?User
     {
-        return $this->loadUserByIdentifier($email);
+        return $this->createQueryBuilder('u')
+            ->andWhere('u.email = :email')
+            ->setParameter('email', self::normalizeEmail($email))
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
     public function findActiveByEmail(string $email): ?User
