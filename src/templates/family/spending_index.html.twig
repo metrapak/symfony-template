@@ -1,0 +1,77 @@
+{#
+    Every child's token-spending setting, side by side (FR-092, BR-091, BR-096).
+
+    Side by side because BR-096's whole point is that the setting differs between children: a
+    parent who trusts a fifteen-year-old with tokens has said nothing about their seven-year-old,
+    and they cannot check that one child at a time.
+
+    Three states are rendered, not two. "Not set" and "off" both mean approval is required, and a
+    parent auditing their family's permissions needs to be able to tell "I decided this" from "I
+    have never looked at it" — see `ChildSpendingSetting::wasChosen()`.
+
+    The rule the switch cannot express is stated on the page rather than assumed: dollars always
+    require approval (BR-090), whatever any of these say.
+#}
+{% extends 'family/_layout.html.twig' %}
+
+{% block title %}Token spending{% endblock %}
+{% block heading %}Token spending{% endblock %}
+
+{% block family_content %}
+    <p>
+        Your children always need your approval to spend <strong>dollars</strong>. Tokens are the
+        only thing this page changes.
+    </p>
+
+    {% if children is empty %}
+        <p class="muted">You have not added any children yet.</p>
+    {% else %}
+        <table>
+            <caption class="visually-hidden">Each child, and whether they may spend tokens without your approval</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Child</th>
+                    <th scope="col">Tokens without approval</th>
+                    <th scope="col">Last changed</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for child in children %}
+                    {% set setting = settings[child.id] %}
+                    <tr>
+                        <td data-label="Child">
+                            <strong>{{ child.name }}</strong>
+                            {% if child.age is not null %}<br><span class="muted">{{ child.age }} years old</span>{% endif %}
+                        </td>
+                        <td data-label="Tokens without approval">
+                            {% if setting.allowsTokenSpendingWithoutApproval %}
+                                Allowed
+                            {% elseif setting.wasChosen %}
+                                Needs your approval
+                            {% else %}
+                                Needs your approval <span class="muted">(not set)</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Last changed">
+                            {% if setting.wasChosen %}
+                                {{ setting.updatedAt|date('j M Y') }}
+                                {% if setting.updatedBy %}<span class="muted">by {{ setting.updatedBy.displayName }}</span>{% endif %}
+                            {% else %}
+                                <span class="muted">Never</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Actions" class="no-label">
+                            <a href="{{ path('family_child_spending', {id: child.id}) }}">
+                                <span aria-hidden="true">Change</span>
+                                <span class="visually-hidden">Change token spending for {{ child.name }}</span>
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    <p><a href="{{ path('family_approvals') }}">Back to approvals</a></p>
+{% endblock %}

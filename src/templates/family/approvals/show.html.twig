@@ -1,0 +1,112 @@
+{#
+    One purchase, in full, with the decision on it (FR-094, FR-095, FR-099, NFR-094).
+
+    **Two layouts, one page.** A child may *view* the purchase they asked for — FR-095 requires
+    them to see it change from Pending to Confirmed, and the parent's note with it — but the
+    family shell's navigation is a parent's and every link in it would answer 403 for them
+    (FR-068). So the viewer who cannot decide gets the player shell. Whether they can decide is
+    the voter's answer, computed in the controller, never a guess from a role here.
+
+    **One form, two buttons, two routes.** FR-094 puts Approve and Deny on separate endpoints and
+    lets the parent attach a note to either. The Deny button carries `formaction`, which is plain
+    HTML: it works with JavaScript off, both submits carry the same CSRF token, and the note the
+    parent typed goes with whichever they press. Two forms would give them two note boxes, one of
+    which would silently throw away what they wrote.
+
+    **Approve and Deny are distinct, clearly labelled actions and never colour-only** (NFR-094).
+    Each has its own words, each names the child and the purchase in its accessible name, and
+    Deny is additionally confirmed — by `confirm-dialog.js` when scripting is available, and not
+    at all when it is not, because the confirmation is a courtesy and the server is the boundary.
+
+    **"Request more info" is not here** (G-31): the spec lists it and defines no recipient, no
+    channel, no resulting state and no effect on the 48-hour clock. The note below says so rather
+    than leaving a parent to wonder where the third button went.
+#}
+{% extends canDecide ? 'family/_layout.html.twig' : 'player/_layout.html.twig' %}
+{% form_theme form 'account/_form_theme.html.twig' %}
+
+{% block title %}{{ purchase.purchaseDescription }}{% endblock %}
+{% block heading %}{{ purchase.purchaseDescription }}{% endblock %}
+
+{% block family_content %}{{ block('approval_body') }}{% endblock %}
+{% block player_content %}{{ block('approval_body') }}{% endblock %}
+
+{% block approval_body %}
+    <article class="purchase-card status-{{ purchase.status.value }}">
+        <div class="headline">
+            <h2>{{ purchase.childProfile.displayName }}</h2>
+            {{ include('approval/_amount.html.twig', {amount: purchase.amount}) }}
+        </div>
+
+        <p class="meta">
+            <span class="status status-{{ purchase.status.value }}">{{ purchase.status.label }}</span>
+            <span>Paid with {{ purchase.paymentType.label|lower }}</span>
+            <span>Asked {{ purchase.requestedAt|date('j M Y, H:i') }}</span>
+            {% if purchase.respondedAt %}
+                <span>Answered {{ purchase.respondedAt|date('j M Y, H:i') }}</span>
+            {% endif %}
+        </p>
+
+        <p>{{ purchase.status.explanation }}</p>
+
+        {% if purchase.status.isPending %}
+            {{ include('approval/_countdown.html.twig', {expiresAt: purchase.expiresAt}) }}
+        {% endif %}
+
+        {% if purchase.parentNotes %}
+            <p class="notes"><strong>Note:</strong> {{ purchase.parentNotes }}</p>
+        {% endif %}
+
+        {% if purchase.paymentReference %}
+            {# Shown because it is the proof the payment happened exactly once, and because the
+               stand-in processor's references are visibly fake — nobody should mistake this
+               environment for one that took money (FR-097, D-04). #}
+            <p class="muted">Payment reference: {{ purchase.paymentReference }}</p>
+        {% endif %}
+    </article>
+
+    {% if canDecide and purchase.status.isPending %}
+        {{ form_start(form) }}
+            {{ include('account/_error_summary.html.twig', {form: form}) }}
+
+            {{ form_row(form.notes) }}
+
+            <div class="actions">
+                <button type="submit" name="decision" value="approve">
+                    <span aria-hidden="true">Approve</span>
+                    <span class="visually-hidden">
+                        Approve {{ purchase.childProfile.displayName }}'s purchase of {{ purchase.purchaseDescription }} for {{ purchase.amount.spokenLabel }}
+                    </span>
+                </button>
+
+                <button
+                    type="submit"
+                    name="decision"
+                    value="deny"
+                    formaction="{{ path('family_approval_deny', {id: purchase.id}) }}"
+                    data-confirm-action="Deny this purchase? {{ purchase.childProfile.displayName }} will be told, and nothing will be charged."
+                    data-confirm-label="Deny"
+                >
+                    <span aria-hidden="true">Deny</span>
+                    <span class="visually-hidden">
+                        Deny {{ purchase.childProfile.displayName }}'s purchase of {{ purchase.purchaseDescription }}
+                    </span>
+                </button>
+
+                <a href="{{ path('family_approvals') }}">Back to approvals</a>
+            </div>
+        {{ form_end(form) }}
+
+        <p class="muted">
+            There is no "request more info" here yet: the specification asks for it without saying
+            who would receive it, how they would answer, or whether the 48-hour clock would keep
+            running. Ask your child directly for now.
+        </p>
+    {% elseif canDecide %}
+        <p><a href="{{ path('family_approvals') }}">Back to approvals</a></p>
+    {% else %}
+        <p><a href="{{ path('player_reservations') }}">Back to my reservations</a></p>
+    {% endif %}
+
+    <style>{{ include('approval/_status_styles.html.twig') }}</style>
+{% endblock %}

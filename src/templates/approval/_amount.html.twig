@@ -1,0 +1,14 @@
+{#
+    One amount of money, rendered so both a sighted reader and a screen reader get it right, and
+    neither gets it twice (NFR-094).
+
+    `$45.00` is announced differently by different screen readers, and "12 tokens" is not a
+    currency at all. So the visible form is hidden from assistive tech and a spoken form sits
+    beside it — see `Money::spokenLabel()`, which is where the two strings are decided.
+
+    Takes `amount` (a `Money`) and an optional `class`.
+#}
+<span class="amount {{ class|default('') }}">
+    <span aria-hidden="true">{{ amount.format }}</span>
+    <span class="visually-hidden">{{ amount.spokenLabel }}</span>
+</span>

@@ -19,7 +19,17 @@
            link is offered to somebody the route would refuse. #}
         {% if is_granted('ROLE_PLAYER') %}
             <li><a href="{{ path('availability_index') }}">Best Times (your availability)</a></li>
+            {# FR-090/FR-095: where a player — a parent or a child login — sees the status of what
+               they have bought or asked to buy. #}
+            <li><a href="{{ path('player_reservations') }}">My reservations</a></li>
         {% endif %}
+        {# FR-094: only a parent decides purchases; a child login is refused the route by
+           ApprovalVoter, so it is not offered one. #}
+        {% if is_granted('ACCOUNT_MANAGE_PAYMENT_METHODS') %}
+            <li><a href="{{ path('family_approvals') }}">Purchase approvals</a></li>
+        {% endif %}
+        {# FR-093: the in-app half of the notification, reachable by everybody who can receive one. #}
+        <li>{{ include('_notification_indicator.html.twig') }}</li>
         {% if is_granted('ROLE_COACH') %}
             <li><a href="{{ path('coach_my_times') }}">My Times (your availability)</a></li>
         {% endif %}

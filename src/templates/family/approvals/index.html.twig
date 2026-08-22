@@ -1,0 +1,107 @@
+{#
+    The parent's review screen (FR-094, FR-096, NFR-094, NFR-X05).
+
+    Pending first, oldest first, because the oldest is the one closest to expiring — a list that
+    buried the request about to lapse under three newer ones would cause FR-096's automatic denial
+    rather than prevent it. Each card carries what FR-094 asks for: the child, what they are
+    buying, how much, how it would be paid, and when it was asked for.
+
+    The totals are per currency and not one number. Dollars and tokens do not add up; see `Money`.
+
+    Cards rather than a table, deliberately: at 320px (NFR-X05) a table of five columns either
+    scrolls sideways or collapses into labelled blocks, and the amount — the thing a parent is
+    deciding about — is exactly what disappears off the right edge first.
+#}
+{% extends 'family/_layout.html.twig' %}
+
+{% block title %}Approvals{% endblock %}
+{% block heading %}Purchases waiting for you{% endblock %}
+
+{% block family_content %}
+    <section aria-labelledby="pending-heading">
+        <h2 id="pending-heading">Pending</h2>
+
+        {% if pending is empty %}
+            <p class="muted">Nothing is waiting for your approval.</p>
+        {% else %}
+            <p>
+                {{ pending|length }} request{{ pending|length == 1 ? '' : 's' }}, totalling
+                {%- for total in totals %} {{ include('approval/_amount.html.twig', {amount: total}) -}}
+                    {%- if not loop.last %} and{% endif %}
+                {%- endfor -%}.
+            </p>
+
+            {% for purchase in pending %}
+                <article class="purchase-card status-pending" aria-labelledby="purchase-{{ purchase.id }}">
+                    <div class="headline">
+                        <h3 id="purchase-{{ purchase.id }}">
+                            {{ purchase.childProfile.displayName }} — {{ purchase.purchaseDescription }}
+                        </h3>
+                        {{ include('approval/_amount.html.twig', {amount: purchase.amount}) }}
+                    </div>
+
+                    <p class="meta">
+                        <span class="status status-pending">{{ purchase.status.label }}</span>
+                        <span>Paid with {{ purchase.paymentType.label|lower }}</span>
+                        <span>Asked {{ purchase.requestedAt|date('j M Y, H:i') }}</span>
+                    </p>
+
+                    {{ include('approval/_countdown.html.twig', {expiresAt: purchase.expiresAt}) }}
+
+                    <p class="actions">
+                        <a href="{{ path('family_approval_show', {id: purchase.id}) }}">
+                            <span aria-hidden="true">Review</span>
+                            {# The accessible name names the child and the purchase, so a page of
+                               "Review" links is not a page of identical links (NFR-023). #}
+                            <span class="visually-hidden">
+                                Review {{ purchase.childProfile.displayName }}'s request for {{ purchase.purchaseDescription }}
+                            </span>
+                        </a>
+                    </p>
+                </article>
+            {% endfor %}
+        {% endif %}
+    </section>
+
+    <section aria-labelledby="decided-heading">
+        <h2 id="decided-heading">Recently decided</h2>
+
+        {% if decided is empty %}
+            <p class="muted">You have not decided anything yet.</p>
+        {% else %}
+            <table>
+                <caption class="visually-hidden">Purchases you have already decided, most recent first</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Child</th>
+                        <th scope="col">Purchase</th>
+                        <th scope="col">Amount</th>
+                        <th scope="col">Outcome</th>
+                        <th scope="col">Decided</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for purchase in decided %}
+                        <tr>
+                            <td data-label="Child">{{ purchase.childProfile.displayName }}</td>
+                            <td data-label="Purchase">
+                                <a href="{{ path('family_approval_show', {id: purchase.id}) }}">{{ purchase.purchaseDescription }}</a>
+                            </td>
+                            <td data-label="Amount">{{ include('approval/_amount.html.twig', {amount: purchase.amount}) }}</td>
+                            <td data-label="Outcome">
+                                <span class="status status-{{ purchase.status.value }}">{{ purchase.status.label }}</span>
+                            </td>
+                            <td data-label="Decided">
+                                {{ purchase.respondedAt ? purchase.respondedAt|date('j M Y, H:i') : '—' }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </section>
+
+    <p><a href="{{ path('family_spending') }}">Token spending settings for your children</a></p>
+
+    <style>{{ include('approval/_status_styles.html.twig') }}</style>
+{% endblock %}

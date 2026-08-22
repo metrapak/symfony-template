@@ -1,0 +1,20 @@
+{#
+    How long is left before a request expires (FR-096, NFR-094).
+
+    **The date is the fact; the countdown is the enhancement.** The requirement asks for a
+    countdown, and a countdown alone is a number that only exists while JavaScript runs — so the
+    deadline is rendered as a real `<time datetime>` with a readable date, and `approval-actions.js`
+    replaces the text beside it with "1 day, 4 hours left", refreshing itself once a minute. With
+    scripting off, or before the script loads, a parent still reads exactly when this lapses,
+    which is what NFR-094's "countdown not the only expiry indicator" asks for.
+
+    Takes `expiresAt` (a `\DateTimeImmutable` or null).
+#}
+{% if expiresAt is not null %}
+    <p class="expiry">
+        Expires
+        <time datetime="{{ expiresAt|date('c') }}" data-countdown>{{ expiresAt|date('j M Y, H:i') }}</time>
+        {# Filled in by the script; empty and harmless without it. #}
+        <span class="countdown" data-countdown-target></span>
+    </p>
+{% endif %}

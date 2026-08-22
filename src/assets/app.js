@@ -10,5 +10,6 @@ import './copy-link.js';
 import './join-registration.js';
 import './branding-picker.js';
 import './availability-grid.js';
+import './approval-actions.js';
 
 console.log('This log comes from assets/app.js - welcome to AssetMapper! 🎉');

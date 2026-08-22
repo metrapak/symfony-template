@@ -1,0 +1,69 @@
+{#
+    What a player has bought, and what is still waiting (FR-090, FR-095).
+
+    This is the screen FR-095's acceptance criterion is about: "the child sees the status change
+    from Pending to Confirmed". The status is a word, always — `ApprovalStatus::label()` — with an
+    explanation under it, because "Expired" on its own tells a fourteen-year-old nothing about what
+    happened or what to do next.
+
+    A parent reaching this page sees their whole family's, since they are the account that answers
+    for it; the list is scoped server-side to the profiles the viewer is or manages, never to an
+    id in the URL.
+
+    Until Epic-02 exists there is nothing to buy, so the "start a purchase" links go to the
+    stand-in checkout and the page says as much.
+#}
+{% extends 'player/_layout.html.twig' %}
+
+{% block title %}My reservations{% endblock %}
+{% block heading %}My reservations{% endblock %}
+
+{% block player_content %}
+    {% if requests is empty %}
+        <p class="muted">Nothing here yet.</p>
+    {% else %}
+        {% for purchase in requests %}
+            <article class="purchase-card status-{{ purchase.status.value }}" aria-labelledby="reservation-{{ purchase.id }}">
+                <div class="headline">
+                    <h2 id="reservation-{{ purchase.id }}">{{ purchase.purchaseDescription }}</h2>
+                    {{ include('approval/_amount.html.twig', {amount: purchase.amount}) }}
+                </div>
+
+                <p class="meta">
+                    <span class="status status-{{ purchase.status.value }}">{{ purchase.status.label }}</span>
+                    <span>{{ purchase.childProfile.displayName }}</span>
+                    <span>Paid with {{ purchase.paymentType.label|lower }}</span>
+                    <span>Asked {{ purchase.requestedAt|date('j M Y, H:i') }}</span>
+                </p>
+
+                <p>{{ purchase.status.explanation }}</p>
+
+                {% if purchase.status.isPending %}
+                    {{ include('approval/_countdown.html.twig', {expiresAt: purchase.expiresAt}) }}
+                {% endif %}
+
+                {% if purchase.parentNotes %}
+                    <p class="notes"><strong>Note from your parent:</strong> {{ purchase.parentNotes }}</p>
+                {% endif %}
+            </article>
+        {% endfor %}
+    {% endif %}
+
+    <section class="card" aria-labelledby="buy-heading">
+        <h2 id="buy-heading">Start a purchase</h2>
+        <p class="muted">
+            Events arrive with a later release. Until then this stand-in stands in for their
+            checkout — nothing here charges anybody.
+        </p>
+        <ul>
+            {% for profile in profiles %}
+                <li>
+                    <a href="{{ path('player_checkout', {id: profile.id}) }}">
+                        <span aria-hidden="true">Buy something for {{ profile.displayName }}</span>
+                        <span class="visually-hidden">Start a purchase for {{ profile.displayName }}</span>
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    </section>
+{% endblock %}

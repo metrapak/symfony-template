@@ -353,6 +353,66 @@ available"), submittable with JavaScript disabled; drag-to-select and the runnin
 top (NFR-081). Rows are days and columns are hours, which is what lets the same markup reflow into a
 day-by-day list at 320px (NFR-082).
 
+## Component: Child Purchase Approval
+
+**Status**: Implemented (Epic-01 TASK-006)
+
+A child's purchase either waits for their parent or goes straight through, and `ChildCheckout` is the one
+place that branch is taken. The decision has three inputs and `ApprovalRequestFactory::approvalIsRequired()`
+is static and pure so the whole matrix is testable without a database: an adult buying for themselves needs
+nobody (BR-065's definition of a child is read from the **profile**, never from the role — a child login
+holds `ROLE_PLAYER` exactly like their parent); USD always requires approval and no setting can waive it
+(BR-090); tokens follow the per-child waiver (FR-092, BR-096).
+
+**Payment execution is a port with an honest stand-in.** `PaymentProcessor` is called on approval and
+`FakePaymentProcessor` implements it: it records the intent, logs a warning, and succeeds. Epic-05 replaces
+it with one container alias and no workflow code changes (FR-097, D-04) — the same seam, for the same
+reason, as `UpcomingReservationCanceller` in the Profile module.
+
+**One payment, guaranteed by an optimistic lock.** `purchase_approval_request.version` is what makes
+NFR-092 true: `approve()` moves the state, flushes *inside* the transaction — where a simultaneous second
+approval loses the version check — and only then calls the processor. A sequential double-click never gets
+that far, because the second load reads `approved` and the entity's own transition guard refuses it. The
+cost is an external call inside a database transaction, which is the right trade while nothing leaves the
+process and the thing Epic-05 should revisit (an intent row plus an outbox); every `PaymentInstruction`
+already carries an idempotency key derived from the request id so such a retry is safe.
+
+**The state machine is on the entity, not in a workflow definition.** Symfony Workflow is not installed, and
+four states with three legal edges do not pay for a bundle and a second vocabulary for the same facts.
+`ApprovalStatus::transitions()` is the single table, and `PurchaseApprovalRequest` asks it before every
+change, so an illegal move is refused whatever calls it — the parent's screen, the expiry sweep, or Epic-05.
+
+**A fifth state, `not_required`.** FR-092's waived token spend still has to appear on the child's
+reservations, still carries a payment reference, and still needs something for the informational
+notification to point at. Recording it as `approved` would claim in the audit trail (FR-098) that a parent
+approved something they were only told about.
+
+**Expiry is a scheduled sweep, not a delayed message.** The only configured transport is `sync://`, which
+executes immediately, so a delay-based design would expire every request at the moment it was created.
+`app:approvals:expire` finds due rows and dispatches one `ExpireApprovalRequest` per row, so a failure takes
+one request rather than the batch, and re-delivery is a no-op — `ApprovalWorkflow::expire()` returns false
+for anything no longer pending. NFR-091's bound is the cron interval, which is an operator's number; the
+deployment contract is in the README.
+
+**In-app notifications are net-new, deliberately narrow infrastructure** (G-33). FR-093 requires them and no
+notification system exists in Epic-01. Cutting to email-only was not available: a child login's address is
+derived and undeliverable by construction (`@children.invalid`, RFC 2606), so FR-095's "the child is
+notified" is in-app or it is nothing. `approval_notification` therefore belongs to this module and knows
+only about purchases — no channels, preferences, templates or subscriptions. The durable row is committed
+before SMTP is touched and a transport failure is logged rather than raised, which is NFR-093.
+
+**Money is integer minor units with a currency, never a float.** Tokens are modelled as a currency whose
+scale is zero, so one column pair serves both and `PaymentType` stays what it is — how a purchase is paid
+for, not what the number means. Amounts of different currencies refuse to add, which is why the parent's
+pending list totals per currency.
+
+Object-level authorization is `ApprovalVoter`. `^/family` is `ROLE_PLAYER`, which every parent *and every
+child* holds, so the role rule protects nothing once a URL carries an id. DECIDE is the child's own parent
+and nobody else — not another parent, not a Super Admin, who has audited impersonation instead, and above
+all not the child (FR-099, BR-094); the "is this a child?" half delegates to
+`ChildActionVoter::MANAGE_PAYMENT_METHODS` rather than re-deriving it. VIEW additionally admits the child
+whose purchase it is, because FR-095 requires them to watch it change from Pending to Confirmed.
+
 ## Cross-Cutting Requirements
 
 - CSRF on every state-changing form. Stateless CSRF is configured (`config/packages/csrf.yaml`) with form token id `submit`.
@@ -381,11 +441,19 @@ day-by-day list at 320px (NFR-082).
 | G-30 | *New (TASK-005).* FR-087's "coach can request a change" has no recipient, state, notification or UI anywhere in the spec, so it is not implemented. The coach *sees* every override recorded against them | Client decision |
 | Q-01.06 | Whether a coach is actively notified of an override is unanswered, so nothing is sent. The record is on the coach's own page | Client decision |
 | R6 | `coach_availability_override.event_id` is a nullable, unconstrained integer: Epic-02 owns events and none exist. The foreign key belongs to Epic-02's first migration | Epic-02 |
+| G-31 | *TASK-006.* US-01.05's "request more info" has no recipient, channel, resulting state, or effect on the 48-hour clock, so it is **not implemented** and the screen says why. A state with no exit would strand every request that entered it | Client decision |
+| G-32 | *TASK-006.* Nothing covers a pending request when the rule under it changes — the token setting is flipped, or the event is cancelled or repriced. Turning the waiver on deliberately does **not** decide requests already waiting | Client decision |
+| G-33 | *TASK-006.* FR-093's in-app notification had no system to live in. A module-scoped `approval_notification` table ships instead of a platform notification service; generalizing it is its own deliverable | Product decision |
+| G-34 | *TASK-006.* Whether a child may resubmit after an expiry, and whether repeated requests are rate-limited, is unspecified. Resubmission is currently unrestricted | Client decision |
+| G-35 | *TASK-006.* Token balances belong to Epic-05, so no balance is checked at request time. The workflow tolerates an unknown balance | Epic-05 |
+| R7 | *TASK-006.* `purchase_approval_request.purchase_reference` is an unconstrained string for the same reason as R6. Both foreign keys belong to Epic-02's first migration | Epic-02 |
+| R8 | *TASK-006.* The payment port is called inside the approval transaction. Correct while `FakePaymentProcessor` ships; a real gateway wants an intent row plus an outbox | Epic-05 |
+| R9 | *TASK-006.* `parentUserId` is singular — multi-parent families are not modelled anywhere in Epic-01, so a second guardian can neither see nor act on approvals. Likely a real-world requirement | Client decision |
 
 ---
 
 *Sources: `specs/Epic-01_User_Management_Authentication_SPEC.md`, `tasks/TASK-001/architect-architecture.md`,
-`tasks/TASK-005/architect-architecture.md`,
+`tasks/TASK-005/architect-architecture.md`, `tasks/TASK-006/requirements-analyst-requirements.md`,
 `tasks/TASK-001/writing-plans-plan.md`, `tasks/TASK-002/architect-architecture.md`,
 `tasks/TASK-002/writing-plans-plan.md`, `tasks/TASK-003/architect-architecture.md`,
 `tasks/TASK-003/writing-plans-plan.md`.*

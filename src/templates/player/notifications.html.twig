@@ -1,0 +1,61 @@
+{#
+    The in-app notification inbox (FR-093, G-33).
+
+    Both a parent and a child reach this page, and for a child it is the *only* channel there is:
+    a child login's address is deliberately undeliverable (`ChildLoginManager`), so FR-095's "the
+    child is notified" happens here or nowhere.
+
+    Unread is marked by a word and a marker, never by colour alone (NFR-094), and clearing it is
+    an explicit POST — a page that marked everything read on render would clear the indicator a
+    parent depends on the moment a prefetch touched it.
+#}
+{% extends 'player/_layout.html.twig' %}
+
+{% block title %}Notifications{% endblock %}
+{% block heading %}Notifications{% endblock %}
+
+{% block player_content %}
+    {% if notifications is empty %}
+        <p class="muted">You have no notifications.</p>
+    {% else %}
+        <p>
+            {{ unread }} unread of {{ notifications|length }}.
+        </p>
+
+        {% if unread > 0 %}
+            <form method="post" action="{{ path('notifications_mark_read') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+                <button type="submit">Mark all as read</button>
+            </form>
+        {% endif %}
+
+        <ul class="notifications">
+            {% for notification in notifications %}
+                <li class="card">
+                    <p>
+                        <strong>{{ notification.summary }}</strong>
+                        {% if notification.isUnread %}
+                            <span class="status status-pending">Unread</span>
+                        {% endif %}
+                    </p>
+                    <p>{{ notification.body }}</p>
+                    <p class="muted">
+                        <time datetime="{{ notification.createdAt|date('c') }}">{{ notification.createdAt|date('j M Y, H:i') }}</time>
+                        {% if notification.purchaseApprovalRequestId %}
+                            —
+                            {% if notification.kind.needsAction %}
+                                <a href="{{ path('family_approval_show', {id: notification.purchaseApprovalRequestId}) }}">Review it</a>
+                            {% else %}
+                                <a href="{{ path('player_reservations') }}">See your reservations</a>
+                            {% endif %}
+                        {% endif %}
+                    </p>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <style>
+        .notifications { list-style: none; padding: 0; }
+    </style>
+{% endblock %}

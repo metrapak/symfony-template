@@ -1,0 +1,11 @@
+Hello {{ recipientName }},
+
+{{ childName }} would like to buy "{{ purchaseDescription }}" for {{ spokenAmount }}, paid with
+{{ paymentType|lower }}.
+
+Approve or deny this purchase: {{ reviewUrl }}
+{% if expiresAt %}
+If nobody answers by {{ expiresAt|date('j M Y, H:i') }} the request is denied automatically and
+nothing is charged.
+{% endif %}
+Nothing has been paid for yet.

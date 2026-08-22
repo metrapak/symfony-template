@@ -52,7 +52,7 @@ parallel once TASK-004 lands.
 | TASK-003 | Merged | `feat/epic-01-task-003-sharelink-invitations` (PR #4) |
 | TASK-004 | Merged | `feat/epic-01-task-004-profiles-family-context-branding` (PR #5) |
 | TASK-005 | Implemented, awaiting review | `feat/epic-01-task-005-availability-conflict-override` |
-| TASK-006 | Not started | — |
+| TASK-006 | Implemented, awaiting review | `feat/epic-01-task-006-child-purchase-approval` |
 
 ## Existing Codebase Baseline
 
@@ -87,7 +87,7 @@ open questions carried forward.
 
 ### Unspecified behaviour
 
-- [ ] **G-09** — US-01.06 says child RSVP and RSVP-cancellation "require parent approval", but the approval workflow (US-01.05) covers **payments only**. Approval for free-event RSVPs is undefined: same 48h expiry? Same notification? Silent auto-approve?
+- [ ] **G-09** — US-01.06 says child RSVP and RSVP-cancellation "require parent approval", but the approval workflow (US-01.05) covers **payments only**. Approval for free-event RSVPs is undefined: same 48h expiry? Same notification? Silent auto-approve? *TASK-006 built the payment workflow only; `ChildCheckout` is the seam a free-event RSVP would reuse once the question is answered.*
 - [ ] **G-10** — Success metrics "0% data leakage between trainer organizations" and "platform handles 1,000 concurrent users" have no stated verification method. Recommend converting to explicit test criteria (isolation test suite + load test target) or removing from the Definition of Done.
 - [ ] **G-11** — Spec says "specific security implementations decided by development team". Package selection for password reset, email verification, image resizing, and rate limiting is therefore an open architecture decision, not a requirement.
 - [ ] **G-12** — Spec §9 requires permissions "enforced on both frontend (UI) and backend (API)", but D-02 scopes delivery to server-rendered Twig. Decide whether the existing `ApiLoginController` / `json_login` firewall stays, is removed, or is deferred to a later epic.
@@ -107,6 +107,14 @@ open questions carried forward.
 - [ ] **G-28 (new)** — *TASK-005.* Availability is a recurring weekly pattern with no date dimension: there is no way to say "away next week". Deliberately deferred to Epic-02, which owns dated events.
 - [ ] **G-29 (new)** — *TASK-005.* No time zone is defined anywhere in the epic. One platform zone ships (`AVAILABILITY_TIMEZONE`, default `UTC`) and is printed on every grid, so the assumption is visible rather than silent. Per-user zones require deciding how a recurring pattern behaves across DST — a client decision.
 - [ ] **G-30 (new)** — *TASK-005.* FR-087's "coach can accept or request a change" has no recipient, no state, no notification and no UI anywhere in the spec, and is therefore **not implemented**. The coach sees every override recorded against them on their own page instead.
+- [ ] **G-31 (new)** — *TASK-006.* "Request more info" (US-01.05) has no recipient, channel, resulting state, or effect on the 48-hour clock. **Not implemented**, and the review screen says why: a state with no exit would strand every request that entered it. Specify it or cut it from the spec.
+- [ ] **G-32 (new)** — *Assumed by TASK-006, 2026-08-22.* Flipping a child's token waiver on does **not** decide requests already pending; a settings change must not spend money. Cancelled, full or repriced events are still unaddressed because events do not exist. Not confirmed with the requester.
+- [x] **G-33 (new)** — *Answered by TASK-006, 2026-08-22.* FR-093's in-app notification ships as a module-scoped `approval_notification` table rather than a platform notification service. Email-only was not an option: a child login's address is undeliverable by construction, so in-app is the only channel a child has. Generalizing it remains its own deliverable.
+- [ ] **G-34 (new)** — *TASK-006.* Resubmission after an expiry is unrestricted and not rate-limited, because nothing specifies otherwise.
+- [ ] **G-35 (new)** — *TASK-006.* No token balance is checked at request time; Epic-05 owns balances and the workflow tolerates an unknown one.
+- [ ] **R7 (new)** — *TASK-006.* `purchase_approval_request.purchase_reference` is an unconstrained string, for the same reason as R6. **Follow-up: add the FK in Epic-02's first migration**, alongside R6's.
+- [ ] **R8 (new)** — *TASK-006.* The payment port is called inside the approval transaction. Correct while the fake ships; a real gateway wants an intent row plus an outbox. **Follow-up in Epic-05.**
+- [ ] **R9 (new)** — *TASK-006.* `parent_id` on a purchase is singular: multi-parent families are not modelled anywhere in Epic-01, so a second guardian can neither see nor act on approvals. Worth raising with the client.
 - [ ] **R6 (new)** — *TASK-005.* `coach_availability_override.event_id` is nullable and carries no foreign key, because Epic-02 owns events and none exist yet. **Follow-up: add the FK in Epic-02's first migration.**
 
 ### Spec's own open questions (carried forward)
@@ -115,7 +123,7 @@ open questions carried forward.
 |:---|:---------|:--------:|:-------|
 | Q-01.01 | Skill level definitions (Beginner/Intermediate/Advanced/Elite or custom)? | P2 | TASK-004 |
 | Q-01.02 | Age group definitions (birth year / age range / grade level)? | P2 | TASK-004 (TASK-003 stores a birth date and derives age, so the answer stays a presentation decision) |
-| Q-01.04 | Which automated emails are required? | **P1** | TASK-001, TASK-002, TASK-006 (TASK-003 shipped three defaults: coach invitation, registration confirmation, parent notification) |
+| Q-01.04 | Which automated emails are required? | **P1** | TASK-001, TASK-002 (TASK-003 shipped three defaults: coach invitation, registration confirmation, parent notification; TASK-006 shipped five more: approval needed, informational token spend, approved, denied, expired) |
 | Q-01.05 | Email verification: required before login, or optional? | **P1** | **TASK-001 (blocking)** |
 | Q-01.06 | Should a coach be notified when their availability is overridden? | P2 | *Unanswered; TASK-005 notifies nobody and shows the record on the coach's own page* |
 | Q-01.07 | Session timeout duration (1 / 7 / 30 days)? | P2 | TASK-001 |

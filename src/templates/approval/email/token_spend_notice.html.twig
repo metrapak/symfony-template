@@ -1,0 +1,16 @@
+{#
+    FR-092 — the parent waived approval for this child's tokens, so this is news and not a
+    request. The first line says so, because a parent who receives both kinds must be able to tell
+    them apart without opening either.
+#}
+<p>Hello {{ recipientName }},</p>
+
+<p>This is for your information — there is nothing for you to approve.</p>
+
+<p>
+    <strong>{{ childName }}</strong> bought <strong>{{ purchaseDescription }}</strong> for
+    <strong>{{ amount }}</strong> using tokens. You allow this child to spend tokens without
+    approval, so they were registered straight away.
+</p>
+
+<p><a href="{{ settingsUrl }}">Change what {{ childName }} may spend without asking</a></p>

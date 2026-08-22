@@ -1,0 +1,48 @@
+{#
+    The stand-in checkout (FR-090, FR-091, FR-092).
+
+    Epic-02 owns events and their prices; this screen exists so the workflow behind FR-090 to
+    FR-092 can actually be reached — by a person and by a browser test — before there is anything
+    with a price to select. It replaces itself the day events land: `ChildCheckout` is the seam,
+    and Epic-02's checkout calls the same method with the event's own reference and price.
+
+    The page states plainly that no money moves. `FakePaymentProcessor` is what implements the
+    payment port until Epic-05 (FR-097, D-04), and a screen that looked like a real checkout while
+    charging nobody would be the more dishonest of the two options.
+#}
+{% extends 'player/_layout.html.twig' %}
+{% form_theme form 'account/_form_theme.html.twig' %}
+
+{% block title %}Buy something for {{ player.displayName }}{% endblock %}
+{% block heading %}Buy something for {{ player.displayName }}{% endblock %}
+
+{% block player_content %}
+    <div class="card">
+        <p>
+            <strong>Nothing here charges anybody.</strong> Events and payments arrive with later
+            releases; this page exists so the approval steps around them work and can be tried.
+        </p>
+    </div>
+
+    {{ form_start(form) }}
+        {{ include('account/_error_summary.html.twig', {form: form}) }}
+
+        {{ form_row(form.purchaseDescription) }}
+
+        <fieldset>
+            <legend>{{ form.paymentType.vars.label }}</legend>
+            {{ form_widget(form.paymentType) }}
+            {{ form_errors(form.paymentType) }}
+        </fieldset>
+
+        {{ form_row(form.amount) }}
+
+        <div class="actions">
+            <button type="submit">
+                <span aria-hidden="true">Continue to checkout</span>
+                <span class="visually-hidden">Continue to checkout for {{ player.displayName }}</span>
+            </button>
+            <a href="{{ path('player_reservations') }}">Cancel</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}
