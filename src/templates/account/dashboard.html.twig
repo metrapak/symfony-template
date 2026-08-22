@@ -1,0 +1,14 @@
+{% extends 'account/_layout.html.twig' %}
+
+{% block title %}{{ roleLabel }} dashboard{% endblock %}
+{% block heading %}{{ roleLabel }} dashboard{% endblock %}
+
+{% block account_content %}
+    {# Placeholder. Each role's real dashboard content arrives with its own feature task. #}
+    <p>Signed in as {{ app.user.userIdentifier }}.</p>
+
+    <ul>
+        <li><a href="{{ path('account_password_change') }}">Change your password</a></li>
+        <li><a href="{{ logout_path() }}">Sign out</a></li>
+    </ul>
+{% endblock %}

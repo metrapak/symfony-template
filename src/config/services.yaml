@@ -12,6 +12,26 @@ parameters:
     app.locales_requirements: 'en|fr|'
     app.default_locale: en
 
+    # FR-002 / Q-01.07 — authenticated session idle window, in seconds. The client has not
+    # confirmed a duration; 7 days is the shipping default. Override per environment with
+    # the SESSION_IDLE_TTL environment variable.
+    app.session_idle_ttl_default: 604800
+    app.session_idle_ttl: '%env(int:default:app.session_idle_ttl_default:SESSION_IDLE_TTL)%'
+
+    # FR-005 / Q-01.05 — whether an unverified email blocks login. Enabled by default; the
+    # gate applies to players and coaches only (see AccountStatusChecker), because trainers
+    # and super admins are created by an administrator through a channel that already proves
+    # email control. Override with the EMAIL_VERIFICATION_REQUIRED environment variable.
+    app.email_verification_required_default: true
+    app.email_verification_required: '%env(bool:default:app.email_verification_required_default:EMAIL_VERIFICATION_REQUIRED)%'
+
+    # Sender identity for transactional account mail. Override per environment with the
+    # MAILER_SENDER_ADDRESS / MAILER_SENDER_NAME environment variables.
+    app.mailer_sender_address_default: 'no-reply@example.com'
+    app.mailer_sender_address: '%env(default:app.mailer_sender_address_default:MAILER_SENDER_ADDRESS)%'
+    app.mailer_sender_name_default: 'Brainique'
+    app.mailer_sender_name: '%env(default:app.mailer_sender_name_default:MAILER_SENDER_NAME)%'
+
 services:
     # default configuration for services in *this* file
     _defaults:
@@ -19,6 +39,10 @@ services:
         autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
         bind:
             int $issLocationCacheTtl: '%iss_location_cache_ttl%'
+            bool $emailVerificationRequired: '%app.email_verification_required%'
+            int $sessionIdleTtl: '%app.session_idle_ttl%'
+            string $senderAddress: '%app.mailer_sender_address%'
+            string $senderName: '%app.mailer_sender_name%'
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
     App\:
@@ -26,6 +50,9 @@ services:
         exclude:
             - '../src/**/Domain/Entity/'
             - '../src/**/Domain/Enum/'
+            - '../src/Account/Entity/'
+            - '../src/Account/Enum/'
+            - '../src/Account/Exception/'
             - '../src/Kernel.php'
 
 #    App\Shared\Infrastructure\EventListener\ExceptionListener:

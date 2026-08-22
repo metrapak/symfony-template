@@ -1,0 +1,36 @@
+{% extends 'account/_layout.html.twig' %}
+
+{% block title %}Sign in{% endblock %}
+{% block heading %}Sign in{% endblock %}
+
+{% block account_content %}
+    {% if error %}
+        <div class="form-error-summary" role="alert" tabindex="-1">
+            {{ error.messageKey|trans(error.messageData, 'security') }}
+        </div>
+    {% endif %}
+
+    {% if app.user %}
+        <p>You are signed in as {{ app.user.userIdentifier }}. <a href="{{ logout_path() }}">Sign out</a></p>
+    {% endif %}
+
+    <form action="{{ path('app_login') }}" method="post">
+        <div>
+            <label for="username">Email address</label>
+            <input type="email" value="{{ last_username }}" name="_username" id="username"
+                   autocomplete="email" required autofocus>
+        </div>
+
+        <div>
+            <label for="password">Password</label>
+            <input type="password" name="_password" id="password" autocomplete="current-password" required>
+        </div>
+
+        <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('authenticate') }}">
+
+        <button type="submit">Sign in</button>
+    </form>
+
+    <p><a href="{{ path('account_password_forgot') }}">Forgotten your password?</a></p>
+    <p><a href="{{ path('account_verify_resend') }}">Need a new confirmation link?</a></p>
+{% endblock %}

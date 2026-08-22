@@ -1,0 +1,22 @@
+{# Error summary at the top of the form: the first thing a keyboard or screen-reader user
+   reaches after a rejected submit, with a link straight to each offending field. #}
+{% if form.vars.submitted and not form.vars.valid %}
+    <div class="form-error-summary" role="alert" tabindex="-1" id="error-summary">
+        <h2>There is a problem</h2>
+        <ul>
+            {% for error in form.vars.errors %}
+                <li>{{ error.message }}</li>
+            {% endfor %}
+            {% for child in form %}
+                {% for error in child.vars.errors %}
+                    <li><a href="#{{ child.vars.id }}">{{ error.message }}</a></li>
+                {% endfor %}
+                {% for grandchild in child %}
+                    {% for error in grandchild.vars.errors %}
+                        <li><a href="#{{ grandchild.vars.id }}">{{ error.message }}</a></li>
+                    {% endfor %}
+                {% endfor %}
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}

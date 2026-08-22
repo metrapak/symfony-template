@@ -1,0 +1,18 @@
+{% extends 'account/_layout.html.twig' %}
+{% form_theme form 'account/_form_theme.html.twig' %}
+
+{% block title %}Send a new confirmation link{% endblock %}
+{% block heading %}Send a new confirmation link{% endblock %}
+
+{% block account_content %}
+    <p>Enter the email address for your account and we will send you a new link to confirm it.</p>
+
+    {{ include('account/_error_summary.html.twig') }}
+
+    {{ form_start(form) }}
+        {{ form_row(form.email) }}
+        <button type="submit">Send confirmation link</button>
+    {{ form_end(form) }}
+
+    <p><a href="{{ path('app_login') }}">Back to sign in</a></p>
+{% endblock %}

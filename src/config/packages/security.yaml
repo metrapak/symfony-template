@@ -8,8 +8,9 @@ security:
         # used to reload user from session & other features (e.g. switch_user)
         app_user_provider:
             entity:
-                class: App\Entity\User
-                property: email
+                # No `property:` — UserRepository implements UserLoaderInterface so a login
+                # as `Foo@Bar.com` resolves against the stored, normalized `foo@bar.com`.
+                class: App\Account\Entity\User
 
     firewalls:
         dev:
@@ -19,14 +20,30 @@ security:
         main:
             lazy: true
             provider: app_user_provider
+            # FR-009: refuses Inactive and Deleted accounts, and (per configuration) accounts
+            # with an unverified email. Runs on every *authentication* — form login and any
+            # future authenticator — but NOT when a session is restored from its cookie:
+            # ContextListener reloads the user and never calls a user checker. What covers an
+            # account deactivated mid-session is User::isEqualTo(); do not remove it on the
+            # assumption that this checker sees those requests.
+            user_checker: App\Account\Security\AccountStatusChecker
             form_login:
                 login_path: app_login
                 check_path: app_login
                 enable_csrf: true
-            json_login:
-                check_path: api_login
+                default_target_path: account_dashboard
+            # FR-003: max_attempts applies per username+IP, and Symfony additionally applies
+            # 5x that limit globally per IP — both dimensions the requirement asks for, with
+            # no custom limiter. Storage is cache.app, so limits are per-node (see R2).
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
             logout:
                 path: app_logout
+                # Without this, any third-party page can sign a visitor out with an
+                # <img src="/logout">. logout_path()/logout_url() add the token for you, so
+                # links built in Twig keep working; anything hand-rolling the URL must not.
+                enable_csrf: true
                 # where to redirect after logout
                 # target: app_any_route
 
@@ -36,10 +53,30 @@ security:
             # https://symfony.com/doc/current/security/impersonating_user.html
             # switch_user: true
 
-    # Note: Only the *first* matching rule is applied
+    # D3: deliberately no hierarchy between the four business roles. A Super Admin inheriting
+    # ROLE_TRAINER would be routed into organization-scoped views with no organization.
+    role_hierarchy: []
+
+    # Note: Only the *first* matching rule is applied — public routes must come first.
+    # FR-010: authorization lives here (and in voters), never in a hidden Twig link.
     access_control:
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
+        - { path: ^/login, roles: PUBLIC_ACCESS }
+        - { path: ^/password/forgot, roles: PUBLIC_ACCESS }
+        - { path: ^/password/reset, roles: PUBLIC_ACCESS }
+        - { path: ^/verify, roles: PUBLIC_ACCESS }
+        - { path: ^/admin, roles: ROLE_SUPER_ADMIN }
+        # Pre-existing admin UI: category create/edit/delete, the last of which happens on a
+        # GET. It predates this epic and was reachable by anyone who guessed the URL. Now that
+        # the application has roles, leaving it open would make FR-010 true only of the pages
+        # written after it.
+        - { path: ^/videos/admin, roles: ROLE_SUPER_ADMIN }
+        - { path: ^/trainer, roles: ROLE_TRAINER }
+        - { path: ^/coach, roles: ROLE_COACH }
+        - { path: ^/family, roles: ROLE_PLAYER }
+        - { path: ^/account, roles: ROLE_USER }
+        - { path: ^/dashboard, roles: ROLE_USER }
+        # No catch-all rule: the pre-existing public pages (/videos, /products, /starships)
+        # must stay reachable anonymously.
 
 when@test:
     security:

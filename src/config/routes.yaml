@@ -1,6 +1,7 @@
-controllers:
-    resource: '../src/Controller/'
+account_controllers:
+    resource: '../src/Account/Controller/'
     type: attribute
+
 products_controllers:
     resource: '../src/Products/Infrastructure/Controller/'
     type: attribute

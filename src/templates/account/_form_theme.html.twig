@@ -1,0 +1,26 @@
+{% use 'bootstrap_4_layout.html.twig' %}
+
+{# Links each field's errors to its input with aria-describedby, so a screen reader
+   announces why the field was rejected instead of only that it was. #}
+{% block form_errors %}
+    {% if errors|length > 0 %}
+        <ul class="form-errors" {% if id is defined %}id="{{ id }}_errors"{% endif %}>
+            {% for error in errors %}
+                <li>{{ error.message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock %}
+
+{% block widget_attributes %}
+    {%- set described_by = [] -%}
+    {%- if help is not empty -%}{%- set described_by = described_by|merge([id ~ '_help']) -%}{%- endif -%}
+    {%- if errors|length > 0 -%}{%- set described_by = described_by|merge([id ~ '_errors']) -%}{%- endif -%}
+    {%- if described_by is not empty -%}
+        {%- set attr = attr|merge({'aria-describedby': described_by|join(' ')}) -%}
+    {%- endif -%}
+    {%- if errors|length > 0 -%}
+        {%- set attr = attr|merge({'aria-invalid': 'true'}) -%}
+    {%- endif -%}
+    {{- parent() -}}
+{% endblock %}
