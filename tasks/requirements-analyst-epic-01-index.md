@@ -49,8 +49,9 @@ parallel once TASK-004 lands.
 |:-----|:-------|:-------|
 | TASK-001 | Merged | `feat/epic-01-user-management-auth` (PR #2) |
 | TASK-002 | Merged | `feat/epic-01-task-002-admin-user-management` (PR #3) |
-| TASK-003 | Implemented, awaiting review | `feat/epic-01-task-003-sharelink-invitations` |
-| TASK-004…006 | Not started | — |
+| TASK-003 | Merged | `feat/epic-01-task-003-sharelink-invitations` (PR #4) |
+| TASK-004 | Implemented, awaiting review | `feat/epic-01-task-004-profiles-family-context-branding` |
+| TASK-005…006 | Not started | — |
 
 ## Existing Codebase Baseline
 

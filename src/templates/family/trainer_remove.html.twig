@@ -1,0 +1,40 @@
+{#
+    FR-066's removal confirmation.
+
+    A page rather than a dialog, and the consequence is spelled out in the requirement's own
+    terms before the button that causes it. The warning is placed *above* the confirm button and
+    marked `role="alert"` so it is read before the control is reached, which is what the task's
+    accessibility item asks for.
+
+    Nothing here is destructive in the database sense: the association is deactivated and the
+    history is kept (BR-066). The copy says so, because a parent who believes they have erased
+    their child's record is being misled.
+#}
+{% extends 'family/_layout.html.twig' %}
+
+{% block title %}Remove {{ player.displayName }} from {{ trainerName }}{% endblock %}
+{% block heading %}Remove {{ player.displayName }} from {{ trainerName }}?{% endblock %}
+
+{% block family_content %}
+    <div class="warning" role="alert">
+        <p>
+            This will cancel all upcoming RSVPs for {{ player.displayName }} with
+            {{ trainerName }}, and {{ trainerName }} will no longer see them on their roster.
+        </p>
+        <p>
+            Their attendance and history with {{ trainerName }} are kept, and you can add them
+            back later.
+        </p>
+    </div>
+
+    <form method="post" action="{{ path('family_trainer_remove', {id: player.id, organizationId: organizationId}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+        <div class="actions">
+            <button type="submit">
+                <span aria-hidden="true">Remove</span>
+                <span class="visually-hidden">Remove {{ player.displayName }} from {{ trainerName }}</span>
+            </button>
+            <a href="{{ path('family_index') }}">Keep them with {{ trainerName }}</a>
+        </div>
+    </form>
+{% endblock %}

@@ -8,5 +8,6 @@ import './styles/app.css';
 import './confirm-dialog.js';
 import './copy-link.js';
 import './join-registration.js';
+import './branding-picker.js';
 
 console.log('This log comes from assets/app.js - welcome to AssetMapper! 🎉');

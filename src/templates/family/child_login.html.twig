@@ -1,0 +1,36 @@
+{#
+    Giving a child their own login (FR-067, G-23).
+
+    The explanation is not decoration: this flow makes two choices a parent has to understand
+    before they commit to it — the child signs in with a username rather than an email address,
+    and password recovery runs through the parent because the derived address cannot receive mail.
+    Both are stated here in plain words. The reasoning behind them is on `ChildLoginManager`.
+#}
+{% extends 'family/_layout.html.twig' %}
+{% form_theme form 'account/_form_theme.html.twig' %}
+
+{% block title %}Create a login for {{ child.displayName }}{% endblock %}
+{% block heading %}Create a login for {{ child.displayName }}{% endblock %}
+
+{% block family_content %}
+    <p>
+        {{ child.displayName }} will sign in with the username you choose — not an email address.
+        They will be asked to pick their own password the first time they sign in.
+    </p>
+    <p class="muted">
+        Because the account has no email address of its own, {{ child.displayName }} cannot reset
+        their own password. If they forget it, you set a new one from this page. You can switch
+        their login off at any time without deleting anything.
+    </p>
+
+    {{ form_start(form) }}
+        {{ include('account/_error_summary.html.twig', {form: form}) }}
+        {{ form_row(form.username) }}
+        {{ form_row(form.plainPassword) }}
+
+        <div class="actions">
+            <button type="submit">Create login</button>
+            <a href="{{ path('family_index') }}">Cancel</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

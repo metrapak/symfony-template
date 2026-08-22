@@ -2,6 +2,14 @@
 
 {% block body %}
     <main id="main-content">
+        {#
+            FR-069 asks for the switcher as a navigation control, so it lives in the layout rather
+            than on one page. It renders nothing at all for a viewer with no training contexts —
+            an anonymous visitor on the login form, a trainer, a coach, a Super Admin — so putting
+            it here costs those pages one cheap resolver call and no markup.
+        #}
+        {{ include('_context_switcher.html.twig') }}
+
         {# Flash messages announce themselves to assistive tech without stealing focus. #}
         <div role="status" aria-live="polite">
             {% for label, messages in app.flashes %}
@@ -15,4 +23,11 @@
 
         {% block account_content %}{% endblock %}
     </main>
+
+    <style>
+        .context-switcher { margin: 1rem 0; padding: .75rem; border: 1px solid #d4d4d4; border-radius: .5rem; }
+        .context-switcher form { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+        .context-switcher select, .context-switcher button { min-height: 2.75rem; }
+        :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+    </style>
 {% endblock %}

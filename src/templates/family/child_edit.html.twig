@@ -1,0 +1,46 @@
+{#
+    Editing a child's profile (FR-060, FR-063).
+
+    Takes a date of birth where the create form took an age, and the reason is on `EditChildInput`:
+    a stored date the parent can only ever adjust through an age field is a date they can never
+    correct. The current age is shown beside it so they can see what the stored date means.
+
+    Skill level is absent. BR-067 makes it trainer-set, and this is the parent's form.
+#}
+{% extends 'family/_layout.html.twig' %}
+{% form_theme form 'account/_form_theme.html.twig' %}
+
+{% block title %}Edit {{ child.displayName }}{% endblock %}
+{% block heading %}Edit {{ child.displayName }}{% endblock %}
+
+{% block family_content %}
+    <dl>
+        <dt>Age today</dt>
+        <dd>{{ age is null ? 'Not recorded' : age }}</dd>
+        <dt>Added</dt>
+        <dd>{{ child.createdAt|date('j M Y') }}</dd>
+    </dl>
+
+    {% set currentPhoto = player_photo_url(child, false) %}
+    {% if currentPhoto %}
+        <p><img class="avatar" src="{{ currentPhoto }}" alt="Current photo of {{ child.displayName }}"></p>
+    {% endif %}
+
+    {{ form_start(form, {attr: {enctype: 'multipart/form-data'}}) }}
+        {{ include('account/_error_summary.html.twig', {form: form}) }}
+        {{ form_row(form.name) }}
+        {{ form_row(form.birthDate) }}
+        {{ form_row(form.gender) }}
+        {{ form_row(form.school) }}
+        {{ form_row(form.jerseyNumber) }}
+        {{ form_row(form.photo) }}
+        {% if child.hasPhoto %}
+            {{ form_row(form.removePhoto) }}
+        {% endif %}
+
+        <div class="actions">
+            <button type="submit">Save</button>
+            <a href="{{ path('family_index') }}">Cancel</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

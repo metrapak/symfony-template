@@ -1,0 +1,31 @@
+{#
+    An emergency contact (FR-061, BR-064).
+
+    One template for both adding and editing: the fields are identical and the only difference is
+    the heading and the button, so two files would be two places to keep a field list in step.
+#}
+{% extends 'family/_layout.html.twig' %}
+{% form_theme form 'account/_form_theme.html.twig' %}
+
+{% set editing = contact is not null %}
+
+{% block title %}{{ editing ? 'Edit ' ~ contact.name : 'Add an emergency contact' }}{% endblock %}
+{% block heading %}{{ editing ? 'Edit ' ~ contact.name : 'Add an emergency contact' }}{% endblock %}
+
+{% block family_content %}
+    <p class="muted">
+        Your trainers see this so they know who to call about any of your children.
+    </p>
+
+    {{ form_start(form) }}
+        {{ include('account/_error_summary.html.twig', {form: form}) }}
+        {{ form_row(form.name) }}
+        {{ form_row(form.relationship) }}
+        {{ form_row(form.phone) }}
+
+        <div class="actions">
+            <button type="submit">{{ editing ? 'Save' : 'Add contact' }}</button>
+            <a href="{{ path('family_index') }}">Cancel</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

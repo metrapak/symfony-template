@@ -16,6 +16,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
+#[ORM\UniqueConstraint(name: 'UNIQ_USER_LOGIN_USERNAME', fields: ['loginUsername'])]
 // The directory's default view filters on both columns (FR-020, NFR-020). Declared on the
 // entity as well as created in the migration, or doctrine:schema:update would propose
 // dropping it on every future diff.
@@ -40,6 +41,39 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Equatab
 
     #[ORM\Column(length: 32, nullable: true)]
     private ?string $phone = null;
+
+    /**
+     * An alternative sign-in name, used only by child logins (FR-067, G-23).
+     *
+     * A child usually has no email address of their own, and BR-064 says the parent owns the
+     * family's contact information — so a child account is created with a *derived*,
+     * undeliverable address and a username the parent chooses. `UserRepository` accepts either
+     * as the login identifier, which is why this column is unique.
+     *
+     * Null for every account that signs in with its email, which is every account but a
+     * child's. Usernames may not contain `@` (see UsernameCandidate), so an identifier can
+     * never be ambiguous between the two columns.
+     */
+    #[ORM\Column(length: 64, nullable: true)]
+    private ?string $loginUsername = null;
+
+    /**
+     * The account holder's photo, relative to the private upload root (FR-060, FR-062).
+     *
+     * Only ever written for a coach, trainer or Super Admin. A player's photo lives on their
+     * `PlayerProfile` instead, because for a family the photo belongs to the *person* who
+     * trains — and a child who has no account at all still needs one. Splitting it this way
+     * gives every column exactly one writer; keeping the photo in both places for a player
+     * would give the profile screen two answers to "which of these is me?".
+     *
+     * Never a URL: NFR-066 keeps uploads outside the web root and serves them through a
+     * controller that checks who is asking.
+     */
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $photoPath = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $photoThumbnailPath = null;
 
     /**
      * @var string The hashed password
@@ -137,6 +171,48 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Equatab
     public function setPhone(?string $phone): static
     {
         $this->phone = null === $phone || '' === trim($phone) ? null : trim($phone);
+
+        return $this;
+    }
+
+    public function getLoginUsername(): ?string
+    {
+        return $this->loginUsername;
+    }
+
+    /**
+     * Usernames are normalized on write for the same reason emails are: the unique index and
+     * the user provider have to agree on one canonical form, or `Mateo.Ruiz` and `mateo.ruiz`
+     * become two accounts that cannot both sign in.
+     */
+    public function setLoginUsername(?string $loginUsername): static
+    {
+        $this->loginUsername = null === $loginUsername || '' === trim($loginUsername)
+            ? null
+            : mb_strtolower(trim($loginUsername));
+
+        return $this;
+    }
+
+    public function getPhotoPath(): ?string
+    {
+        return $this->photoPath;
+    }
+
+    public function getPhotoThumbnailPath(): ?string
+    {
+        return $this->photoThumbnailPath;
+    }
+
+    public function hasPhoto(): bool
+    {
+        return null !== $this->photoPath;
+    }
+
+    public function setPhoto(?string $photoPath, ?string $thumbnailPath): static
+    {
+        $this->photoPath = $photoPath;
+        $this->photoThumbnailPath = null !== $photoPath ? $thumbnailPath : null;
 
         return $this;
     }

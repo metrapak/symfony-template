@@ -1,0 +1,43 @@
+{#
+    FR-066's "Add Trainer", both options on one screen.
+
+    Two ways to fill one form: paste the link a trainer sent, or pick from the trainers you
+    already train with. `AddTrainerInput` requires exactly one of them and says why that rule
+    belongs to the pair rather than to either field.
+
+    When there is nobody left to pick — a first trainer, or a player already with all of them —
+    the choice field does not exist and the page says so, rather than rendering an empty select.
+#}
+{% extends 'family/_layout.html.twig' %}
+{% form_theme form 'account/_form_theme.html.twig' %}
+
+{% block title %}Add a trainer for {{ player.displayName }}{% endblock %}
+{% block heading %}Add a trainer for {{ player.displayName }}{% endblock %}
+
+{% block family_content %}
+    {{ form_start(form) }}
+        {{ include('account/_error_summary.html.twig', {form: form}) }}
+
+        <fieldset>
+            <legend>Option 1 — paste a trainer's link</legend>
+            {{ form_row(form.shareLinkCode) }}
+        </fieldset>
+
+        {% if form.organizationId is defined %}
+            <fieldset>
+                <legend>Option 2 — choose a trainer you already train with</legend>
+                {{ form_row(form.organizationId) }}
+            </fieldset>
+        {% else %}
+            <p class="muted">
+                {{ player.displayName }} already trains with all of your trainers, so paste a new
+                link to add another.
+            </p>
+        {% endif %}
+
+        <div class="actions">
+            <button type="submit">Add trainer</button>
+            <a href="{{ path('family_index') }}">Cancel</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

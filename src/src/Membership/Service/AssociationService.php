@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Membership\Service;
 
+use App\Account\Entity\Organization;
 use App\Account\Entity\User;
 use App\Membership\Dto\AssociationSummary;
 use App\Membership\Entity\ShareLink;
@@ -88,11 +89,66 @@ final readonly class AssociationService
     }
 
     /**
-     * Ends a membership without deleting it (BR-047, NFR-X06).
+     * Attaches a profile to a trainer the account already trains with, with no link involved
+     * (FR-066, "Option B").
      *
-     * Nothing in Epic-01 calls this from a screen yet — G-15 and G-20 are the requirements
-     * that would — but the row has to be endable for the history it preserves to mean
-     * anything, and the reactivation path in `attachAll()` is only reachable once it is.
+     * There is no ShareLink here and that is the whole point: a parent adding a second child
+     * to a trainer they already train with is extending a relationship that trainer already
+     * granted them, not joining a new one. Consuming a link use for it would let a family
+     * silently exhaust a single-use invitation by rearranging their own children, and there
+     * may be no link left to consume at all.
+     *
+     * Whether the caller is *entitled* to that organization is not decided here — the family
+     * screens check it against the associations the account already holds. This method is the
+     * write, and it is idempotent: an active association is left alone, an ended one is
+     * brought back rather than duplicated, because the unique index means there is no second
+     * row to create.
+     */
+    public function attachWithoutLink(Organization $organization, PlayerProfile $profile): void
+    {
+        try {
+            $this->runAttachWithoutLink($organization, $profile);
+        } catch (UniqueConstraintViolationException) {
+            // A concurrent add of the same pair — a double submit, or the form opened twice —
+            // won the race. The transaction rolled back, so running again sees its row and
+            // returns without writing. One retry: a second violation would mean something
+            // other than a race, and swallowing it would hide it. Mirrors `attachAll()`.
+            $this->runAttachWithoutLink($organization, $profile);
+        }
+    }
+
+    /**
+     * @throws UniqueConstraintViolationException when a concurrent add wrote the same pair
+     */
+    private function runAttachWithoutLink(Organization $organization, PlayerProfile $profile): void
+    {
+        $organizationId = (int) $organization->getId();
+        $existing = $this->associations->findOneFor($organizationId, $profile);
+
+        if (null !== $existing && $existing->isActive()) {
+            return;
+        }
+
+        $now = $this->clock->now();
+
+        $this->entityManager->wrapInTransaction(function () use ($organization, $profile, $existing, $now): void {
+            if (null !== $existing) {
+                $existing->reactivate(null, $now);
+            } else {
+                $this->associations->add(new TrainerPlayerAssociation($organization, $profile, null, $now));
+            }
+
+            $this->entityManager->flush();
+        });
+    }
+
+    /**
+     * Ends a membership without deleting it (BR-047, BR-066, NFR-X06).
+     *
+     * Called by TASK-004's family screens when a parent removes a child from a trainer, which
+     * is what makes the reactivation path in `attachAll()` and `attachWithoutLink()` reachable:
+     * the same family can rejoin later, and the unique index means it must be this row that
+     * comes back.
      */
     public function deactivate(int $organizationId, PlayerProfile $profile): void
     {

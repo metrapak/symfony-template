@@ -1,0 +1,72 @@
+{#
+    The context switcher (FR-069, FR-070, NFR-064).
+
+    A `<select>` inside a form with a submit button, not a JavaScript dropdown. Three reasons,
+    and the first two are requirements:
+
+      - NFR-064 asks for a control that is keyboard-operable and announces the change. A native
+        select is both, in every browser and every screen reader, with no code of ours to get
+        wrong. `confirm-dialog.js`-style progressive enhancement can submit it on change later;
+        the fallback is what ships.
+      - FR-069's grouping — "Your Training" and "Your Children's Training" — maps exactly onto
+        `<optgroup>`, which is the markup a screen reader announces as a group. The three shapes
+        the requirement describes are the three cases below: a parent who trains sees both
+        groups, a parent who does not sees only the children's, and a child sees a flat list with
+        no "Me" section (their own contexts arrive in `own` and there is nothing in `children`).
+      - Switching is a POST with a CSRF token, because it changes what every subsequent page
+        shows. A GET link would let a third-party page move somebody from their own training to
+        their child's with an `<img>` tag.
+
+    A user with one context still sees it, as static text: FR-070 says there is no combined view,
+    so which context you are in is never ambiguous — but a select with one option is a control
+    that does nothing.
+#}
+{% set contexts = training_contexts() %}
+{% set current = current_training_context() %}
+{% set total = contexts.own|length + contexts.children|length %}
+
+{% if total > 0 %}
+    <div class="context-switcher">
+        {% if total == 1 %}
+            <p class="context-current">
+                Viewing <strong>{{ current.label }}</strong>
+            </p>
+        {% else %}
+            <form method="post" action="{{ path('context_switch') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('switch_context') }}">
+
+                <label for="context-select">Training context</label>
+                <select id="context-select" name="context">
+                    {% if contexts.own is not empty and contexts.children is not empty %}
+                        {# FR-069's two named groups, in the requirement's own words. #}
+                        <optgroup label="Your Training">
+                            {% for option in contexts.own %}
+                                <option value="{{ option.key }}" {{ current and current.key == option.key ? 'selected' : '' }}>
+                                    {{ option.label }}
+                                </option>
+                            {% endfor %}
+                        </optgroup>
+                        <optgroup label="Your Children's Training">
+                            {% for option in contexts.children %}
+                                <option value="{{ option.key }}" {{ current and current.key == option.key ? 'selected' : '' }}>
+                                    {{ option.label }}
+                                </option>
+                            {% endfor %}
+                        </optgroup>
+                    {% else %}
+                        {# One group only: a parent who does not train, or a child login. Rendered
+                           flat rather than inside a single optgroup, because a group of one is
+                           noise a screen reader still has to read out. #}
+                        {% for option in contexts.own|merge(contexts.children) %}
+                            <option value="{{ option.key }}" {{ current and current.key == option.key ? 'selected' : '' }}>
+                                {{ option.label }}
+                            </option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+
+                <button type="submit">Switch</button>
+            </form>
+        {% endif %}
+    </div>
+{% endif %}

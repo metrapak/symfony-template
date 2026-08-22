@@ -1,0 +1,189 @@
+{#
+    The Family / Player Profiles page (FR-065, FR-066).
+
+    Two sections, and the split is FR-065's: the parent's own profile under one heading, their
+    children under another. A parent who does not train still has a "Self" profile — BR-060 says a
+    parent account *is* a player account — so the first section is never empty.
+
+    Every trainer row carries its connection date, because FR-066 asks for "associated trainers
+    and association dates": a parent needs to be able to answer "since when?" without asking.
+#}
+{% extends 'family/_layout.html.twig' %}
+
+{% block title %}Player profiles{% endblock %}
+{% block heading %}Player profiles{% endblock %}
+
+{% block family_content %}
+    <section class="card" aria-labelledby="self-heading">
+        <h2 id="self-heading">Your training</h2>
+
+        <div class="actions">
+            {% set selfPhoto = player_photo_url(selfProfile) %}
+            {% if selfPhoto %}
+                <img class="avatar" src="{{ selfPhoto }}" alt="">
+            {% endif %}
+            <p>
+                <strong>{{ selfProfile.displayName }}</strong>
+                {% if trainers is empty %}
+                    <span class="muted">— you are not training with anyone yet.</span>
+                {% endif %}
+            </p>
+        </div>
+
+        {% if trainers is not empty %}
+            <ul>
+                {% for trainer in trainers %}
+                    <li>{{ trainer.organizationName }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <div class="actions">
+            <a href="{{ path('account_profile') }}">Edit your own profile</a>
+            <a href="{{ path('family_trainer_add', {id: selfProfile.id}) }}">Add a trainer for yourself</a>
+        </div>
+    </section>
+
+    <section aria-labelledby="children-heading">
+        <h2 id="children-heading">Your children's training</h2>
+
+        {% if children is empty %}
+            <p class="muted">You have not added any children yet.</p>
+        {% else %}
+            <table>
+                <caption class="visually-hidden">Your children, their trainers and when each association started</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Child</th>
+                        <th scope="col">Age</th>
+                        <th scope="col">Trainers</th>
+                        <th scope="col">Login</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for child in children %}
+                        <tr>
+                            <td data-label="Child">
+                                {% set childPhoto = player_photo_url(child.profile) %}
+                                {% if childPhoto %}
+                                    <img class="avatar" src="{{ childPhoto }}" alt="">
+                                {% endif %}
+                                <strong>{{ child.name }}</strong><br>
+                                <span class="muted">{{ gender_label(child.profile) }}</span>
+                            </td>
+                            <td data-label="Age">
+                                {{ child.age is null ? 'Not recorded' : child.age }}
+                            </td>
+                            <td data-label="Trainers">
+                                {% if child.hasTrainers %}
+                                    <ul>
+                                        {% for trainer in child.trainers %}
+                                            <li>
+                                                {{ trainer.organizationName }}
+                                                <span class="muted">since {{ trainer.connectedAt|date('j M Y') }}</span>
+                                                {# The accessible name says which child and which trainer, so a page
+                                                   of "Remove" links is not a page of identical links (NFR-023). #}
+                                                <a href="{{ path('family_trainer_remove_confirm', {id: child.id, organizationId: trainer.organizationId}) }}">
+                                                    <span aria-hidden="true">Remove</span>
+                                                    <span class="visually-hidden">Remove {{ child.name }} from {{ trainer.organizationName }}</span>
+                                                </a>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <span class="muted">No trainers yet</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Login">
+                                {# Three states, not two: FR-067's login can be absent, active, or
+                                   switched off — and a parent needs to tell the last two apart. #}
+                                {% if not child.hasLogin %}
+                                    <span class="muted">None</span>
+                                {% elseif child.loginActive %}
+                                    Active
+                                {% else %}
+                                    Switched off
+                                {% endif %}
+                            </td>
+                            <td data-label="Actions" class="no-label">
+                                <div class="actions">
+                                    <a href="{{ path('family_child_edit', {id: child.id}) }}">
+                                        <span aria-hidden="true">Edit</span>
+                                        <span class="visually-hidden">Edit {{ child.name }}'s profile</span>
+                                    </a>
+                                    <a href="{{ path('family_trainer_add', {id: child.id}) }}">
+                                        <span aria-hidden="true">Add trainer</span>
+                                        <span class="visually-hidden">Add a trainer for {{ child.name }}</span>
+                                    </a>
+                                    {% if not child.hasLogin %}
+                                        <a href="{{ path('family_child_login_new', {id: child.id}) }}">
+                                            <span aria-hidden="true">Create login</span>
+                                            <span class="visually-hidden">Create a login for {{ child.name }}</span>
+                                        </a>
+                                    {% elseif child.loginActive %}
+                                        {{ include('admin/_confirm_form.html.twig', {
+                                            action_path: path('family_child_login_revoke', {id: child.id}),
+                                            label: 'Switch off login',
+                                            accessible_name: 'Switch off ' ~ child.name ~ "'s login",
+                                            message: child.name ~ ' will not be able to sign in until you switch it back on. Nothing is deleted.',
+                                            confirm_label: 'Switch off',
+                                            variant: 'destructive',
+                                        }) }}
+                                    {% else %}
+                                        {{ include('admin/_confirm_form.html.twig', {
+                                            action_path: path('family_child_login_restore', {id: child.id}),
+                                            label: 'Switch on login',
+                                            accessible_name: 'Switch on ' ~ child.name ~ "'s login",
+                                            message: child.name ~ ' will be able to sign in again.',
+                                            confirm_label: 'Switch on',
+                                        }) }}
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+
+        <p><a href="{{ path('family_child_new') }}">+ Add child</a></p>
+    </section>
+
+    <section class="card" aria-labelledby="contacts-heading">
+        <h2 id="contacts-heading">Emergency contacts</h2>
+
+        <p class="muted">
+            Who your trainers should call about any of your children. You hold these details for
+            the whole family.
+        </p>
+
+        {% if emergencyContacts is empty %}
+            <p class="muted">You have not added an emergency contact yet.</p>
+        {% else %}
+            <ul>
+                {% for contact in emergencyContacts %}
+                    <li>
+                        <strong>{{ contact.name }}</strong> ({{ contact.relationship }}) — {{ contact.phone }}
+                        <div class="actions">
+                            <a href="{{ path('family_contact_edit', {id: contact.id}) }}">
+                                <span aria-hidden="true">Edit</span>
+                                <span class="visually-hidden">Edit {{ contact.name }}</span>
+                            </a>
+                            {{ include('admin/_confirm_form.html.twig', {
+                                action_path: path('family_contact_delete', {id: contact.id}),
+                                label: 'Remove',
+                                accessible_name: 'Remove ' ~ contact.name ~ ' as an emergency contact',
+                                message: 'Remove ' ~ contact.name ~ ' as an emergency contact? Your trainers will no longer see this number.',
+                                confirm_label: 'Remove',
+                                variant: 'destructive',
+                            }) }}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <p><a href="{{ path('family_contact_new') }}">+ Add an emergency contact</a></p>
+    </section>
+{% endblock %}
