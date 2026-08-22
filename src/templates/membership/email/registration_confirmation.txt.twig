@@ -1,0 +1,13 @@
+Hello {{ name }},
+
+{% if playerName == name %}You are registered with {{ organizationName }}.{% else %}{{ playerName }} is registered with {{ organizationName }}.{% endif %}
+
+{% if verificationRequired %}
+One more step: we have sent a second email with a confirmation link. Open it to activate your
+sign-in - you will not be able to sign in until you do.
+{% else %}
+You can sign in and see this trainer's events and content straight away.
+{% endif %}
+
+Your details are visible to {{ organizationName }} only. If you later join another trainer,
+each trainer sees their own program and nothing else.

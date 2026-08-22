@@ -20,6 +20,16 @@ doctrine:
                 type: attribute
                 dir: '%kernel.project_dir%/src/Account/Entity'
                 prefix: 'App\Account\Entity'
+            Membership:
+                is_bundle: false
+                type: attribute
+                dir: '%kernel.project_dir%/src/Membership/Entity'
+                prefix: 'App\Membership\Entity'
+            Profile:
+                is_bundle: false
+                type: attribute
+                dir: '%kernel.project_dir%/src/Profile/Entity'
+                prefix: 'App\Profile\Entity'
             Products:
                 is_bundle: false
                 type: attribute

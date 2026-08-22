@@ -1,0 +1,24 @@
+{#
+    FR-048 / BR-046 — a child opened a trainer link.
+
+    No association is created and the link is not consumed. The parent has been emailed the
+    same link so they can complete it from their own account.
+#}
+{% extends 'join/_layout.html.twig' %}
+
+{% block title %}Ask your parent to register you{% endblock %}
+{% block heading %}Ask your parent to register you{% endblock %}
+
+{% block join_content %}
+    <p>Ask your parent to register you with {{ organizationName }}.</p>
+
+    <p>
+        {% if notified %}
+            We have emailed {{ parentEmail }} with a link so they can finish it for you.
+        {% else %}
+            We already let {{ parentEmail }} know about this — they have the link in their inbox.
+        {% endif %}
+    </p>
+
+    <p><a href="{{ path('account_dashboard') }}">Back to your dashboard</a></p>
+{% endblock %}

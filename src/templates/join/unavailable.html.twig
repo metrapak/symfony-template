@@ -1,0 +1,19 @@
+{#
+    FR-049. The single response for a code that is unknown, deactivated or fully used.
+
+    It names no trainer and no reason, and the controller returns it with 404, because telling
+    the three apart would let a visitor learn which codes exist. Do not add detail here.
+#}
+{% extends 'join/_layout.html.twig' %}
+
+{% block title %}This link is not available{% endblock %}
+{% block heading %}This link is not available{% endblock %}
+
+{% block join_content %}
+    <p>
+        The link you followed does not work. It may have been withdrawn, already used, or typed
+        incorrectly.
+    </p>
+
+    <p>Ask whoever sent it to you for a new one.</p>
+{% endblock %}

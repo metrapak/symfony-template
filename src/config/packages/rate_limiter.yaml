@@ -7,3 +7,21 @@ framework:
             policy: 'sliding_window'
             limit: 3
             interval: '15 minutes'
+
+        # FR-049. `/join/{code}` is public, unauthenticated and creates accounts, which makes
+        # it the epic's largest external attack surface. Codes carry 128 bits of entropy, so
+        # this is not what stops enumeration — arithmetic is — but it keeps a scanner from
+        # turning the endpoint into free database load, and it bounds the blast radius of any
+        # future code-format mistake. Keyed by client IP.
+        join_redemption:
+            policy: 'sliding_window'
+            limit: 30
+            interval: '15 minutes'
+
+        # Tighter, because a submission writes: an account, a profile, an association and two
+        # emails. Ten in an hour is far more registrations than a household produces and far
+        # fewer than a script wants.
+        join_registration:
+            policy: 'sliding_window'
+            limit: 10
+            interval: '1 hour'

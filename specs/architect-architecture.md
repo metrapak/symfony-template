@@ -114,9 +114,11 @@ forgotten scope becomes an argument error at compile time rather than a silent c
 A Doctrine SQL filter was considered and **rejected**: it applies globally and silently, Super Admin tooling
 legitimately needs cross-tenant reads, and a filter accidentally disabled fails open.
 
-`TenantContext` is designed to answer for trainers and coaches. **As implemented it resolves trainers only**
-— a coach reaches their organization through an assignment record that does not exist yet, so the coach
-branch returns null behind a documented TODO and must be completed by the coach-management task.
+`TenantContext` answers for trainers and coaches. A trainer's tenant is the organization they own; a
+coach's is the organization of their **active** `coach_assignment`, resolved through the
+`CoachOrganizationProvider` interface (declared in `Account`, implemented in `Membership`) so the module
+that owns tenancy does not depend on the module that depends on it. A coach with no active assignment still
+has no tenant. TASK-003 closed the TODO TASK-001 left here.
 
 Players have no single organization — they have a selected training context, resolved separately, and it
 must be authorized server-side on every request: a forged context identifier returns 403, never data.
@@ -223,6 +225,81 @@ environment variable through the `default:` env processor. Consequence: an exist
 unchanged without either variable set, and setting the variable overrides it. `cookie_lifetime` and
 `gc_maxlifetime` both read the same parameter so the two cannot silently disagree.
 
+## Component: Invitations (ShareLinks)
+
+**Status**: Implemented (Epic-01 TASK-003)
+
+One `share_link` table for both kinds of invitation. A player link is `maxUses = null, expiresAt = null`
+(unlimited, never expires); a coach invitation is `maxUses = 1, expiresAt = now + 7 days` addressed to one
+email. Two tables would duplicate the code column, the counter, the resolver and every query to express a
+difference two nullable columns already express.
+
+Codes are a value object: `random_bytes(16)` rendered as 26 base32 characters over an alphabet without
+`I`, `L`, `O` or `U`. Nothing derives from the row, the organization or the clock. **Enumeration is
+defeated by the key space, not by the rate limiter** — the limiter on `/join` exists so a scanner cannot
+turn a public endpoint into free database load.
+
+**A use is claimed by one conditional UPDATE**, never by read-then-write:
+`UPDATE … SET use_count = use_count + 1 WHERE id = ? AND active AND (max_uses IS NULL OR use_count <
+max_uses) AND (expires_at IS NULL OR expires_at > ?)`. The failure this prevents is a hundred concurrent
+redemptions of a single-use invitation each reading `use_count = 0` and each deciding they are the allowed
+use (NFR-041).
+
+**Failure is uniform.** Malformed, unknown, deactivated and consumed codes all resolve to one state that
+carries no link at all, so no template can leak which of the four it was. Expired is the single
+distinguishable failure, required by FR-046 so the holder of a lapsed coach invitation can be told to ask
+for a new one — a bounded disclosure to somebody who already had a real code.
+
+Deactivating a link withdraws an invitation; it does not expel the players who already accepted one
+(G-19).
+
+## Component: Organization Membership
+
+**Status**: Implemented (Epic-01 TASK-003)
+
+Two membership records, both append-and-amend rather than delete:
+
+- `trainer_player_association` joins an organization to a `player_profile`, **unique on (organization,
+  player_profile)**. That index — not the service's read-before-write — is what makes redeeming a link
+  twice idempotent (FR-043), because two concurrent redemptions both pass the read.
+- `coach_assignment` joins an organization to a coach, with a **partial unique index on `coach_id` where
+  `status = 'active'`**. BR-044 says a coach works for one trainer at a time; a full unique index cannot
+  express it, because a coach who leaves one organization for another must keep the ended row. FR-045
+  requires the rule to be "a database constraint plus a service check, not UI-only", and this is the
+  constraint half. The predicate is written in the entity mapping exactly as PostgreSQL stores it, or
+  every future `migrations:diff` would propose dropping and recreating the index.
+
+`share_link_redemption` records every use — which link, by whom, when, and what it produced (new account /
+association / blocked child) — for Epic-06. A repeat redemption that changes nothing is deliberately *not*
+recorded and consumes no use, so the counter means "people who joined" rather than "pages viewed".
+
+`PlayerProfile` lives in `src/Profile/` and is TASK-004's entity, seeded by TASK-003 with only the columns
+the invitation flow writes. It carries two user references that answer different questions: `owner` is the
+account that manages the profile (what family selection reads), `account` is the login it signs in as, null
+until TASK-004 ships child logins (what the child block reads).
+
+## Component: Public Redemption Flow
+
+**Status**: Implemented (Epic-01 TASK-003)
+
+`/join/{code}` is the only unauthenticated, account-creating endpoint in the application. Four properties
+hold, and all four live in the controller rather than in its templates:
+
+- Every entry point is rate limited by IP, with separate budgets for viewing and for submitting.
+- Failure is the uniform response described above; only an expired invitation is distinguishable.
+- **Nothing is decided in the controller.** `RedemptionPlanner` maps (link type, current account) onto one
+  of six outcomes — register as player, register as coach, associate a family, accept a coach invitation,
+  block a child, refuse — and every service it routes to re-checks what it enforces, so a page rendered
+  before a link was withdrawn cannot authorize the submit that follows it.
+- State changes are POSTs with CSRF tokens, except the refusal FR-048 puts on a GET; that one is
+  deduplicated per (link, child) so a reload does not email the parent again.
+
+Registration attempts a programmatic sign-in and falls back to the verification notice when the firewall
+refuses, so the behaviour follows `EMAIL_VERIFICATION_REQUIRED` rather than assuming an answer to Q-01.05.
+
+Object-level authorization for the trainer side is `ShareLinkVoter`: `^/trainer` is `ROLE_TRAINER`, which
+every trainer holds, so the role rule protects nothing once a URL carries an id.
+
 ## Cross-Cutting Requirements
 
 - CSRF on every state-changing form. Stateless CSRF is configured (`config/packages/csrf.yaml`) with form token id `submit`.
@@ -238,8 +315,12 @@ unchanged without either variable set, and setting the variable overrides it. `c
 | R2 | Rate-limiter and session storage are node-local; a shared store is needed for the 1,000-concurrent-user target | Horizontal scaling |
 | R4 | No async Messenger transport, so mail is synchronous | Deployment decision |
 | G-16 | The deletion compliance record holds a digest, not the original email and data snapshot FR-027 asks for. Needs legal sign-off | Compliance review |
-| G-15 | Deactivating or deleting a **trainer** has undefined consequences for their organization's players, coaches, links, and branding | Epic-01 TASK-003/004 |
+| G-15 | Deactivating or deleting a **trainer** has undefined consequences for their organization's players, coaches, links, and branding. Unanswered by TASK-003, which added more to break | Epic-01 TASK-004 |
+| G-20 | A coach may move between trainers — the schema permits it, no workflow performs it. Who ends the old assignment, and what history the coach keeps, is unspecified | Epic-01 TASK-004 |
+| G-21 | Answered by TASK-003 with an explicit self-versus-child choice on the registration form; the spec still never defines it | Spec correction |
+| R5 | NFR-041's 100-concurrent-redemption target is proven by constraint and sequentially, not by a parallel load test — DAMA's per-test transaction is invisible to a second connection | Load harness |
 | G-19 | FR-025 requires "photo → default avatar"; there is no photo column until profiles land | Epic-01 TASK-004 |
+| Q-01.02 | Age groups are undefined. TASK-003 stores a **birth date** and derives age, so the answer stays a presentation decision | Epic-01 TASK-004 |
 | G-07 | Availability is specified both per-profile and per-(profile, trainer) | Epic-01 TASK-005 |
 | G-29 | No time zone is defined anywhere, yet weekly availability stores local times | Epic-01 TASK-005 |
 
@@ -247,4 +328,5 @@ unchanged without either variable set, and setting the variable overrides it. `c
 
 *Sources: `specs/Epic-01_User_Management_Authentication_SPEC.md`, `tasks/TASK-001/architect-architecture.md`,
 `tasks/TASK-001/writing-plans-plan.md`, `tasks/TASK-002/architect-architecture.md`,
-`tasks/TASK-002/writing-plans-plan.md`.*
+`tasks/TASK-002/writing-plans-plan.md`, `tasks/TASK-003/architect-architecture.md`,
+`tasks/TASK-003/writing-plans-plan.md`.*

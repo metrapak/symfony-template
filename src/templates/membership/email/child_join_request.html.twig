@@ -1,0 +1,20 @@
+{#
+    FR-048 — the notification a parent receives after their child opens a trainer's link.
+    Subject and CTA are fixed by the spec: "Review Registration".
+#}
+<p>Hello {{ parentName }},</p>
+
+<p>
+    <strong>{{ childName }}</strong> opened an invitation to join
+    <strong>{{ organizationName }}</strong>'s program. Children cannot add a trainer themselves,
+    so nothing has changed yet.
+</p>
+
+<p><a href="{{ joinUrl }}">Review Registration</a></p>
+
+<p>
+    Opening that link while signed in to your own account lets you choose which of your family
+    members joins {{ organizationName }}.
+</p>
+
+<p>If this was not expected, you can ignore this message — no association has been created.</p>

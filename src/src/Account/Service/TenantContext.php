@@ -29,6 +29,7 @@ final readonly class TenantContext
     public function __construct(
         private Security $security,
         private OrganizationRepository $organizations,
+        private CoachOrganizationProvider $coachOrganizations,
     ) {
     }
 
@@ -42,9 +43,11 @@ final readonly class TenantContext
 
         return match ($user->getRole()) {
             UserRole::Trainer => $this->organizations->findOneByOwner($user)?->getId(),
-            // TODO: a coach belongs to an organization through their assignment, which the
-            // coach-management task introduces. Until then a coach has no resolvable tenant.
-            UserRole::Coach => null,
+            // A coach reaches their organization through the assignment TASK-003 introduced.
+            // Answered through a provider interface rather than by reading the Membership
+            // repository directly, so this module does not depend on the one that depends
+            // on it. A coach with no active assignment still has no tenant.
+            UserRole::Coach => $this->coachOrganizations->organizationIdForCoach($user),
             UserRole::Player, UserRole::SuperAdmin => null,
         };
     }

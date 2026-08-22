@@ -60,6 +60,9 @@ class AuthorizationMatrixTest extends AccountWebTestCase
         yield 'family' => ['/family'];
         yield 'dashboard hub' => ['/dashboard'];
         yield 'change password' => ['/account/password'];
+        // TASK-003's trainer tools live under the same tree and inherit its rule.
+        yield 'trainer player links' => ['/trainer/share-links'];
+        yield 'trainer coaches' => ['/trainer/coaches'];
     }
 
     #[DataProvider('protectedPathProvider')]
@@ -87,6 +90,18 @@ class AuthorizationMatrixTest extends AccountWebTestCase
         $this->client->request('GET', $path);
 
         self::assertResponseIsSuccessful();
+    }
+
+    /**
+     * FR-042 / FR-049: `/join/{code}` must answer an anonymous visitor. It answers an unknown
+     * code with 404 and no hint, which is the point — what matters here is that the firewall
+     * does not send them to the login page instead.
+     */
+    public function testTheRedemptionEndpointIsReachableAnonymously(): void
+    {
+        $this->client->request('GET', '/join/AAAA1111BBBB2222CCCC3333DD');
+
+        self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }
 
     /**

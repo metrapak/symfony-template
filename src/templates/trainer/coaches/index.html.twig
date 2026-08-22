@@ -1,0 +1,48 @@
+{# FR-046 / US-01.08 — coaches and the state of every invitation. #}
+{% extends 'trainer/_layout.html.twig' %}
+
+{% block title %}Coaches{% endblock %}
+{% block heading %}Coaches{% endblock %}
+
+{% block trainer_content %}
+    <p><a href="{{ path('trainer_coaches_invite') }}">Invite a coach</a></p>
+
+    <table>
+        <caption class="visually-hidden">Coach invitations and their status</caption>
+        <thead>
+            <tr>
+                <th scope="col">Coach</th>
+                <th scope="col">Email</th>
+                <th scope="col">Status</th>
+                <th scope="col">Invited</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for invitation in invitations %}
+            <tr>
+                <td>{{ invitation.coachName }}</td>
+                <td>{{ invitation.email }}</td>
+                {# The status is a word, not a colour: the class only tints text that already says it. #}
+                <td class="status-{{ invitation.status.value }}">{{ invitation.status.label }}</td>
+                <td>{{ invitation.link.createdAt|date('Y-m-d') }}</td>
+                <td>
+                    <div class="actions">
+                        {% if invitation.canBeResent %}
+                            {{ include('admin/_confirm_form.html.twig', {
+                                action_path: path('trainer_coaches_invite_resend', {id: invitation.link.id}),
+                                label: 'Resend',
+                                accessible_name: 'Resend invitation to ' ~ invitation.email,
+                                message: 'A new invitation will be emailed to ' ~ invitation.email ~ ' and the previous link will stop working. Continue?',
+                                confirm_label: 'Send new invitation',
+                            }) }}
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+        {% else %}
+            <tr><td colspan="5">No coaches yet. Invite one to help deliver your sessions.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

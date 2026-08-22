@@ -1,0 +1,23 @@
+{# FR-045 — a coach accepting an invitation with a new account. #}
+{% extends 'join/_layout.html.twig' %}
+{% form_theme form 'account/_form_theme.html.twig' %}
+
+{% block title %}Coach for {{ organizationName }}{% endblock %}
+{% block heading %}Coach for {{ organizationName }}{% endblock %}
+
+{% block join_content %}
+    <p>
+        Creating your account accepts this invitation and attaches you to
+        <strong>{{ organizationName }}</strong>. A coach works with one trainer at a time.
+    </p>
+
+    {{ form_start(form) }}
+        {{ include('account/_error_summary.html.twig', {form: form}) }}
+        {{ form_row(form.name) }}
+        {{ form_row(form.email) }}
+        {{ form_row(form.plainPassword.first) }}
+        {{ form_row(form.plainPassword.second) }}
+        {{ form_row(form.phone) }}
+        <button type="submit">Create account</button>
+    {{ form_end(form) }}
+{% endblock %}

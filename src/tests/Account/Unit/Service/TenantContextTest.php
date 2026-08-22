@@ -9,6 +9,7 @@ use App\Account\Entity\User;
 use App\Account\Enum\UserRole;
 use App\Account\Exception\NoOrganizationInContext;
 use App\Account\Repository\OrganizationRepository;
+use App\Account\Service\CoachOrganizationProvider;
 use App\Account\Service\TenantContext;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -23,6 +24,7 @@ class TenantContextTest extends TestCase
         $context = new TenantContext(
             $this->securityReturning($trainer),
             $this->organizationsReturning($organization),
+            $this->coachOrganizationsReturning(null),
         );
 
         self::assertSame(42, $context->currentOrganizationId());
@@ -36,6 +38,7 @@ class TenantContextTest extends TestCase
         $context = new TenantContext(
             $this->securityReturning($trainer),
             $this->organizationsReturning(null),
+            $this->coachOrganizationsReturning(null),
         );
 
         self::assertNull($context->currentOrganizationId());
@@ -50,6 +53,33 @@ class TenantContextTest extends TestCase
         $context = new TenantContext(
             $this->securityReturning($this->user(UserRole::Player)),
             $this->organizationsReturning(null),
+            $this->coachOrganizationsReturning(null),
+        );
+
+        self::assertNull($context->currentOrganizationId());
+    }
+
+    /**
+     * TASK-003 completed the branch TASK-001 left returning null: a coach's tenant is the
+     * organization of their active assignment, resolved through the provider interface.
+     */
+    public function testCoachResolvesToTheOrganizationOfTheirActiveAssignment(): void
+    {
+        $context = new TenantContext(
+            $this->securityReturning($this->user(UserRole::Coach)),
+            $this->organizationsReturning(null),
+            $this->coachOrganizationsReturning(7),
+        );
+
+        self::assertSame(7, $context->currentOrganizationId());
+    }
+
+    public function testCoachWithoutAnActiveAssignmentHasNoTenant(): void
+    {
+        $context = new TenantContext(
+            $this->securityReturning($this->user(UserRole::Coach)),
+            $this->organizationsReturning(null),
+            $this->coachOrganizationsReturning(null),
         );
 
         self::assertNull($context->currentOrganizationId());
@@ -60,6 +90,7 @@ class TenantContextTest extends TestCase
         $context = new TenantContext(
             $this->securityReturning($this->user(UserRole::SuperAdmin)),
             $this->organizationsReturning(null),
+            $this->coachOrganizationsReturning(null),
         );
 
         self::assertNull($context->currentOrganizationId());
@@ -70,6 +101,7 @@ class TenantContextTest extends TestCase
         $context = new TenantContext(
             $this->securityReturning(null),
             $this->organizationsReturning(null),
+            $this->coachOrganizationsReturning(null),
         );
 
         self::assertNull($context->currentOrganizationId());
@@ -80,6 +112,7 @@ class TenantContextTest extends TestCase
         $context = new TenantContext(
             $this->securityReturning($this->user(UserRole::Player)),
             $this->organizationsReturning(null),
+            $this->coachOrganizationsReturning(null),
         );
 
         $this->expectException(NoOrganizationInContext::class);
@@ -109,6 +142,14 @@ class TenantContextTest extends TestCase
         $security->method('getUser')->willReturn($user);
 
         return $security;
+    }
+
+    private function coachOrganizationsReturning(?int $organizationId): CoachOrganizationProvider
+    {
+        $provider = $this->createMock(CoachOrganizationProvider::class);
+        $provider->method('organizationIdForCoach')->willReturn($organizationId);
+
+        return $provider;
     }
 
     private function organizationsReturning(?Organization $organization): OrganizationRepository

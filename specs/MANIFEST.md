@@ -26,6 +26,11 @@ An AI-assisted development accelerator for Symfony 7.4 LTS and Symfony 8.1 proje
 - Users are removed by anonymizing the row in place, never by deleting it, so historical rows and aggregate totals survive an erasure; every FK to `"user"` is `ON DELETE RESTRICT`.
 - The GDPR compliance record stores a SHA-256 digest of the original address instead of the address and data snapshot the spec asks for, so the record does not re-create the data the erasure removed (open: G-16, legal sign-off).
 - Audit writes persist without flushing, so an entry commits or rolls back with the change it describes.
+- Invitation codes are 128 bits from a CSPRNG: enumeration is defeated by the key space, and the rate limiter on the public redemption endpoint is load protection, not the security boundary.
+- Unknown, deactivated and consumed invitation codes are one indistinguishable response; only an expired coach invitation is told apart, because FR-046 requires offering a resend.
+- A use of an invitation is claimed by one conditional UPDATE, never read-then-write, so concurrent redemptions of a single-use link cannot all succeed.
+- Membership correctness lives in the schema: unique (organization, player) associations, and a **partial** unique index enforcing one active coach assignment per coach.
+- Player profiles store a birth date and derive age, because a stored age is correct on the day it is typed and wrong every year after.
 
 ## Tech Stack
 

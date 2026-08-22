@@ -1,0 +1,78 @@
+{#
+    FR-040 — the trainer's player links: view, copy, deactivate.
+
+    The copy button is progressive enhancement (`copy-link.js`); the code itself is always on
+    the page as selectable text, so the feature works with JavaScript off.
+#}
+{% extends 'trainer/_layout.html.twig' %}
+
+{% block title %}Player links{% endblock %}
+{% block heading %}Player links{% endblock %}
+
+{% block trainer_content %}
+    <p>
+        Share one of these links with your players. Anyone who opens it can register and joins
+        your program straight away. Player links never expire and can be used any number of times.
+    </p>
+
+    <form method="post" action="{{ path('trainer_share_links_create') }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+        <button type="submit">Generate a new link</button>
+    </form>
+
+    <table>
+        <caption class="visually-hidden">Your player links</caption>
+        <thead>
+            <tr>
+                <th scope="col">Link</th>
+                <th scope="col">Status</th>
+                <th scope="col">Times used</th>
+                <th scope="col">Created</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for link in links %}
+            {% set joinUrl = url('membership_join', {code: link.code}) %}
+            <tr>
+                <td><code id="link-{{ link.id }}">{{ joinUrl }}</code></td>
+                <td>{{ link.active ? 'Active' : 'Deactivated' }}</td>
+                <td>{{ link.useCount }}</td>
+                <td>{{ link.createdAt|date('Y-m-d') }}</td>
+                <td>
+                    <div class="actions">
+                        {#
+                            Hidden from assistive tech and from browsers without the clipboard
+                            API: the URL next to it is already selectable, and a button that
+                            silently does nothing is worse than no button. copy-link.js reveals
+                            it only when it can actually copy.
+                        #}
+                        <button type="button"
+                                class="copy-link"
+                                hidden
+                                data-copy-target="link-{{ link.id }}"
+                                data-copy-label="Copy link for {{ link.code }}">
+                            Copy
+                        </button>
+
+                        {% if link.active %}
+                            {{ include('admin/_confirm_form.html.twig', {
+                                action_path: path('trainer_share_links_deactivate', {id: link.id}),
+                                label: 'Deactivate',
+                                accessible_name: 'Deactivate link ' ~ link.code,
+                                message: 'This link will stop working for anyone who opens it. Players who already joined through it keep their place. Continue?',
+                                confirm_label: 'Deactivate link',
+                            }) }}
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+        {% else %}
+            <tr><td colspan="5">You have no player links yet. Generate one to start inviting players.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    {# Announces the result of a copy without moving focus (NFR-043). #}
+    <p role="status" aria-live="polite" id="copy-status"></p>
+{% endblock %}

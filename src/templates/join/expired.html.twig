@@ -1,0 +1,22 @@
+{#
+    FR-046 — the one distinguishable failure: an invitation that lapsed.
+
+    Told apart from an unknown code on purpose, so the holder knows to ask for a resend rather
+    than assume they mistyped it. Returned with 410 Gone.
+#}
+{% extends 'join/_layout.html.twig' %}
+
+{% block title %}This invitation has expired{% endblock %}
+{% block heading %}This invitation has expired{% endblock %}
+
+{% block join_content %}
+    <p>
+        The invitation from <strong>{{ organizationName }}</strong> is no longer valid. Invitations
+        last seven days.
+    </p>
+
+    <p>
+        Ask {{ organizationName }} to send you a new one{% if targetEmail %} — they can resend it to
+        {{ targetEmail }} from their Coaches page{% endif %}.
+    </p>
+{% endblock %}

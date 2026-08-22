@@ -30,6 +30,10 @@ class AccountFixtures extends Fixture
     public const MUST_CHANGE_PASSWORD_TRAINER = 'temp-password@example.com';
     public const UNVERIFIED_PLAYER = 'unverified@example.com';
 
+    public const TRAINER_REFERENCE = 'account.trainer';
+    public const PLAYER_REFERENCE = 'account.player';
+    public const ORGANIZATION_REFERENCE = 'account.organization';
+
     public function __construct(
         private readonly UserPasswordHasherInterface $passwordHasher,
         private readonly ClockInterface $clock,
@@ -62,7 +66,14 @@ class AccountFixtures extends Fixture
             $manager->persist($user);
         }
 
-        $manager->persist(new Organization('Example Academy', $trainer, $now));
+        $organization = new Organization('Example Academy', $trainer, $now);
+        $manager->persist($organization);
+
+        // Named so the fixtures of later modules can attach to this trainer's tenant without
+        // re-querying it by name.
+        $this->addReference(self::TRAINER_REFERENCE, $trainer);
+        $this->addReference(self::PLAYER_REFERENCE, $player);
+        $this->addReference(self::ORGANIZATION_REFERENCE, $organization);
 
         $manager->flush();
     }

@@ -48,8 +48,9 @@ parallel once TASK-004 lands.
 | Task | Status | Branch |
 |:-----|:-------|:-------|
 | TASK-001 | Merged | `feat/epic-01-user-management-auth` (PR #2) |
-| TASK-002 | Implemented, awaiting review | `feat/epic-01-task-002-admin-user-management` |
-| TASK-003…006 | Not started | — |
+| TASK-002 | Merged | `feat/epic-01-task-002-admin-user-management` (PR #3) |
+| TASK-003 | Implemented, awaiting review | `feat/epic-01-task-003-sharelink-invitations` |
+| TASK-004…006 | Not started | — |
 
 ## Existing Codebase Baseline
 
@@ -90,19 +91,24 @@ open questions carried forward.
 - [ ] **G-12** — Spec §9 requires permissions "enforced on both frontend (UI) and backend (API)", but D-02 scopes delivery to server-rendered Twig. Decide whether the existing `ApiLoginController` / `json_login` firewall stays, is removed, or is deferred to a later epic.
 - [ ] **G-13** — WCAG 2.1 AA is required in §13 but appears in **no** epic-level acceptance criterion. Accessibility is currently untestable as a gate.
 - [x] **G-14** — *Resolved 2026-08-22 (TASK-002).* Expiry means **exit to the admin view**, not logout. Implemented as a `kernel.request` subscriber reading the open audit row; window is `IMPERSONATION_TTL`, default 3600s.
-- [ ] **G-15** — No requirement covers what happens to a **trainer's** organization data when the trainer themself is deactivated or GDPR-deleted (US-01.12 / US-01.13 are written for players). Do their players, coaches, ShareLinks, and branding survive? *Unchanged by TASK-002; carried to TASK-003/004.*
+- [ ] **G-15** — No requirement covers what happens to a **trainer's** organization data when the trainer themself is deactivated or GDPR-deleted (US-01.12 / US-01.13 are written for players). Do their players, coaches, ShareLinks, and branding survive? *Unchanged by TASK-002 and TASK-003, which added associations, assignments and links to the list of things with no defined fate. Carried to TASK-004.*
 - [x] **G-17** — *Resolved 2026-08-22 (TASK-002).* Self-deactivation, self-deletion, and removal or demotion of the last active Super Admin are all blocked in the services.
 - [x] **G-18** — *Resolved 2026-08-22 (TASK-002).* Per-action audit logging is required and implemented; `impersonator_id` is stamped on every entry written during a switch.
 - [ ] **G-16** — *Answered by TASK-002, still open with legal.* The deletion compliance record stores a SHA-256 digest of the original address instead of the cleartext address and data snapshot FR-027 asks for.
 - [ ] **G-19** — *New (TASK-002).* FR-025's "photo → default avatar" has no column to clear until profiles land in TASK-004.
+- [x] **G-19b (link deactivation)** — *Assumed by TASK-003, 2026-08-22.* Deactivating a ShareLink blocks future redemptions only; players who already joined keep their association. Not confirmed with the requester.
+- [ ] **G-20** — *New (TASK-003).* A coach may be active under one trainer "at a time", implying they can move. `CoachAssignment::end()` and the partial index support it; no workflow performs it, and who may end an assignment is unspecified.
+- [x] **G-21** — *Answered by TASK-003, 2026-08-22.* The registration form asks explicitly whether the registrant is the player or is registering a child, rather than inferring it from the age. The spec text still does not define this.
+- [ ] **G-22 (new)** — *TASK-003.* Whether a trainer may hold several active player links is unspecified. Several are permitted, so a printed code and a campaign code can coexist. Reversing this invalidates links already in circulation — the riskiest of TASK-003's assumptions.
+- [ ] **G-23 (new)** — *TASK-003.* FR-042 says a new player "can immediately see that trainer's events", but the shipped `EMAIL_VERIFICATION_REQUIRED` default blocks a player's first sign-in until they confirm their address (Q-01.05). Registration follows the configuration rather than either sentence; answering Q-01.05 answers this.
 
 ### Spec's own open questions (carried forward)
 
 | ID | Question | Priority | Blocks |
 |:---|:---------|:--------:|:-------|
 | Q-01.01 | Skill level definitions (Beginner/Intermediate/Advanced/Elite or custom)? | P2 | TASK-004 |
-| Q-01.02 | Age group definitions (birth year / age range / grade level)? | P2 | TASK-004 |
-| Q-01.04 | Which automated emails are required? | **P1** | TASK-001, TASK-002, TASK-003, TASK-006 |
+| Q-01.02 | Age group definitions (birth year / age range / grade level)? | P2 | TASK-004 (TASK-003 stores a birth date and derives age, so the answer stays a presentation decision) |
+| Q-01.04 | Which automated emails are required? | **P1** | TASK-001, TASK-002, TASK-006 (TASK-003 shipped three defaults: coach invitation, registration confirmation, parent notification) |
 | Q-01.05 | Email verification: required before login, or optional? | **P1** | **TASK-001 (blocking)** |
 | Q-01.06 | Should a coach be notified when their availability is overridden? | P2 | TASK-005 |
 | Q-01.07 | Session timeout duration (1 / 7 / 30 days)? | P2 | TASK-001 |
