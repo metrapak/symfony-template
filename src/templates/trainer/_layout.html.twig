@@ -1,0 +1,55 @@
+{#
+    Shell for the trainer tools. Deliberately plain, like the admin shell: this epic ships
+    behaviour, and the trainer's own branding arrives with US-01.14 in TASK-004.
+#}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <main id="main-content" class="trainer">
+        <nav aria-label="Trainer sections">
+            <ul class="trainer-nav">
+                <li><a href="{{ path('trainer_dashboard') }}">Dashboard</a></li>
+                <li><a href="{{ path('trainer_share_links_index') }}">Player links</a></li>
+                <li><a href="{{ path('trainer_coaches_index') }}">Coaches</a></li>
+                <li><a href="{{ logout_path() }}">Sign out</a></li>
+            </ul>
+        </nav>
+
+        <div role="status" aria-live="polite">
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <p class="flash flash-{{ label }}">{{ message }}</p>
+                {% endfor %}
+            {% endfor %}
+        </div>
+
+        <h1>{% block heading %}{% endblock %}</h1>
+
+        {% block trainer_content %}{% endblock %}
+    </main>
+
+    <style>
+        .trainer { max-width: 72rem; margin: 0 auto; padding: 1rem; font: 400 1rem/1.5 system-ui, sans-serif; }
+        .trainer-nav { display: flex; flex-wrap: wrap; gap: 1rem; list-style: none; padding: 0; }
+        .trainer table { width: 100%; border-collapse: collapse; }
+        .trainer th, .trainer td { padding: .5rem; border-bottom: 1px solid #d4d4d4; text-align: left; }
+        .trainer th { background: #f5f5f5; }
+        .trainer code { word-break: break-all; }
+        .trainer .flash-error { color: #b91c1c; }
+        .trainer .flash-warning { color: #b45309; }
+        .trainer .actions { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+        .trainer :focus-visible { outline: 3px solid #1d4ed8; outline-offset: 2px; }
+        .trainer button, .trainer input[type="text"], .trainer input[type="email"] { min-height: 2.75rem; }
+        /* Status is carried by the text; the colour is an extra, never the message (NFR-X04). */
+        .trainer .status-expired { color: #b45309; }
+        .trainer .status-accepted { color: #15803d; }
+        .visually-hidden {
+            position: absolute;
+            width: 1px; height: 1px;
+            margin: -1px; padding: 0; border: 0;
+            clip-path: inset(50%);
+            overflow: hidden;
+            white-space: nowrap;
+        }
+    </style>
+{% endblock %}

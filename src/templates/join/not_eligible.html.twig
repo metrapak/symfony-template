@@ -1,0 +1,16 @@
+{#
+    The signed-in account cannot use this link: a trainer, a Super Admin, a coach holding a
+    player link, a player holding a coach invitation, or a coach who already works elsewhere
+    (BR-044). The link itself is valid, so this is not the FR-049 uniform failure page — the
+    visitor is told what is wrong with the pairing, never anything about other tenants.
+#}
+{% extends 'join/_layout.html.twig' %}
+
+{% block title %}This link is not for this account{% endblock %}
+{% block heading %}This link is not for this account{% endblock %}
+
+{% block join_content %}
+    <p>{{ reason }}</p>
+
+    <p><a href="{{ path('account_dashboard') }}">Back to your dashboard</a></p>
+{% endblock %}

@@ -60,6 +60,12 @@ services:
             - '../src/Account/Entity/'
             - '../src/Account/Enum/'
             - '../src/Account/Exception/'
+            - '../src/Membership/Entity/'
+            - '../src/Membership/Enum/'
+            - '../src/Membership/Exception/'
+            - '../src/Membership/ValueObject/'
+            - '../src/Profile/Entity/'
+            - '../src/Profile/Enum/'
             - '../src/Kernel.php'
 
 #    App\Shared\Infrastructure\EventListener\ExceptionListener:

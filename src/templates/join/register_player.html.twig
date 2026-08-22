@@ -1,0 +1,54 @@
+{#
+    FR-042 — registration behind a player link.
+
+    The child-only field stays in the document for every visitor. `join-registration.js` hides
+    it while "I am the player" is selected, and the server picks its validation group from the
+    submitted flag, so hiding a field never means skipping its rules (NFR-043).
+#}
+{% extends 'join/_layout.html.twig' %}
+{% form_theme form 'account/_form_theme.html.twig' %}
+
+{% block title %}Register with {{ organizationName }}{% endblock %}
+{% block heading %}Register with {{ organizationName }}{% endblock %}
+
+{% block join_content %}
+    <p>{{ organizationName }} invited you to train with them. Your details stay with this trainer.</p>
+
+    {{ form_start(form, {attr: {'data-join-registration': 'true'}}) }}
+        {{ include('account/_error_summary.html.twig', {form: form}) }}
+
+        <fieldset>
+            <legend>Who is joining?</legend>
+            {{ form_widget(form.registeringChild) }}
+        </fieldset>
+
+        <fieldset>
+            <legend>Your account</legend>
+            {{ form_row(form.name) }}
+            {{ form_row(form.email) }}
+            {{ form_row(form.plainPassword.first) }}
+            {{ form_row(form.plainPassword.second) }}
+            {{ form_row(form.phone) }}
+        </fieldset>
+
+        <fieldset>
+            <legend data-player-legend>Player details</legend>
+            {# Only the player's own name is child-specific: an adult registering themselves
+               trains under the account name above. Date of birth and gender are asked for on
+               both branches, so they are never hidden. #}
+            <div data-child-only>
+                {{ form_row(form.playerName) }}
+            </div>
+            {{ form_row(form.birthDate) }}
+            {{ form_row(form.gender) }}
+        </fieldset>
+
+        <button type="submit">Create account</button>
+    {{ form_end(form) }}
+
+    <p>
+        Already have an account?
+        <a href="{{ path('app_login', {_target_path: path('membership_join', {code: link.code})}) }}">Sign in</a>
+        instead — you can train with several trainers from one account.
+    </p>
+{% endblock %}

@@ -1,0 +1,13 @@
+Hello{% if coachName %} {{ coachName }}{% endif %},
+
+{{ trainerName }} has invited you to coach for {{ organizationName }}.
+{% if personalMessage %}
+"{{ personalMessage }}"
+{% endif %}
+Accept the invitation: {{ joinUrl }}
+
+This link works once and expires on {{ expiresAt|date('j F Y') }}. If it has already lapsed by
+the time you open it, ask {{ trainerName }} to send a new one.
+
+If you were not expecting this, you can ignore this message - nothing happens until you open
+the link.

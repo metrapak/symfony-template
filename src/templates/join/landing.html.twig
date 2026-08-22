@@ -1,0 +1,75 @@
+{#
+    The page behind a valid ShareLink. What it offers depends on who is looking (FR-042 …
+    FR-045); `RedemptionPlanner` decided that, and this template only renders the branch.
+#}
+{% extends 'join/_layout.html.twig' %}
+
+{% block title %}Join {{ organizationName }}{% endblock %}
+{% block heading %}Join {{ organizationName }}{% endblock %}
+
+{% block join_content %}
+    {% if action == 'register_player' %}
+        <p>{{ organizationName }} has invited you to train with them. Create an account to get started.</p>
+
+        <p><a href="{{ path('membership_join_register', {code: link.code}) }}">Create an account</a></p>
+        <p>
+            Already have an account?
+            <a href="{{ path('app_login', {_target_path: path('membership_join', {code: link.code})}) }}">Sign in</a>
+            and open this link again to add {{ organizationName }}.
+        </p>
+
+    {% elseif action == 'register_coach' %}
+        <p>
+            You have been invited to coach for <strong>{{ organizationName }}</strong>.
+            This invitation is single-use and expires on {{ link.expiresAt|date('j F Y') }}.
+        </p>
+
+        {% if link.message %}
+            <blockquote>{{ link.message|nl2br }}</blockquote>
+        {% endif %}
+
+        <p><a href="{{ path('membership_join_register', {code: link.code}) }}">Accept and create your account</a></p>
+        <p>
+            Already coaching on this platform?
+            <a href="{{ path('app_login', {_target_path: path('membership_join', {code: link.code})}) }}">Sign in</a>
+            and open this invitation again.
+        </p>
+
+    {% elseif action == 'accept_coach_invitation' %}
+        <p>Accept this invitation to start coaching for <strong>{{ organizationName }}</strong>.</p>
+
+        {% if link.message %}
+            <blockquote>{{ link.message|nl2br }}</blockquote>
+        {% endif %}
+
+        <p>A coach works with one trainer at a time. If you already coach elsewhere, that has to end first.</p>
+
+        <form method="post" action="{{ path('membership_join_associate', {code: link.code}) }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+            <button type="submit">Join {{ organizationName }}</button>
+        </form>
+
+    {% elseif action == 'associate_player' %}
+        {% if familyForm %}
+            {# FR-044. A real fieldset with a legend, so the group has an accessible name and
+               the question is announced before the first checkbox (NFR-043). #}
+            {% form_theme familyForm 'account/_form_theme.html.twig' %}
+
+            {{ form_start(familyForm) }}
+                {{ include('account/_error_summary.html.twig', {form: familyForm}) }}
+                <fieldset>
+                    <legend>Who will train with {{ organizationName }}?</legend>
+                    {{ form_widget(familyForm.profileIds) }}
+                </fieldset>
+                <button type="submit">Join {{ organizationName }}</button>
+            {{ form_end(familyForm) }}
+        {% else %}
+            <p>Join <strong>{{ organizationName }}</strong> to see their events and content.</p>
+
+            <form method="post" action="{{ path('membership_join_associate', {code: link.code}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+                <button type="submit">Join {{ organizationName }}</button>
+            </form>
+        {% endif %}
+    {% endif %}
+{% endblock %}

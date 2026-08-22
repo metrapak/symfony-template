@@ -1,0 +1,19 @@
+{# FR-041 / US-01.08 — the invitation a coach receives, with the trainer's own message. #}
+<p>Hello{% if coachName %} {{ coachName }}{% endif %},</p>
+
+<p>
+    <strong>{{ trainerName }}</strong> has invited you to coach for <strong>{{ organizationName }}</strong>.
+</p>
+
+{% if personalMessage %}
+    <blockquote>{{ personalMessage|nl2br }}</blockquote>
+{% endif %}
+
+<p><a href="{{ joinUrl }}">Accept the invitation</a></p>
+
+<p>
+    This link works once and expires on {{ expiresAt|date('j F Y') }}. If it has already lapsed by the
+    time you open it, ask {{ trainerName }} to send a new one.
+</p>
+
+<p>If you were not expecting this, you can ignore this message — nothing happens until you open the link.</p>

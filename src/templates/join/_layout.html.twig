@@ -1,0 +1,48 @@
+{#
+    Shell for the public redemption pages.
+
+    Deliberately plain, like the admin and account shells: this epic ships behaviour, and the
+    trainer-branded version of this page arrives with US-01.14 in TASK-004. It carries no
+    navigation on purpose — a visitor here has no account yet, so there is nowhere to navigate.
+#}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <main id="main-content" class="join">
+        <div role="status" aria-live="polite">
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <p class="flash flash-{{ label }}">{{ message }}</p>
+                {% endfor %}
+            {% endfor %}
+        </div>
+
+        <h1>{% block heading %}{% endblock %}</h1>
+
+        {% block join_content %}{% endblock %}
+    </main>
+
+    <style>
+        .join { max-width: 40rem; margin: 0 auto; padding: 1rem; font: 400 1rem/1.5 system-ui, sans-serif; }
+        .join fieldset { border: 1px solid #d4d4d4; border-radius: .5rem; padding: 1rem; margin: 0 0 1rem; }
+        .join legend { padding: 0 .35rem; font-weight: 600; }
+        .join label { display: inline-block; }
+        .join .form-errors { color: #b91c1c; margin: .25rem 0; padding-left: 1rem; }
+        .join .form-error-summary { border: 2px solid #b91c1c; padding: .75rem 1rem; margin-bottom: 1rem; }
+        .join .flash-error { color: #b91c1c; }
+        .join .flash-warning { color: #b45309; }
+        .join :focus-visible { outline: 3px solid #1d4ed8; outline-offset: 2px; }
+        .join input[type="text"], .join input[type="email"], .join input[type="password"],
+        .join input[type="tel"], .join input[type="date"], .join select { min-height: 2.75rem; width: 100%; max-width: 24rem; }
+        .join button { min-height: 2.75rem; padding: 0 1rem; }
+        .join .choice-list { list-style: none; padding: 0; }
+        .visually-hidden {
+            position: absolute;
+            width: 1px; height: 1px;
+            margin: -1px; padding: 0; border: 0;
+            clip-path: inset(50%);
+            overflow: hidden;
+            white-space: nowrap;
+        }
+    </style>
+{% endblock %}

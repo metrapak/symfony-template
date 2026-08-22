@@ -73,6 +73,10 @@ security:
         - { path: ^/password/forgot, roles: PUBLIC_ACCESS }
         - { path: ^/password/reset, roles: PUBLIC_ACCESS }
         - { path: ^/verify, roles: PUBLIC_ACCESS }
+        # FR-042/FR-049: the redemption flow must be reachable by a visitor who has no account
+        # yet. Everything it is allowed to do for a *signed-in* visitor is decided per account
+        # by RedemptionPlanner, not by this rule.
+        - { path: ^/join, roles: PUBLIC_ACCESS }
         # Reachable while impersonating, when the operator holds the target's roles rather
         # than their own. The route only redirects into Symfony's own exit handling.
         - { path: ^/impersonation/exit, roles: ROLE_USER }

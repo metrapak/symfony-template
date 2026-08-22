@@ -1,0 +1,22 @@
+{# FR-041 / US-01.08 — "Invite Coach". #}
+{% extends 'trainer/_layout.html.twig' %}
+{% form_theme form 'account/_form_theme.html.twig' %}
+
+{% block title %}Invite a coach{% endblock %}
+{% block heading %}Invite a coach{% endblock %}
+
+{% block trainer_content %}
+    <p>
+        The coach receives a single-use link that expires after seven days. A coach can work
+        with one trainer at a time, so somebody already coaching elsewhere cannot accept.
+    </p>
+
+    {{ form_start(form) }}
+        {{ include('account/_error_summary.html.twig', {form: form}) }}
+        {{ form_row(form.email) }}
+        {{ form_row(form.name) }}
+        {{ form_row(form.message) }}
+        <button type="submit">Send invitation</button>
+        <a href="{{ path('trainer_coaches_index') }}">Cancel</a>
+    {{ form_end(form) }}
+{% endblock %}
