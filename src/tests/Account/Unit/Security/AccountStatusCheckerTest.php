@@ -75,7 +75,7 @@ class AccountStatusCheckerTest extends TestCase
 
     private function user(UserRole $role, UserStatus $status): User
     {
-        $user = new User('user@example.com', $role, new \DateTimeImmutable('2026-08-21 09:00:00'));
+        $user = new User('user@example.com', 'Test User', $role, new \DateTimeImmutable('2026-08-21 09:00:00'));
         $user->setStatus($status);
 
         return $user;

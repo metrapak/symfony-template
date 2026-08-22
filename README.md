@@ -96,6 +96,34 @@ make db-seed
 
 ---
 
+## ⚙️ Account Module Configuration
+
+Every one of these has a working default in `src/config/services.yaml`, so an existing deployment boots
+with none of them set. Set the environment variable to override.
+
+| Variable | Default | Effect |
+|:---------|:--------|:-------|
+| `SESSION_IDLE_TTL` | `604800` (7 days) | Idle window before an authenticated session is signed out. Also drives the session cookie lifetime and GC lifetime, so the three cannot disagree. |
+| `EMAIL_VERIFICATION_REQUIRED` | `true` | Whether an unverified email blocks sign-in. Applies to players and coaches only — trainers and super admins are created by an administrator through a channel that already proves email control. |
+| `IMPERSONATION_TTL` | `3600` (1 hour) | How long a Super Admin may stay switched into another account before the session is ended automatically and they are returned to their own view. |
+| `MAILER_SENDER_ADDRESS` | `no-reply@example.com` | From address on transactional account mail. |
+| `MAILER_SENDER_NAME` | `Brainique` | From name on transactional account mail. |
+
+### Creating the first Super Admin
+
+There is no UI path to a Super Admin account and no self-registration for any role, so the first one comes
+from the CLI:
+
+```bash
+make terminal
+bin/console app:account:create-super-admin admin@example.com --name="Ada Admin"
+```
+
+The password is prompted for (hidden) when omitted, which keeps it out of shell history and the process
+list.
+
+---
+
 ## 🐳 Docker Services
 
 - **Nginx**: Web server (port 8080)

@@ -1,0 +1,57 @@
+{#
+    Shell for the Super Admin tools. Deliberately plain: this epic ships behavior, and the
+    visual design system arrives with the branding task (US-01.14 / TASK-004).
+#}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <main id="main-content" class="admin">
+        <nav aria-label="Admin sections">
+            <ul class="admin-nav">
+                <li><a href="{{ path('admin_dashboard') }}">Dashboard</a></li>
+                <li><a href="{{ path('admin_users_index') }}">Users</a></li>
+                <li><a href="{{ path('admin_audit_impersonations') }}">Impersonation history</a></li>
+                <li><a href="{{ logout_path() }}">Sign out</a></li>
+            </ul>
+        </nav>
+
+        {# Announced without stealing focus, matching the account layout. #}
+        <div role="status" aria-live="polite">
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <p class="flash flash-{{ label }}">{{ message }}</p>
+                {% endfor %}
+            {% endfor %}
+        </div>
+
+        <h1>{% block heading %}{% endblock %}</h1>
+
+        {% block admin_content %}{% endblock %}
+    </main>
+
+    <style>
+        .admin { max-width: 72rem; margin: 0 auto; padding: 1rem; font: 400 1rem/1.5 system-ui, sans-serif; }
+        .admin-nav { display: flex; flex-wrap: wrap; gap: 1rem; list-style: none; padding: 0; }
+        .admin table { width: 100%; border-collapse: collapse; }
+        .admin th, .admin td { padding: .5rem; border-bottom: 1px solid #d4d4d4; text-align: left; }
+        .admin th { background: #f5f5f5; }
+        .admin .status-inactive, .admin .status-deleted { color: #737373; }
+        .admin .flash-error { color: #b91c1c; }
+        .admin .flash-warning { color: #b45309; }
+        .admin .filters { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; margin-bottom: 1rem; }
+        .admin :focus-visible { outline: 3px solid #1d4ed8; outline-offset: 2px; }
+        .admin .actions { display: flex; flex-wrap: wrap; gap: .4rem; }
+        .admin dialog { max-width: 32rem; padding: 1.25rem; border: 1px solid #d4d4d4; border-radius: .5rem; }
+        .admin dialog::backdrop { background: rgb(0 0 0 / .45); }
+        /* Present to assistive tech, absent from the visual layout: how a row of buttons all
+           reading "Delete" becomes "Delete user Jane Doe" for a screen reader (NFR-023). */
+        .visually-hidden {
+            position: absolute;
+            width: 1px; height: 1px;
+            margin: -1px; padding: 0; border: 0;
+            clip-path: inset(50%);
+            overflow: hidden;
+            white-space: nowrap;
+        }
+    </style>
+{% endblock %}

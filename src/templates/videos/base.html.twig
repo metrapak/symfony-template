@@ -25,6 +25,10 @@
 </head>
 
 <body class="text-center">
+{# FR-029: this layout does not extend base.html.twig, so the banner is included here too —
+   "every page" has two roots in this project, and covering only one would leave the video
+   pages looking like a normal session while impersonating. #}
+{{ include('_impersonation_banner.html.twig') }}
 <div class="container-fluid">
     {% block menu %}
         {{ include('videos/includes/_menu.html.twig') }}

@@ -1,0 +1,24 @@
+{% extends 'admin/_layout.html.twig' %}
+{# Same accessible form theme the account pages use: errors linked to inputs via aria-describedby. #}
+{% form_theme form 'account/_form_theme.html.twig' %}
+
+{% block title %}Create trainer{% endblock %}
+{% block heading %}Create trainer account{% endblock %}
+
+{% block admin_content %}
+    {#
+        BR-020: Trainer is the only role created from here. Coaches and players arrive through
+        a trainer's ShareLink (TASK-003), and there is no self-registration for any role.
+    #}
+    <p>The trainer receives an invitation with a temporary password they must replace at their first sign-in.</p>
+
+    {{ form_start(form) }}
+        {{ include('account/_error_summary.html.twig', {form: form}) }}
+        {{ form_row(form.businessName) }}
+        {{ form_row(form.name) }}
+        {{ form_row(form.email) }}
+        {{ form_row(form.phone) }}
+        <button type="submit">Create trainer</button>
+        <a href="{{ path('admin_users_index') }}">Cancel</a>
+    {{ form_end(form) }}
+{% endblock %}

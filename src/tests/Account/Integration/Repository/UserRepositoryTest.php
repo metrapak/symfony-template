@@ -77,7 +77,7 @@ class UserRepositoryTest extends KernelTestCase
 
     private function persistUser(string $email): User
     {
-        $user = new User($email, UserRole::Player, new \DateTimeImmutable());
+        $user = new User($email, 'Directory Test User', UserRole::Player, new \DateTimeImmutable());
         $user->setPassword('irrelevant-for-this-test');
 
         $this->entityManager->persist($user);

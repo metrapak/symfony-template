@@ -1,0 +1,21 @@
+{# FR-022 / US-01.01 — the invitation a Super Admin's newly created trainer receives. #}
+<p>Hello {{ name }},</p>
+
+<p>
+    A trainer account has been created for <strong>{{ businessName }}</strong>. You can sign in with the
+    details below.
+</p>
+
+<table role="presentation">
+    <tr><td><strong>Email</strong></td><td>{{ recipientEmail }}</td></tr>
+    <tr><td><strong>Temporary password</strong></td><td><code>{{ temporaryPassword }}</code></td></tr>
+</table>
+
+<p><a href="{{ loginUrl }}">Sign in</a></p>
+
+<p>
+    You will be asked to choose your own password the first time you sign in. The temporary password above
+    stops working at that point, so there is nothing to remember from this message afterwards.
+</p>
+
+<p>If you were not expecting this, please contact us — do not sign in.</p>

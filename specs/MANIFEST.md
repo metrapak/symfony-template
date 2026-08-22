@@ -6,7 +6,7 @@ An AI-assisted development accelerator for Symfony 7.4 LTS and Symfony 8.1 proje
 
 | File | Purpose | Depends On | Last Updated |
 |------|---------|------------|--------------|
-| architect-architecture.md | System design, components, data flow | - | 2026-08-21 |
+| architect-architecture.md | System design, components, data flow | - | 2026-08-22 |
 | api-designer-spec.md | Endpoints, schemas, authentication | architect-architecture | - |
 | frontend-design-spec.md | Pages, components, state management | architect-architecture, api-designer-spec | - |
 | docs-generator-implementation.md | Build process, deployment, tooling | - | - |
@@ -21,6 +21,11 @@ An AI-assisted development accelerator for Symfony 7.4 LTS and Symfony 8.1 proje
 - Organization-scoped repository methods take the organization id as a required parameter; no Doctrine SQL filter for tenancy.
 - Unresolved requirements ship as a container parameter with its own default plus an env-var override, so answering them is a configuration change rather than a rewrite.
 - `User` implements `EquatableInterface` so a status or role change de-authenticates existing sessions; the user checker alone does not run on session refresh.
+- Impersonation is Symfony's `switch_user`, authorized and audited on the `security.switch_user` event rather than in a controller, because the firewall listener answers `?_switch_user=` on any URL.
+- Impersonation expires after a configurable window via a request subscriber, reading elapsed time from the open audit row rather than from a session key.
+- Users are removed by anonymizing the row in place, never by deleting it, so historical rows and aggregate totals survive an erasure; every FK to `"user"` is `ON DELETE RESTRICT`.
+- The GDPR compliance record stores a SHA-256 digest of the original address instead of the address and data snapshot the spec asks for, so the record does not re-create the data the erasure removed (open: G-16, legal sign-off).
+- Audit writes persist without flushing, so an entry commits or rolls back with the change it describes.
 
 ## Tech Stack
 

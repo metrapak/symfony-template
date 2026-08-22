@@ -121,6 +121,80 @@ branch returns null behind a documented TODO and must be completed by the coach-
 Players have no single organization — they have a selected training context, resolved separately, and it
 must be authorized server-side on every request: a forged context identifier returns 403, never data.
 
+## Component: Audit Logging
+
+**Status**: Implemented (Epic-01 TASK-002)
+
+One append-only `audit_log_entry` table records every sensitive operation. An entry carries the **actor**
+(the identity the action was performed as), the **impersonator** (nullable — the Super Admin behind that
+identity), the action, a polymorphic subject (`subjectType` + `subjectId`, no FK, so a later module can
+audit its own entities without a column per module), a JSON payload, and a timestamp.
+
+**`AuditLogger::log()` persists but never flushes.** The audited change and its record must commit or roll
+back together, and only the calling service knows where that transaction begins. A logger that flushed on
+its own would produce entries for operations that later rolled back — a false record, which is worse than a
+missing one.
+
+`ImpersonationContext` is the only reader of `SwitchUserToken` outside the security layer. `AuditLogger`
+asks it for the impersonator on every write, so an entry written by code that has never heard of
+impersonation still carries the admin behind it.
+
+Every foreign key from an audit or history table to `"user"` is **`ON DELETE RESTRICT`**. Users are never
+hard-deleted — they are anonymized in place — so a CASCADE would only ever fire for a code path that is not
+supposed to exist.
+
+## Component: Impersonation
+
+**Status**: Implemented (Epic-01 TASK-002)
+
+Symfony's `switch_user`, wrapped — never re-implemented. `ROLE_ALLOWED_TO_SWITCH` is granted to
+`ROLE_SUPER_ADMIN` through `role_hierarchy`; this is a capability grant, not a business role, and does not
+reopen the "no hierarchy between the four roles" decision above.
+
+**Authorization is enforced on the `security.switch_user` event, not in the controller.**
+`SwitchUserListener` answers `?_switch_user=` appended to *any* URL, so a controller-only check would be a
+check anyone could skip by editing the address bar. `SwitchUserAuditSubscriber` throws
+`AccessDeniedException` — which `SwitchUserListener` does not catch, only `AuthenticationException` — so a
+forbidden target surfaces as 403. `ImpersonateVoter` mirrors the same rules for the button and for a clean
+403 on the POST.
+
+Refused targets: any Super Admin (FR-030), any `Deleted` account, and any target at all when the actor is
+already switched. `Inactive` targets are allowed on purpose — "why can I not sign in" is a support question
+this feature exists to answer.
+
+**Expiry has no native support and is a `kernel.request` subscriber** at priority 7. It reads elapsed time
+from the open `impersonation_session` row rather than from a session key, so there is one authoritative
+answer that survives a session restored from a cookie. On expiry the original token is restored, the record
+is closed with `endReason = expiry`, and the operator is redirected to the admin dashboard — expiry hands
+back the borrowed identity, it does not end the operator's own session. Window: `IMPERSONATION_TTL`,
+default 3600s.
+
+## Component: Account Removal
+
+**Status**: Implemented (Epic-01 TASK-002)
+
+Two verbs, and they are not variants of one another:
+
+- **Deactivate** writes status only. All history stays, and it is reversible. Existing sessions end through
+  `User::isEqualTo()`.
+- **Delete** anonymizes the row in place — name → `Deleted User`, email → `deleted_{id}@example.com`, phone
+  → NULL, password → fresh random bytes, verification cleared, status → `Deleted` (terminal).
+
+**The user row is never deleted.** That is what keeps FR-026 true: every history row keeps pointing at the
+same id, aggregate counts and sums are numerically unchanged by an erasure, and each row renders "Deleted
+User" because they all read `User::getDisplayName()`.
+
+`UserDeletionRecord` holds `originalUserId`, a **SHA-256 digest** of the original address, the anonymized
+address, the actor, a required reason, and a timestamp. It deliberately does **not** hold the address in
+clear or a data snapshot, as FR-027 asks — that would re-create the personal data the erasure just removed,
+in a table nobody erases. See G-16 below; this needs legal sign-off, and reverting is a migration plus a
+service change.
+
+Two guards, in the services rather than in a voter so they hold for a console or fixture caller too: nobody
+may deactivate or delete their own account, and the last active Super Admin may not be deactivated, deleted,
+or demoted. There is no self-registration and no UI path to create a Super Admin, so removing the last one
+locks everybody out until somebody reaches a shell.
+
 ## Component: Workflow and Transactions
 
 **Status**: Implemented
@@ -163,10 +237,14 @@ unchanged without either variable set, and setting the variable overrides it. `c
 |:---|:-----|:-------|
 | R2 | Rate-limiter and session storage are node-local; a shared store is needed for the 1,000-concurrent-user target | Horizontal scaling |
 | R4 | No async Messenger transport, so mail is synchronous | Deployment decision |
-| G-15 | Deactivating or deleting a **trainer** has undefined consequences for their organization's players, coaches, links, and branding | Epic-01 TASK-002 |
+| G-16 | The deletion compliance record holds a digest, not the original email and data snapshot FR-027 asks for. Needs legal sign-off | Compliance review |
+| G-15 | Deactivating or deleting a **trainer** has undefined consequences for their organization's players, coaches, links, and branding | Epic-01 TASK-003/004 |
+| G-19 | FR-025 requires "photo → default avatar"; there is no photo column until profiles land | Epic-01 TASK-004 |
 | G-07 | Availability is specified both per-profile and per-(profile, trainer) | Epic-01 TASK-005 |
 | G-29 | No time zone is defined anywhere, yet weekly availability stores local times | Epic-01 TASK-005 |
 
 ---
 
-*Sources: `specs/Epic-01_User_Management_Authentication_SPEC.md`, `tasks/TASK-001/architect-architecture.md`, `tasks/TASK-001/writing-plans-plan.md`.*
+*Sources: `specs/Epic-01_User_Management_Authentication_SPEC.md`, `tasks/TASK-001/architect-architecture.md`,
+`tasks/TASK-001/writing-plans-plan.md`, `tasks/TASK-002/architect-architecture.md`,
+`tasks/TASK-002/writing-plans-plan.md`.*

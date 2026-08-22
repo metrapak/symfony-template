@@ -16,6 +16,10 @@ use Symfony\Component\Security\Core\User\UserInterface;
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
+// The directory's default view filters on both columns (FR-020, NFR-020). Declared on the
+// entity as well as created in the migration, or doctrine:schema:update would propose
+// dropping it on every future diff.
+#[ORM\Index(name: 'IDX_USER_ROLE_STATUS', columns: ['role', 'status'])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface, EquatableInterface
 {
     #[ORM\Id]
@@ -25,6 +29,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Equatab
 
     #[ORM\Column(length: 180)]
     private string $email;
+
+    /**
+     * The human label for this account: a trainer's own name, a coach's name, a player or
+     * parent's name. Required for every user (spec §9, "Required fields enforced (name,
+     * email for all users)") and set to "Deleted User" by anonymization (FR-025).
+     */
+    #[ORM\Column(length: 255)]
+    private string $name;
+
+    #[ORM\Column(length: 32, nullable: true)]
+    private ?string $phone = null;
 
     /**
      * @var string The hashed password
@@ -60,9 +75,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Equatab
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $updatedAt;
 
-    public function __construct(string $email, UserRole $role, \DateTimeImmutable $now)
+    public function __construct(string $email, string $name, UserRole $role, \DateTimeImmutable $now)
     {
         $this->setEmail($email);
+        $this->name = $name;
         $this->role = $role;
         $this->createdAt = $now;
         $this->updatedAt = $now;
@@ -85,6 +101,42 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Equatab
     public function setEmail(string $email): static
     {
         $this->email = mb_strtolower(trim($email));
+
+        return $this;
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): static
+    {
+        $this->name = $name;
+
+        return $this;
+    }
+
+    /**
+     * The single label every template asks for when it needs to show who a user is.
+     *
+     * Routing all of them through one accessor is what makes FR-026 hold: anonymization
+     * writes "Deleted User" into `name`, and every roster, payment row and analytics table
+     * that renders a user picks that up without each of them remembering to check status.
+     */
+    public function getDisplayName(): string
+    {
+        return $this->name;
+    }
+
+    public function getPhone(): ?string
+    {
+        return $this->phone;
+    }
+
+    public function setPhone(?string $phone): static
+    {
+        $this->phone = null === $phone || '' === trim($phone) ? null : trim($phone);
 
         return $this;
     }
@@ -146,6 +198,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Equatab
     public function markEmailVerified(\DateTimeImmutable $at): static
     {
         $this->emailVerifiedAt = $at;
+
+        return $this;
+    }
+
+    /**
+     * Clears the verification stamp. Used by anonymization (FR-025): the address that was
+     * verified no longer exists on this row, so the claim that it was verified is false.
+     */
+    public function markEmailUnverified(): static
+    {
+        $this->emailVerifiedAt = null;
 
         return $this;
     }

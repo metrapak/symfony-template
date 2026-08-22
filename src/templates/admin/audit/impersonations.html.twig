@@ -1,0 +1,45 @@
+{% extends 'admin/_layout.html.twig' %}
+
+{% block title %}Impersonation history{% endblock %}
+{% block heading %}Impersonation history{% endblock %}
+
+{% block admin_content %}
+    {# FR-032: the compliance report. Read-only; the rows are written by the security layer. #}
+    <p>{{ sessions.getTotalItemCount }} session{{ sessions.getTotalItemCount == 1 ? '' : 's' }} recorded.</p>
+
+    <table>
+        <caption class="visually-hidden">Impersonation sessions, newest first</caption>
+        <thead>
+            <tr>
+                <th scope="col">Administrator</th>
+                <th scope="col">Viewed as</th>
+                <th scope="col">Started</th>
+                <th scope="col">Ended</th>
+                <th scope="col">Duration</th>
+                <th scope="col">Outcome</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for session in sessions %}
+            <tr>
+                <td>{{ session.admin.displayName }}<br><small>{{ session.admin.email }}</small></td>
+                <td>{{ session.targetUser.displayName }}<br><small>{{ role_label(session.targetUser.role) }}</small></td>
+                <td>{{ session.startedAt|date('Y-m-d H:i:s') }}</td>
+                <td>{{ session.endedAt ? session.endedAt|date('Y-m-d H:i:s') : 'In progress' }}</td>
+                <td>
+                    {%- if session.durationSeconds is null -%}
+                        —
+                    {%- else -%}
+                        {{ (session.durationSeconds // 60) }}m {{ session.durationSeconds % 60 }}s
+                    {%- endif -%}
+                </td>
+                <td>{{ session.endReason ? session.endReason.label : 'Open' }}</td>
+            </tr>
+        {% else %}
+            <tr><td colspan="6">No impersonation sessions have been recorded.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    {{ knp_pagination_render(sessions) }}
+{% endblock %}
