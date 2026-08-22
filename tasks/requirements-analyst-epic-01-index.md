@@ -50,8 +50,9 @@ parallel once TASK-004 lands.
 | TASK-001 | Merged | `feat/epic-01-user-management-auth` (PR #2) |
 | TASK-002 | Merged | `feat/epic-01-task-002-admin-user-management` (PR #3) |
 | TASK-003 | Merged | `feat/epic-01-task-003-sharelink-invitations` (PR #4) |
-| TASK-004 | Implemented, awaiting review | `feat/epic-01-task-004-profiles-family-context-branding` |
-| TASK-005…006 | Not started | — |
+| TASK-004 | Merged | `feat/epic-01-task-004-profiles-family-context-branding` (PR #5) |
+| TASK-005 | Implemented, awaiting review | `feat/epic-01-task-005-availability-conflict-override` |
+| TASK-006 | Not started | — |
 
 ## Existing Codebase Baseline
 
@@ -81,7 +82,7 @@ open questions carried forward.
 - [ ] **G-04** — US-01.05 and US-01.06 both cross-reference "parent approval — see US-01.04", but approval is US-01.05; US-01.04 is child-trainer associations.
 - [ ] **G-05** — Duplicate section numbers: two `§10` (User Flows / Epic AC), two `§11` (Performance / Mockups), two `§12` (Questions / Testing).
 - [ ] **G-06** — `Q-01.05` is used twice with different content: inside US-01.06 (COPPA / 16-18 independent accounts) and in the §12 table (email verification before login). `Q-01.03` is missing from the table entirely.
-- [ ] **G-07** — Availability scope contradiction: US-01.03 says each child has availability "**per trainer**"; US-01.09 says availability is stored "per player profile" (trainer-agnostic). These produce different schemas. *Blocking for TASK-005.*
+- [x] **G-07** — Availability scope contradiction: US-01.03 says each child has availability "**per trainer**"; US-01.09 says availability is stored "per player profile" (trainer-agnostic). *Decided by TASK-005, 2026-08-22: **per profile**. `availability_slot` carries no organization id, so every trainer of a player reads the same declared times. The spec text still says both and needs correcting.*
 - [ ] **G-08** — "Camp-to-User Conversion (Integration with Epic-08)" is listed in §3 MVP scope with 5 bullet behaviours but has **no user story and no acceptance criteria**. Cannot be estimated or tested as written.
 
 ### Unspecified behaviour
@@ -102,6 +103,11 @@ open questions carried forward.
 - [x] **G-21** — *Answered by TASK-003, 2026-08-22.* The registration form asks explicitly whether the registrant is the player or is registering a child, rather than inferring it from the age. The spec text still does not define this.
 - [ ] **G-22 (new)** — *TASK-003.* Whether a trainer may hold several active player links is unspecified. Several are permitted, so a printed code and a campaign code can coexist. Reversing this invalidates links already in circulation — the riskiest of TASK-003's assumptions.
 - [ ] **G-23 (new)** — *TASK-003.* FR-042 says a new player "can immediately see that trainer's events", but the shipped `EMAIL_VERIFICATION_REQUIRED` default blocks a player's first sign-in until they confirm their address (Q-01.05). Registration follows the configuration rather than either sentence; answering Q-01.05 answers this.
+- [x] **G-27 (new)** — *Assumed by TASK-005, 2026-08-22.* US-01.09 asks for "hourly blocks **or** custom ranges", which are two different schemas. Hourly blocks ship, as a container parameter (`AVAILABILITY_SLOT_MINUTES`); arbitrary minute boundaries are not offered. Not confirmed with the requester.
+- [ ] **G-28 (new)** — *TASK-005.* Availability is a recurring weekly pattern with no date dimension: there is no way to say "away next week". Deliberately deferred to Epic-02, which owns dated events.
+- [ ] **G-29 (new)** — *TASK-005.* No time zone is defined anywhere in the epic. One platform zone ships (`AVAILABILITY_TIMEZONE`, default `UTC`) and is printed on every grid, so the assumption is visible rather than silent. Per-user zones require deciding how a recurring pattern behaves across DST — a client decision.
+- [ ] **G-30 (new)** — *TASK-005.* FR-087's "coach can accept or request a change" has no recipient, no state, no notification and no UI anywhere in the spec, and is therefore **not implemented**. The coach sees every override recorded against them on their own page instead.
+- [ ] **R6 (new)** — *TASK-005.* `coach_availability_override.event_id` is nullable and carries no foreign key, because Epic-02 owns events and none exist yet. **Follow-up: add the FK in Epic-02's first migration.**
 
 ### Spec's own open questions (carried forward)
 
@@ -111,7 +117,7 @@ open questions carried forward.
 | Q-01.02 | Age group definitions (birth year / age range / grade level)? | P2 | TASK-004 (TASK-003 stores a birth date and derives age, so the answer stays a presentation decision) |
 | Q-01.04 | Which automated emails are required? | **P1** | TASK-001, TASK-002, TASK-006 (TASK-003 shipped three defaults: coach invitation, registration confirmation, parent notification) |
 | Q-01.05 | Email verification: required before login, or optional? | **P1** | **TASK-001 (blocking)** |
-| Q-01.06 | Should a coach be notified when their availability is overridden? | P2 | TASK-005 |
+| Q-01.06 | Should a coach be notified when their availability is overridden? | P2 | *Unanswered; TASK-005 notifies nobody and shows the record on the coach's own page* |
 | Q-01.07 | Session timeout duration (1 / 7 / 30 days)? | P2 | TASK-001 |
 
 ## Cross-Cutting Requirements (apply to all 6 tasks)

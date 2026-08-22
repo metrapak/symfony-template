@@ -38,6 +38,21 @@ parameters:
     app.upload_root_default: '%kernel.project_dir%/var/uploads'
     app.upload_root: '%env(default:app.upload_root_default:UPLOAD_ROOT)%'
 
+    # G-27 — the length of one block in every availability grid, in minutes. US-01.09 asks for
+    # "hourly blocks or custom ranges", which are two different schemas; hourly blocks ship
+    # (see App\Availability\Service\TimeGrid for the reasoning). Must divide 1440. Override with
+    # the AVAILABILITY_SLOT_MINUTES environment variable — answering G-27 differently is a
+    # configuration change, not a rewrite.
+    app.availability_slot_minutes_default: 60
+    app.availability_slot_minutes: '%env(int:default:app.availability_slot_minutes_default:AVAILABILITY_SLOT_MINUTES)%'
+
+    # G-29 — the single time zone every stored availability minute is wall-clock time in. The
+    # epic defines no time zone anywhere; this makes the assumption explicit and prints it on
+    # every grid rather than leaving "Monday 17:00" to mean whatever the reader assumes.
+    # Override with the AVAILABILITY_TIMEZONE environment variable.
+    app.availability_timezone_default: 'UTC'
+    app.availability_timezone: '%env(default:app.availability_timezone_default:AVAILABILITY_TIMEZONE)%'
+
     # Sender identity for transactional account mail. Override per environment with the
     # MAILER_SENDER_ADDRESS / MAILER_SENDER_NAME environment variables.
     app.mailer_sender_address_default: 'no-reply@example.com'
@@ -58,6 +73,8 @@ services:
             string $senderAddress: '%app.mailer_sender_address%'
             string $senderName: '%app.mailer_sender_name%'
             string $uploadRoot: '%app.upload_root%'
+            int $availabilitySlotMinutes: '%app.availability_slot_minutes%'
+            string $availabilityTimezone: '%app.availability_timezone%'
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
     App\:
@@ -65,6 +82,9 @@ services:
         exclude:
             - '../src/**/Domain/Entity/'
             - '../src/**/Domain/Enum/'
+            - '../src/Availability/Entity/'
+            - '../src/Availability/Enum/'
+            - '../src/Availability/ValueObject/'
             - '../src/Account/Entity/'
             - '../src/Account/Enum/'
             - '../src/Account/Exception/'

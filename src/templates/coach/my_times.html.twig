@@ -1,0 +1,77 @@
+{#
+    "My Times" — a coach's recurring weekly availability (FR-082, FR-087, US-01.10).
+
+    The same grid the family sees, on the coach's own subject. Split shifts need no special
+    control: two runs of ticked hours with a gap between them are stored as two ranges, and two
+    adjacent runs become one.
+
+    The overrides table below is as far as FR-087 goes in this task, and the template says so
+    where a reader will ask. "The coach sees the assignment" needs Epic-02's assignments to exist,
+    and "can accept or request a change" has no defined workflow, recipient or state anywhere in
+    the spec (G-30) — so what a coach gets today is the honest record that a trainer scheduled
+    them outside their times, and why.
+#}
+{% extends 'coach/_layout.html.twig' %}
+{% form_theme form 'account/_form_theme.html.twig' %}
+
+{% block title %}My Times{% endblock %}
+{% block heading %}My Times{% endblock %}
+
+{% block coach_content %}
+    {{ include('availability/_grid_styles.html.twig') }}
+
+    <p class="muted">
+        Trainers see these times when they schedule sessions. They are a guide: a trainer can
+        still ask you to cover a session outside them, and you will see their reason here.
+    </p>
+
+    {{ include('availability/_summary.html.twig', {summary: summary}) }}
+
+    {% if weekLines is not empty %}
+        <ul class="week-lines">
+            {% for line in weekLines %}<li>{{ line }}</li>{% endfor %}
+        </ul>
+    {% endif %}
+
+    {{ form_start(form, {attr: {'data-availability-form': ''}}) }}
+        {{ include('account/_error_summary.html.twig', {form: form}) }}
+
+        {{ include('availability/_grid.html.twig', {form: form, days: days, grid: grid}) }}
+
+        <div class="actions">
+            <button type="submit">Save my times</button>
+            <button type="button" data-availability-copy-weekdays hidden>Copy Monday to all weekdays</button>
+            <button type="button" data-availability-clear hidden>Clear all</button>
+        </div>
+
+        {{ form_rest(form) }}
+    {{ form_end(form, {render_rest: false}) }}
+
+    <h2>Sessions scheduled outside your times</h2>
+
+    {% if overrides is empty %}
+        <p class="muted">Nothing yet. When a trainer schedules you outside these times, their reason appears here.</p>
+    {% else %}
+        <table class="overrides">
+            <caption class="visually-hidden">Overrides recorded against your availability</caption>
+            <thead>
+                <tr>
+                    <th scope="col">When</th>
+                    <th scope="col">Session time</th>
+                    <th scope="col">Recorded by</th>
+                    <th scope="col">Reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for override in overrides %}
+                    <tr>
+                        <td>{{ override.createdAt|date('Y-m-d H:i') }}</td>
+                        <td>{{ override.dayOfWeek.label }} {{ override.window.format }}</td>
+                        <td>{{ override.overriddenBy.displayName }}</td>
+                        <td>{{ override.reason }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}

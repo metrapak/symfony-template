@@ -1,0 +1,59 @@
+{#
+    Shell for the coach's own pages (US-01.10).
+
+    The first one the coach role has: TASK-001 gave every role a placeholder dashboard, and until
+    now a coach had nothing of their own to navigate. Deliberately plain, like the trainer and
+    admin shells, reading the `--brand` custom property so the trainer's colour reaches a coach's
+    pages without this template knowing whose colour it is.
+#}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <main id="main-content" class="coach">
+        <nav aria-label="Coach sections">
+            <ul class="coach-nav">
+                <li><a href="{{ path('coach_dashboard') }}">Dashboard</a></li>
+                <li><a href="{{ path('coach_my_times') }}">My Times</a></li>
+                <li><a href="{{ path('account_profile') }}">My profile</a></li>
+                <li><a href="{{ logout_path() }}">Sign out</a></li>
+            </ul>
+        </nav>
+
+        <div role="status" aria-live="polite">
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <p class="flash flash-{{ label }}">{{ message }}</p>
+                {% endfor %}
+            {% endfor %}
+        </div>
+
+        <h1>{% block heading %}{% endblock %}</h1>
+
+        {% block coach_content %}{% endblock %}
+    </main>
+
+    <style>
+        .coach { max-width: 72rem; margin: 0 auto; padding: 1rem; font: 400 1rem/1.5 system-ui, sans-serif; }
+        .coach-nav { display: flex; flex-wrap: wrap; gap: 1rem; list-style: none; padding: 0; }
+        .coach h1, .coach h2 { color: var(--brand); }
+        .coach table { width: 100%; border-collapse: collapse; }
+        .coach .overrides th, .coach .overrides td { padding: .5rem; border-bottom: 1px solid #d4d4d4; text-align: left; vertical-align: top; }
+        .coach .overrides th { background: #f5f5f5; }
+        .coach .flash-error { color: #b91c1c; }
+        .coach .flash-warning { color: #b45309; }
+        .coach .muted { color: #525252; }
+        .coach .card { border: 1px solid #d4d4d4; border-radius: .5rem; padding: 1rem; margin-bottom: 1rem; }
+        .coach .actions { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+        .coach :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+        .coach button { min-height: 2.75rem; }
+        .form-error-summary { border-left: 4px solid #b91c1c; padding: .5rem .75rem; background: #fef2f2; }
+        .visually-hidden {
+            position: absolute;
+            width: 1px; height: 1px;
+            margin: -1px; padding: 0; border: 0;
+            clip-path: inset(50%);
+            overflow: hidden;
+            white-space: nowrap;
+        }
+    </style>
+{% endblock %}

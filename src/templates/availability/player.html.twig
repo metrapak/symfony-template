@@ -1,0 +1,62 @@
+{#
+    "Best Times" for one player (FR-080, FR-081, US-01.09, Flow 6).
+
+    One page per profile, reached from the switcher below: FR-081 asks for separate availability
+    per child, and separate URLs are what make that real — a parent can bookmark one child's week,
+    and no screen ever holds two children's grids at once.
+#}
+{% extends 'family/_layout.html.twig' %}
+{% form_theme form 'account/_form_theme.html.twig' %}
+
+{% block title %}Best Times — {{ profile.displayName }}{% endblock %}
+{% block heading %}Best Times for {{ profile.displayName }}{% endblock %}
+
+{% block family_content %}
+    {{ include('availability/_grid_styles.html.twig') }}
+
+    <p class="muted">
+        Trainers see these preferences when they plan sessions. They are a guide, never a
+        commitment — nothing is booked or blocked by what you tick here.
+    </p>
+
+    {% if switchable|length > 1 %}
+        {# FR-081's profile switcher. Links rather than a select: each profile has its own page,
+           so this is navigation and not a form that needs submitting. #}
+        <nav aria-label="Choose whose availability to set" class="card">
+            <ul class="family-nav">
+                {% for option in switchable %}
+                    <li>
+                        {% if option.id == profile.id %}
+                            <strong aria-current="page">{{ option.displayName }}</strong>
+                        {% else %}
+                            <a href="{{ path('availability_player', {playerProfileId: option.id}) }}">{{ option.displayName }}</a>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </nav>
+    {% endif %}
+
+    {{ include('availability/_summary.html.twig', {summary: summary}) }}
+
+    {% if weekLines is not empty %}
+        <ul class="week-lines">
+            {% for line in weekLines %}<li>{{ line }}</li>{% endfor %}
+        </ul>
+    {% endif %}
+
+    {{ form_start(form, {attr: {'data-availability-form': ''}}) }}
+        {{ include('account/_error_summary.html.twig', {form: form}) }}
+
+        {{ include('availability/_grid.html.twig', {form: form, days: days, grid: grid}) }}
+
+        <div class="actions">
+            <button type="submit">Save availability</button>
+            {# Enhancements only. Hidden until the script that gives them meaning has run. #}
+            <button type="button" data-availability-copy-weekdays hidden>Copy Monday to all weekdays</button>
+            <button type="button" data-availability-clear hidden>Clear all</button>
+        </div>
+
+        {{ form_rest(form) }}
+    {{ form_end(form, {render_rest: false}) }}
+{% endblock %}
