@@ -22,7 +22,7 @@
             </ul>
         </nav>
 
-        {{ app.user }}
+        {% if app.user %}{{ app.user.displayName }}{% endif %}
         {{ app.request.uri }}
         {{ path('homepage') }}
         {{ app_name }}
