@@ -17,9 +17,9 @@
 {% block heading %}Your profile{% endblock %}
 
 {% block account_content %}
-    <section aria-labelledby="readonly-heading">
-        <h2 id="readonly-heading">Account details</h2>
-        <dl>
+    <section class="pp-card" aria-labelledby="readonly-heading">
+        <h2 class="pp-card-title" id="readonly-heading">Account details</h2>
+        <dl class="pp-dl">
             <dt>Email</dt>
             <dd>{{ user.email }}</dd>
             <dt>Role</dt>
@@ -32,7 +32,7 @@
                 <dd>{{ playerProfile.skillLevel ?? 'Not assessed yet' }}</dd>
             {% endif %}
         </dl>
-        <p class="muted">
+        <p class="pp-card-lead">
             These cannot be changed here. Your email and role are managed by an administrator, and
             your skill level is set by your trainer.
         </p>
@@ -43,10 +43,10 @@
         : account_photo_url(user, false) %}
 
     {% if currentPhoto %}
-        <p><img class="avatar" src="{{ currentPhoto }}" alt="Your current profile photo"></p>
+        <p><img class="pp-photo" src="{{ currentPhoto }}" alt="Your current profile photo"></p>
     {% endif %}
 
-    {{ form_start(form, {attr: {enctype: 'multipart/form-data'}}) }}
+    {{ form_start(form, {attr: {enctype: 'multipart/form-data', class: 'pp-form pp-card'}}) }}
         {{ include('account/_error_summary.html.twig', {form: form}) }}
 
         {{ form_row(form.name) }}
@@ -76,16 +76,9 @@
         {% if form.notifyOnTrainerCreated is defined %}{{ form_row(form.notifyOnTrainerCreated) }}{% endif %}
         {% if form.notifyOnAccountErasure is defined %}{{ form_row(form.notifyOnAccountErasure) }}{% endif %}
 
-        <div class="actions">
-            <button type="submit">Save</button>
-            <a href="{{ path('account_dashboard') }}">Back to dashboard</a>
+        <div class="pp-actions">
+            <button type="submit" class="pp-btn pp-btn--primary">Save</button>
+            <a class="pp-btn pp-btn--ghost" href="{{ path('account_dashboard') }}">Back to dashboard</a>
         </div>
     {{ form_end(form) }}
-
-    <style>
-        .avatar { width: 6rem; height: 6rem; border-radius: 50%; object-fit: cover; }
-        .muted { color: #525252; }
-        .actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
-        .form-error-summary { border-left: 4px solid #b91c1c; padding: .5rem .75rem; background: #fef2f2; }
-    </style>
 {% endblock %}

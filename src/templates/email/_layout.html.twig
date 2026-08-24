@@ -1,0 +1,103 @@
+{#
+    The shell every HTML email in this application extends.
+
+    Email is not the web, and three constraints in particular shape what is below:
+
+      1. **Every style is inline.** No CSS inliner is installed (`twig/cssinliner-extra` is not a
+         dependency) and several clients strip a `<style>` element outright, so a rule that is not
+         on the element does not exist. That is why this file is verbose and why a `class` would
+         be decoration rather than styling.
+      2. **Tables do the layout.** Outlook renders through Word, which supports neither flexbox
+         nor grid. A `role="presentation"` table is the only layout primitive that behaves the
+         same in Outlook, Gmail and Apple Mail.
+      3. **It is light, while the application is dark.** Not an oversight: a dark HTML email is
+         re-tinted unpredictably by client dark-mode heuristics, and these messages carry things —
+         a temporary password, a purchase to approve — where "renders correctly everywhere" beats
+         "matches the app". The brand still arrives, as the accent on the rule and the button.
+
+    Branding: `brandColor` and `organizationName` are optional context keys with platform
+    defaults. The membership messages already pass `organizationName`, so those arrive under the
+    trainer's own name; the rest fall back to the platform's. They are not resolved here from `viewer_branding()` on purpose — that function reads
+    the *current viewer's* security context, and half of these messages are sent with no viewer at
+    all (the approval expiry sweep runs from cron, FR-096) or by somebody other than the recipient
+    (a Super Admin creating a trainer). Getting a trainer's colour onto their members' mail means
+    the three `*Mailer` services resolving the organization's branding and passing these two keys,
+    which is two more entries in a context array rather than a change to this layout.
+
+    Blocks: `email_content` (required), `preheader` (the inbox preview line), `email_title`,
+    `email_footer_note` (optional extra small print).
+#}
+{% set brand = brandColor|default('#006600') %}
+{% set orgName = organizationName|default(app_name) %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block email_title %}{{ orgName }}{% endblock %}</title>
+</head>
+<body style="margin:0; padding:0; width:100%; background-color:#f3f4f3;">
+    {#
+        The preheader: the line a client shows in the inbox next to the subject. Without one it
+        shows the first words of the body, which for most of these is "Hello,". Hidden in the
+        rendered message by zero height and a transparent colour — the combination that works in
+        Gmail, Apple Mail and Outlook alike.
+    #}
+    <div style="display:none; max-height:0; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; color:#f3f4f3;">
+        {% block preheader %}{% endblock %}
+    </div>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+           style="background-color:#f3f4f3; width:100%;">
+        <tr>
+            <td align="center" style="padding:24px 12px;">
+
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600"
+                       style="width:600px; max-width:100%; background-color:#ffffff; border:1px solid #e0e3e0; border-radius:12px;">
+
+                    {#
+                        The masthead is the organization's name as text, not its logo. A remote
+                        image is blocked by default in most clients until the recipient asks for
+                        it, so a logo-only header is a blank box on first read — and inline SVG,
+                        the other option, is stripped by Gmail entirely.
+                    #}
+                    <tr>
+                        <td style="padding:24px 28px 0 28px;">
+                            <p style="margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:16px; line-height:22px; font-weight:600; color:#1c1f1c;">
+                                {{ orgName }}
+                            </p>
+                        </td>
+                    </tr>
+
+                    {# The brand's one appearance as colour: a rule under the masthead. #}
+                    <tr>
+                        <td style="padding:14px 28px 0 28px;">
+                            <div style="height:3px; line-height:3px; font-size:0; background-color:{{ brand }}; border-radius:2px;">&nbsp;</div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding:22px 28px 28px 28px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:15px; line-height:24px; color:#1c1f1c;">
+                            {% block email_content %}{% endblock %}
+                        </td>
+                    </tr>
+                </table>
+
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600"
+                       style="width:600px; max-width:100%;">
+                    <tr>
+                        <td style="padding:16px 28px 0 28px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:12px; line-height:18px; color:#5e5e5e;">
+                            {% block email_footer_note %}{% endblock %}
+                            <p style="margin:8px 0 0 0;">
+                                Sent by {{ orgName }}. If a link above does not work, copy it into your
+                                browser's address bar.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

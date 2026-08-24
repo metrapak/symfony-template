@@ -1,19 +1,32 @@
 {# FR-041 / US-01.08 — the invitation a coach receives, with the trainer's own message. #}
-<p>Hello{% if coachName %} {{ coachName }}{% endif %},</p>
+{% extends 'email/_layout.html.twig' %}
 
-<p>
-    <strong>{{ trainerName }}</strong> has invited you to coach for <strong>{{ organizationName }}</strong>.
-</p>
+{% block email_title %}An invitation to coach{% endblock %}
+{% block preheader %}{{ trainerName }} has invited you to coach for {{ organizationName }}.{% endblock %}
 
-{% if personalMessage %}
-    <blockquote>{{ personalMessage|nl2br }}</blockquote>
-{% endif %}
+{% block email_content %}
+    <p style="margin:0 0 14px 0;">Hello{% if coachName %} {{ coachName }}{% endif %},</p>
 
-<p><a href="{{ joinUrl }}">Accept the invitation</a></p>
+    <p style="margin:0 0 14px 0;">
+        <strong>{{ trainerName }}</strong> has invited you to coach for <strong>{{ organizationName }}</strong>.
+    </p>
 
-<p>
-    This link works once and expires on {{ expiresAt|date('j F Y') }}. If it has already lapsed by the
-    time you open it, ask {{ trainerName }} to send a new one.
-</p>
+    {% if personalMessage %}
+        <blockquote style="margin:0 0 14px 0; padding:10px 16px; border-left:3px solid #e0e3e0; color:#3f3f3f;">
+            {{ personalMessage|nl2br }}
+        </blockquote>
+    {% endif %}
 
-<p>If you were not expecting this, you can ignore this message — nothing happens until you open the link.</p>
+    {{ include('email/_button.html.twig', {
+        url: joinUrl,
+        label: 'Accept the invitation',
+        brand: brandColor|default('#006600'),
+    }) }}
+
+    <p style="margin:0 0 14px 0;">
+        This link works once and expires on {{ expiresAt|date('j F Y') }}. If it has already lapsed by the
+        time you open it, ask {{ trainerName }} to send a new one.
+    </p>
+
+    <p style="margin:0;">If you were not expecting this, you can ignore this message — nothing happens until you open the link.</p>
+{% endblock %}

@@ -11,5 +11,7 @@ import './join-registration.js';
 import './branding-picker.js';
 import './availability-grid.js';
 import './approval-actions.js';
+import './password-toggle.js';
+import './password-hint.js';
 
 console.log('This log comes from assets/app.js - welcome to AssetMapper! 🎉');

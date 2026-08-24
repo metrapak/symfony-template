@@ -63,7 +63,7 @@
         </div>
 
         <div class="actions">
-            <button type="submit">Save branding</button>
+            <button class="pp-btn pp-btn--primary" type="submit">Save branding</button>
             <a href="{{ path('trainer_dashboard') }}">Cancel</a>
         </div>
     {{ form_end(form) }}
@@ -75,17 +75,4 @@
         </form>
     {% endif %}
 
-    <style>
-        .brand-preview { border: 1px solid #d4d4d4; border-radius: .5rem; padding: 1rem; margin-bottom: 1rem; }
-        .brand-bar {
-            display: flex; align-items: center; gap: .75rem;
-            padding: .75rem 1rem; border-radius: .375rem;
-            background: var(--brand); color: var(--brand-fg);
-        }
-        .brand-logo { height: 2.5rem; width: auto; }
-        .colour-field { display: flex; align-items: flex-end; gap: .5rem; }
-        .colour-picker { width: 3rem; min-height: 2.75rem; padding: 0; border: 1px solid #d4d4d4; }
-        .muted { color: #525252; }
-        .form-error-summary { border-left: 4px solid #b91c1c; padding: .5rem .75rem; background: #fef2f2; }
-    </style>
 {% endblock %}

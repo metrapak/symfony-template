@@ -1,7 +1,18 @@
-<p>Hello,</p>
+{% extends 'email/_layout.html.twig' %}
 
-<p>Please confirm your email address so you can start using your account.</p>
+{% block email_title %}Confirm your email address{% endblock %}
+{% block preheader %}Confirm your address to finish setting up your account.{% endblock %}
 
-<p><a href="{{ verificationUrl }}">Confirm my email address</a></p>
+{% block email_content %}
+    <p style="margin:0 0 14px 0;">Hello,</p>
 
-<p>The link stops working on {{ expiresAt|date('j F Y \\a\\t H:i') }} (UTC).</p>
+    <p style="margin:0 0 14px 0;">Please confirm your email address so you can start using your account.</p>
+
+    {{ include('email/_button.html.twig', {
+        url: verificationUrl,
+        label: 'Confirm my email address',
+        brand: brandColor|default('#006600'),
+    }) }}
+
+    <p style="margin:0;">The link stops working on {{ expiresAt|date('j F Y \\a\\t H:i') }} (UTC).</p>
+{% endblock %}

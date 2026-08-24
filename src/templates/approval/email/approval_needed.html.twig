@@ -5,20 +5,31 @@
     it would be paid — so a parent reading this on a phone knows what they are being asked before
     they sign in. The deadline is here too, because FR-096 makes silence an answer.
 #}
-<p>Hello {{ recipientName }},</p>
+{% extends 'email/_layout.html.twig' %}
 
-<p>
-    <strong>{{ childName }}</strong> would like to buy <strong>{{ purchaseDescription }}</strong>
-    for <strong>{{ amount }}</strong>, paid with {{ paymentType|lower }}.
-</p>
+{% block email_title %}A purchase needs your approval{% endblock %}
+{% block preheader %}{{ childName }} would like to buy {{ purchaseDescription }} for {{ amount }}.{% endblock %}
 
-<p><a href="{{ reviewUrl }}">Approve or deny this purchase</a></p>
+{% block email_content %}
+    <p style="margin:0 0 14px 0;">Hello {{ recipientName }},</p>
 
-{% if expiresAt %}
-    <p>
-        If nobody answers by <strong>{{ expiresAt|date('j M Y, H:i') }}</strong> the request is
-        denied automatically and nothing is charged.
+    <p style="margin:0 0 14px 0;">
+        <strong>{{ childName }}</strong> would like to buy <strong>{{ purchaseDescription }}</strong>
+        for <strong>{{ amount }}</strong>, paid with {{ paymentType|lower }}.
     </p>
-{% endif %}
 
-<p>Nothing has been paid for yet.</p>
+    {{ include('email/_button.html.twig', {
+        url: reviewUrl,
+        label: 'Approve or deny this purchase',
+        brand: brandColor|default('#006600'),
+    }) }}
+
+    {% if expiresAt %}
+        <p style="margin:0 0 14px 0;">
+            If nobody answers by <strong>{{ expiresAt|date('j M Y, H:i') }}</strong> the request is
+            denied automatically and nothing is charged.
+        </p>
+    {% endif %}
+
+    <p style="margin:0;">Nothing has been paid for yet.</p>
+{% endblock %}

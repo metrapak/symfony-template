@@ -65,7 +65,7 @@
         {% endif %}
 
         <div class="actions">
-            <button type="submit">{{ lookalikes is not empty ? 'Yes, add them anyway' : 'Add child' }}</button>
+            <button class="pp-btn pp-btn--primary" type="submit">{{ lookalikes is not empty ? 'Yes, add them anyway' : 'Add child' }}</button>
             <a href="{{ path('family_index') }}">Cancel</a>
         </div>
     {{ form_end(form) }}

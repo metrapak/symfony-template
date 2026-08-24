@@ -12,7 +12,6 @@
 {% block heading %}Best Times for {{ profile.displayName }}{% endblock %}
 
 {% block family_content %}
-    {{ include('availability/_grid_styles.html.twig') }}
 
     <p class="muted">
         Trainers see these preferences when they plan sessions. They are a guide, never a
@@ -51,7 +50,7 @@
         {{ include('availability/_grid.html.twig', {form: form, days: days, grid: grid}) }}
 
         <div class="actions">
-            <button type="submit">Save availability</button>
+            <button class="pp-btn pp-btn--primary" type="submit">Save availability</button>
             {# Enhancements only. Hidden until the script that gives them meaning has run. #}
             <button type="button" data-availability-copy-weekdays hidden>Copy Monday to all weekdays</button>
             <button type="button" data-availability-clear hidden>Clear all</button>

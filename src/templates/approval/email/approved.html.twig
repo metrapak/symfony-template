@@ -1,12 +1,19 @@
 {# FR-095 — the outcome, to whoever did not make the decision. #}
-<p>Hello {{ recipientName }},</p>
+{% extends 'email/_layout.html.twig' %}
 
-<p>
-    <strong>{{ purchaseDescription }}</strong> for <strong>{{ childName }}</strong> was approved.
-    The payment of <strong>{{ amount }}</strong> has gone through and {{ childName }} is
-    registered.
-</p>
+{% block email_title %}Purchase approved{% endblock %}
+{% block preheader %}{{ purchaseDescription }} for {{ childName }} was approved.{% endblock %}
 
-{% if parentNotes %}
-    <p><strong>Note:</strong> {{ parentNotes }}</p>
-{% endif %}
+{% block email_content %}
+    <p style="margin:0 0 14px 0;">Hello {{ recipientName }},</p>
+
+    <p style="margin:0 0 14px 0;">
+        <strong>{{ purchaseDescription }}</strong> for <strong>{{ childName }}</strong> was approved.
+        The payment of <strong>{{ amount }}</strong> has gone through and {{ childName }} is
+        registered.
+    </p>
+
+    {% if parentNotes %}
+        <p style="margin:0;"><strong>Note:</strong> {{ parentNotes }}</p>
+    {% endif %}
+{% endblock %}

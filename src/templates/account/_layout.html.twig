@@ -1,33 +1,138 @@
+{#
+    The signed-in application shell (designs/event_builder.svg).
+
+    A sticky sidebar of primary destinations beside the page body, on the dark canvas with the
+    accent wash behind it. Three things about this layout are deliberate:
+
+      1. **Navigation lives here, not on the dashboard.** Before this change the dashboard *was*
+         the navigation — a list of links no other page could reach. The design puts those
+         destinations in a persistent sidebar, so a page reached from one can be left again
+         without the browser's back button.
+      2. **Every item is behind the same check that guards its route.** The links are conditioned
+         on `is_granted` with the attribute the destination's own voter uses, so a link is never
+         offered to somebody the route would answer with a 403 — and, just as importantly, hiding
+         the link is never the *only* thing stopping them (FR-010).
+      3. **`aria-current="page"` marks the current destination** and the CSS keys off that
+         attribute rather than a class, so what is announced and what is highlighted cannot drift.
+
+    The context switcher stays in this shell because FR-069 calls it a navigation control. It
+    renders nothing for a viewer with no training contexts, so a trainer, a coach or a Super Admin
+    pays one cheap resolver call and no markup.
+
+    Focused single-task pages — sign in, password reset, the forced password change — use
+    `account/_focus_layout.html.twig` instead: navigation you are not allowed to follow yet is
+    worse than no navigation.
+#}
 {% extends 'base.html.twig' %}
 
-{% block body %}
-    <main id="main-content">
-        {#
-            FR-069 asks for the switcher as a navigation control, so it lives in the layout rather
-            than on one page. It renders nothing at all for a viewer with no training contexts —
-            an anonymous visitor on the login form, a trainer, a coach, a Super Admin — so putting
-            it here costs those pages one cheap resolver call and no markup.
-        #}
-        {{ include('_context_switcher.html.twig') }}
+{% block body_class %}pp-theme{% endblock %}
 
-        {# Flash messages announce themselves to assistive tech without stealing focus. #}
-        <div role="status" aria-live="polite">
-            {% for label, messages in app.flashes %}
-                {% for message in messages %}
-                    <p class="flash flash-{{ label }}">{{ message }}</p>
-                {% endfor %}
-            {% endfor %}
+{% block body %}
+    {% import '_nav.html.twig' as nav %}
+    {% import '_icons.html.twig' as icons %}
+
+    {% set branding = viewer_branding() %}
+    {% set logoUrl = branding_logo_url(branding) %}
+    {% set route = app.request.attributes.get('_route') %}
+
+    <div class="pp-shell">
+        <div class="pp-sidebar">
+            <a class="pp-brand" href="{{ path('account_dashboard') }}">
+                <span class="pp-brand-mark">
+                    {% if logoUrl %}
+                        {# `alt=""`: the organization's name is written out immediately beside it,
+                           so a description here would be read twice. #}
+                        <img src="{{ logoUrl }}" alt="">
+                    {% else %}
+                        {{ include('_logo.html.twig') }}
+                    {% endif %}
+                </span>
+                <span>{{ branding.organizationName ?? app_name }}</span>
+            </a>
+
+            <nav class="pp-nav" aria-label="Main">
+                <ul>
+                    {# `/dashboard` redirects to the role's own landing route (FR-008), so the
+                       item is current on any of the four destinations as well as on the hub. #}
+                    {{ nav.item(
+                        path('account_dashboard'),
+                        'Dashboard',
+                        'dashboard',
+                        route in ['account_dashboard', 'admin_dashboard', 'trainer_dashboard', 'coach_dashboard', 'family_dashboard']
+                    ) }}
+
+                    {# A player's own family section. A trainer, coach or Super Admin has no
+                       children to manage and would only get a 403 from the voter guarding it. #}
+                    {% if is_granted('FAMILY_MANAGE_CHILDREN') %}
+                        {{ nav.item(path('family_index'), 'Player profiles', 'family', route starts with 'family_' and route != 'family_dashboard' and route != 'family_approvals') }}
+                    {% endif %}
+
+                    {# FR-080 / FR-082: each role reaches its own availability grid. #}
+                    {% if is_granted('ROLE_PLAYER') %}
+                        {{ nav.item(path('availability_index'), 'Best Times', 'calendar', route starts with 'availability_') }}
+                        {# FR-090 / FR-095 — where a player sees what they bought or asked to buy. #}
+                        {{ nav.item(path('player_reservations'), 'My reservations', 'reservations', route == 'player_reservations') }}
+                    {% endif %}
+
+                    {% if is_granted('ROLE_COACH') %}
+                        {{ nav.item(path('coach_my_times'), 'My Times', 'clock', route == 'coach_my_times') }}
+                    {% endif %}
+
+                    {% if is_granted('ROLE_TRAINER') %}
+                        {{ nav.item(path('trainer_players_availability'), 'Player availability', 'availability', route == 'trainer_players_availability') }}
+                    {% endif %}
+
+                    {# FR-094: only a parent decides purchases; a child login is refused the route
+                       by ApprovalVoter, so it is not offered one. #}
+                    {% if is_granted('ACCOUNT_MANAGE_PAYMENT_METHODS') %}
+                        {{ nav.item(path('family_approvals'), 'Purchase approvals', 'approvals', route == 'family_approvals') }}
+                    {% endif %}
+
+                    {#
+                        FR-093, the in-app half of the notification. The link and its count come
+                        from the shared indicator partial, which four other layouts also include,
+                        so the item is assembled here instead of being rendered by `nav.item`:
+                        the count and its screen-reader wording stay in one place.
+                    #}
+                    <li class="pp-nav-item pp-nav-item--wrap">
+                        {{ icons.icon('notifications') }}
+                        {{ include('_notification_indicator.html.twig') }}
+                    </li>
+
+                    {{ nav.item(path('account_profile'), 'Your profile', 'profile', route == 'account_profile') }}
+                    {{ nav.item(path('account_password_change'), 'Change password', 'password', route == 'account_password_change') }}
+                    {{ nav.item(logout_path(), 'Sign out', 'signout', false) }}
+                </ul>
+            </nav>
         </div>
 
-        <h1>{% block heading %}{% endblock %}</h1>
+        <main id="main-content" class="pp-main">
+            <div class="pp-topbar">
+                <h1 class="pp-page-title">{% block heading %}{% endblock %}</h1>
 
-        {% block account_content %}{% endblock %}
-    </main>
+                {#
+                    The initials are decoration — `aria-hidden` — because the name they abbreviate
+                    is spelled out in the same link. Two glyphs of a display name is not a fact a
+                    screen reader needs twice.
+                #}
+                <a class="pp-user-chip" href="{{ path('account_profile') }}">
+                    <span class="pp-avatar" aria-hidden="true">{{ app.user.displayName|slice(0, 2) }}</span>
+                    <span>{{ app.user.displayName }}</span>
+                </a>
+            </div>
 
-    <style>
-        .context-switcher { margin: 1rem 0; padding: .75rem; border: 1px solid #d4d4d4; border-radius: .5rem; }
-        .context-switcher form { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
-        .context-switcher select, .context-switcher button { min-height: 2.75rem; }
-        :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
-    </style>
+            {{ include('_context_switcher.html.twig') }}
+
+            {# Flash messages announce themselves to assistive tech without stealing focus. #}
+            <div role="status" aria-live="polite">
+                {% for label, messages in app.flashes %}
+                    {% for message in messages %}
+                        <p class="flash flash-{{ label }}">{{ message }}</p>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+
+            {% block account_content %}{% endblock %}
+        </main>
+    </div>
 {% endblock %}

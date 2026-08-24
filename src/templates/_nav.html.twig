@@ -1,0 +1,27 @@
+{#
+    One navigation item for the application shell (designs/event_builder.svg).
+
+    Lives in its own file rather than as a `{% macro %}` inside the layout because a macro
+    declared in a template that `extends` another is only reliably reachable through an explicit
+    import, and a shell that silently rendered no navigation would be a very quiet bug.
+
+    `current` is passed in rather than compared here: which route counts as "this section" is a
+    question about the section, not about the item, and a coach's My Times and a player's Best
+    Times answer it differently.
+#}
+{% import '_icons.html.twig' as icons %}
+
+{% macro item(url, label, iconName, current) %}
+    {% import '_icons.html.twig' as icons %}
+    <li>
+        {#
+            `aria-current="page"` is the state; the CSS keys off the attribute so the highlighted
+            item and the announced item are always the same item. The bold weight and the border
+            carry it as well as the tint, because colour alone is not a cue (WCAG 1.4.1).
+        #}
+        <a class="pp-nav-item" href="{{ url }}"{% if current %} aria-current="page"{% endif %}>
+            {{ icons.icon(iconName) }}
+            <span>{{ label }}</span>
+        </a>
+    </li>
+{% endmacro %}

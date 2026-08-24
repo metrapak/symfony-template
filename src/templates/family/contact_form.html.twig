@@ -24,7 +24,7 @@
         {{ form_row(form.phone) }}
 
         <div class="actions">
-            <button type="submit">{{ editing ? 'Save' : 'Add contact' }}</button>
+            <button class="pp-btn pp-btn--primary" type="submit">{{ editing ? 'Save' : 'Add contact' }}</button>
             <a href="{{ path('family_index') }}">Cancel</a>
         </div>
     {{ form_end(form) }}

@@ -4,11 +4,18 @@
     Says who could not answer and what to do next, because "expired" without either is a message
     that only reports a failure.
 #}
-<p>Hello {{ recipientName }},</p>
+{% extends 'email/_layout.html.twig' %}
 
-<p>
-    <strong>{{ purchaseDescription }}</strong> for <strong>{{ childName }}</strong> expired after
-    48 hours with no answer, so it was denied automatically. Nothing has been charged.
-</p>
+{% block email_title %}Purchase request expired{% endblock %}
+{% block preheader %}{{ purchaseDescription }} for {{ childName }} lapsed after 48 hours. Nothing has been charged.{% endblock %}
 
-<p>If {{ childName }} still wants it, they can ask again.</p>
+{% block email_content %}
+    <p style="margin:0 0 14px 0;">Hello {{ recipientName }},</p>
+
+    <p style="margin:0 0 14px 0;">
+        <strong>{{ purchaseDescription }}</strong> for <strong>{{ childName }}</strong> expired after
+        48 hours with no answer, so it was denied automatically. Nothing has been charged.
+    </p>
+
+    <p style="margin:0;">If {{ childName }} still wants it, they can ask again.</p>
+{% endblock %}

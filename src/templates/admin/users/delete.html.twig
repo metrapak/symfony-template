@@ -33,7 +33,7 @@
     {{ form_start(form) }}
         {{ include('account/_error_summary.html.twig', {form: form}) }}
         {{ form_row(form.reason) }}
-        <button type="submit">Delete personal information</button>
+        <button class="pp-btn pp-btn--danger" type="submit">Delete personal information</button>
         <a href="{{ path('admin_users_index') }}">Cancel</a>
     {{ form_end(form) }}
 {% endblock %}

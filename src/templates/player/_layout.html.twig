@@ -10,63 +10,84 @@
     parent-only entries are behind the same capability check that guards the routes — the check is
     the route's, this only decides whether to draw the link.
 
-    Plain CSS in the layout, like every other shell in this epic; the brand colour arrives through
-    the `--brand` custom property that `_branding.html.twig` sets.
+    The application shell and its dark canvas come from the theme (designs/event_builder.svg); the
+    section's old light-canvas `<style>` block is gone and the class vocabulary its pages already
+    use is repainted in `assets/styles/app.css` instead.
 #}
 {% extends 'base.html.twig' %}
 
+{% block body_class %}pp-theme{% endblock %}
+
 {% block body %}
-    <main id="main-content" class="player">
-        <nav aria-label="Sections">
-            <ul class="player-nav">
-                <li><a href="{{ path('account_dashboard') }}">Dashboard</a></li>
-                <li><a href="{{ path('player_reservations') }}">My reservations</a></li>
-                <li><a href="{{ path('availability_index') }}">Best Times</a></li>
-                <li><a href="{{ path('account_profile') }}">My profile</a></li>
-                <li>{{ include('_notification_indicator.html.twig') }}</li>
-                {% if is_granted('ACCOUNT_MANAGE_PAYMENT_METHODS') %}
-                    <li><a href="{{ path('family_approvals') }}">Approvals</a></li>
-                {% endif %}
-                <li><a href="{{ logout_path() }}">Sign out</a></li>
-            </ul>
-        </nav>
+    {% import '_nav.html.twig' as nav %}
+    {% import '_icons.html.twig' as icons %}
 
-        {{ include('_context_switcher.html.twig') }}
+    {% set branding = viewer_branding() %}
+    {% set logoUrl = branding_logo_url(branding) %}
+    {% set route = app.request.attributes.get('_route') %}
 
-        {# Flash messages announce themselves without stealing focus. #}
-        <div role="status" aria-live="polite">
-            {% for label, messages in app.flashes %}
-                {% for message in messages %}
-                    <p class="flash flash-{{ label }}">{{ message }}</p>
-                {% endfor %}
-            {% endfor %}
+    <div class="pp-shell">
+        <div class="pp-sidebar">
+            <a class="pp-brand" href="{{ path('account_dashboard') }}">
+                <span class="pp-brand-mark">
+                    {% if logoUrl %}
+                        <img src="{{ logoUrl }}" alt="">
+                    {% else %}
+                        {{ include('_logo.html.twig') }}
+                    {% endif %}
+                </span>
+                <span>{{ branding.organizationName ?? app_name }}</span>
+            </a>
+
+            <nav class="pp-nav" aria-label="Sections">
+                <ul>
+                    {{ nav.item(path('account_dashboard'), 'Dashboard', 'dashboard', route in ['account_dashboard', 'family_dashboard']) }}
+                    {{ nav.item(path('player_reservations'), 'My reservations', 'reservations', route in ['player_reservations', 'player_checkout']) }}
+                    {{ nav.item(path('availability_index'), 'Best Times', 'calendar', route starts with 'availability_') }}
+                    {{ nav.item(path('account_profile'), 'My profile', 'profile', route == 'account_profile') }}
+
+                    {# FR-093. Assembled here rather than by `nav.item` so the count and its
+                       screen-reader wording stay in the one partial five shells share. #}
+                    <li class="pp-nav-item pp-nav-item--wrap">
+                        {{ icons.icon('notifications') }}
+                        {{ include('_notification_indicator.html.twig') }}
+                    </li>
+
+                    {# FR-094: only a parent decides purchases. A child login is refused the route
+                       by `ApprovalVoter`, so it is not offered one either. #}
+                    {% if is_granted('ACCOUNT_MANAGE_PAYMENT_METHODS') %}
+                        {{ nav.item(path('family_approvals'), 'Approvals', 'approvals', route starts with 'family_approval') }}
+                    {% endif %}
+
+                    {{ nav.item(logout_path(), 'Sign out', 'signout', false) }}
+                </ul>
+            </nav>
         </div>
 
-        <h1>{% block heading %}{% endblock %}</h1>
+        <main id="main-content" class="pp-main">
+            <div class="pp-topbar">
+                <h1 class="pp-page-title">{% block heading %}{% endblock %}</h1>
 
-        {% block player_content %}{% endblock %}
-    </main>
+                <a class="pp-user-chip" href="{{ path('account_profile') }}">
+                    <span class="pp-avatar" aria-hidden="true">{{ app.user.displayName|slice(0, 2) }}</span>
+                    <span>{{ app.user.displayName }}</span>
+                </a>
+            </div>
 
-    <style>
-        .player { max-width: 60rem; margin: 0 auto; padding: 1rem; font: 400 1rem/1.5 system-ui, sans-serif; }
-        .player-nav { display: flex; flex-wrap: wrap; gap: 1rem; list-style: none; padding: 0; }
-        .player h1, .player h2 { color: var(--brand); }
-        .player .flash-error { color: #b91c1c; }
-        .player .flash-warning { color: #b45309; }
-        .player :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
-        .player button, .player input, .player select, .player textarea { min-height: 2.75rem; font: inherit; }
-        .player .muted { color: #525252; }
-        .player .card { border: 1px solid #d4d4d4; border-radius: .5rem; padding: 1rem; margin-bottom: 1rem; }
-        .player .actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
-        .form-error-summary { border-left: 4px solid #b91c1c; padding: .5rem .75rem; background: #fef2f2; }
-        .visually-hidden {
-            position: absolute;
-            width: 1px; height: 1px;
-            margin: -1px; padding: 0; border: 0;
-            clip-path: inset(50%);
-            overflow: hidden;
-            white-space: nowrap;
-        }
-        {{ include('approval/_status_styles.html.twig') }}
-    </style>
+            {{ include('_context_switcher.html.twig') }}
+
+            {# Flash messages announce themselves without stealing focus. #}
+            <div role="status" aria-live="polite">
+                {% for label, messages in app.flashes %}
+                    {% for message in messages %}
+                        <p class="flash flash-{{ label }}">{{ message }}</p>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+
+            <div class="pp-content">
+                {% block player_content %}{% endblock %}
+            </div>
+        </main>
+    </div>
 {% endblock %}

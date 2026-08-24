@@ -1,21 +1,46 @@
 {# FR-022 / US-01.01 — the invitation a Super Admin's newly created trainer receives. #}
-<p>Hello {{ name }},</p>
+{% extends 'email/_layout.html.twig' %}
 
-<p>
-    A trainer account has been created for <strong>{{ businessName }}</strong>. You can sign in with the
-    details below.
-</p>
+{% block email_title %}Your trainer account is ready{% endblock %}
+{% block preheader %}Sign in with the temporary password inside and choose your own.{% endblock %}
 
-<table role="presentation">
-    <tr><td><strong>Email</strong></td><td>{{ recipientEmail }}</td></tr>
-    <tr><td><strong>Temporary password</strong></td><td><code>{{ temporaryPassword }}</code></td></tr>
-</table>
+{% block email_content %}
+    <p style="margin:0 0 14px 0;">Hello {{ name }},</p>
 
-<p><a href="{{ loginUrl }}">Sign in</a></p>
+    <p style="margin:0 0 14px 0;">
+        A trainer account has been created for <strong>{{ businessName }}</strong>. You can sign in with the
+        details below.
+    </p>
 
-<p>
-    You will be asked to choose your own password the first time you sign in. The temporary password above
-    stops working at that point, so there is nothing to remember from this message afterwards.
-</p>
+    {#
+        A two-column detail table rather than a definition list: `<dl>` collapses to a single
+        run-on line in Outlook, which for a credential is exactly the wrong place to lose the
+        pairing between a label and its value.
+    #}
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0"
+           style="margin:0 0 14px 0; border-collapse:collapse;">
+        <tr>
+            <td style="padding:6px 16px 6px 0; vertical-align:top; color:#5e5e5e; white-space:nowrap;">Email</td>
+            <td style="padding:6px 0; vertical-align:top;">{{ recipientEmail }}</td>
+        </tr>
+        <tr>
+            <td style="padding:6px 16px 6px 0; vertical-align:top; color:#5e5e5e; white-space:nowrap;">Temporary password</td>
+            <td style="padding:6px 0; vertical-align:top;">
+                <code style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:14px; background-color:#f3f4f3; padding:2px 6px; border-radius:4px;">{{ temporaryPassword }}</code>
+            </td>
+        </tr>
+    </table>
 
-<p>If you were not expecting this, please contact us — do not sign in.</p>
+    {{ include('email/_button.html.twig', {
+        url: loginUrl,
+        label: 'Sign in',
+        brand: brandColor|default('#006600'),
+    }) }}
+
+    <p style="margin:0 0 14px 0;">
+        You will be asked to choose your own password the first time you sign in. The temporary password above
+        stops working at that point, so there is nothing to remember from this message afterwards.
+    </p>
+
+    <p style="margin:0;">If you were not expecting this, please contact us — do not sign in.</p>
+{% endblock %}

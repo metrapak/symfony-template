@@ -12,12 +12,64 @@
     {% endif %}
 {% endblock %}
 
+{#
+    Field errors go *after* the control, which is where `designs/inputs.svg` puts them and where
+    the eye is already looking after a rejected submit.
+
+    Getting there takes two overrides rather than one, because `bootstrap_4_layout` renders a
+    field's errors from inside `form_label` — right after the `<label>` and therefore above the
+    input. `form_label_errors` is the theme's own hook for that call, so emptying it moves the
+    errors without reimplementing label rendering (which has separate branches for checkboxes,
+    radios and switches that would be easy to get subtly wrong).
+
+    The row below then renders them itself. The guard matters: when `label` is `false` the
+    framework's label block takes a different path and emits the errors in its own wrapper, so
+    rendering them here as well would show every message twice on the two fields in this
+    application that hide their label (`DayAvailabilityFormType`, `FamilySelectionFormType`).
+#}
+{% block form_label_errors %}{% endblock %}
+
+{% block form_row %}
+    {%- set element = (compound is defined and compound) ? 'fieldset' : 'div' -%}
+    <{{ element }}{% with {attr: row_attr|merge({class: (row_attr.class|default('') ~ ' form-group')|trim})} %}{{ block('attributes') }}{% endwith %}>
+        {{- form_label(form) -}}
+        {#
+            `form_widget` is called without the `aria-describedby` / `aria-invalid` attributes
+            `bootstrap_4_layout` would pass here. `widget_attributes` below computes both, and it
+            computes them better: it links the *error* ids too, which the framework's row does
+            not. Passing them from here as well only produced a duplicated `_help` id.
+        #}
+        {{- form_widget(form) -}}
+        {{- form_help(form) -}}
+        {%- if label is not same as(false) -%}{{- form_errors(form) -}}{%- endif -%}
+    </{{ element }}>
+{% endblock %}
+
 {% block widget_attributes %}
-    {%- set described_by = [] -%}
+    {#
+       A field may already point at something of its own — the password rules list on the reset
+       and change screens does exactly that. Seeding the list with whatever the caller passed
+       means the accessibility wiring below *adds* the help and error ids instead of replacing
+       the caller's, which is how that description silently disappeared the first time a
+       validation error put an `_errors` id on the same field.
+    #}
+    {%- set described_by = attr['aria-describedby'] is defined ? attr['aria-describedby']|split(' ')|filter(v => v is not empty) : [] -%}
     {%- if help is not empty -%}{%- set described_by = described_by|merge([id ~ '_help']) -%}{%- endif -%}
     {%- if errors|length > 0 -%}{%- set described_by = described_by|merge([id ~ '_errors']) -%}{%- endif -%}
-    {%- if described_by is not empty -%}
-        {%- set attr = attr|merge({'aria-describedby': described_by|join(' ')}) -%}
+    {#
+       Deduplicated because the same id can arrive twice — once from a caller's own
+       `aria-describedby` and once from the rules above. A repeated id is not fatal, but a screen
+       reader reading the same help text twice is a defect nobody would report and everybody
+       would notice.
+    #}
+    {%- set unique_described_by = [] -%}
+    {%- for value in described_by -%}
+        {%- if value not in unique_described_by -%}
+            {%- set unique_described_by = unique_described_by|merge([value]) -%}
+        {%- endif -%}
+    {%- endfor -%}
+    {%- if unique_described_by is not empty -%}
+        {%- set attr = attr|merge({'aria-describedby': unique_described_by|join(' ')}) -%}
     {%- endif -%}
     {%- if errors|length > 0 -%}
         {%- set attr = attr|merge({'aria-invalid': 'true'}) -%}

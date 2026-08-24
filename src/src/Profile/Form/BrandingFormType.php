@@ -43,7 +43,7 @@ final class BrandingFormType extends AbstractType
             ->add('primaryColorHex', TextType::class, [
                 'label' => 'Primary colour (hex)',
                 'required' => false,
-                'help' => \sprintf('For example #1d4ed8. Leave empty to use the default (%s).', OrganizationBranding::DEFAULT_PRIMARY_COLOR),
+                'help' => \sprintf('For example #006600. Leave empty to use the default (%s).', OrganizationBranding::DEFAULT_PRIMARY_COLOR),
                 'attr' => [
                     'placeholder' => OrganizationBranding::DEFAULT_PRIMARY_COLOR,
                     'pattern' => '#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})',

@@ -72,7 +72,7 @@
             {{ form_row(form.notes) }}
 
             <div class="actions">
-                <button type="submit" name="decision" value="approve">
+                <button class="pp-btn pp-btn--primary" type="submit" name="decision" value="approve">
                     <span aria-hidden="true">Approve</span>
                     <span class="visually-hidden">
                         Approve {{ purchase.childProfile.displayName }}'s purchase of {{ purchase.purchaseDescription }} for {{ purchase.amount.spokenLabel }}
@@ -80,6 +80,7 @@
                 </button>
 
                 <button
+                    class="pp-btn pp-btn--danger"
                     type="submit"
                     name="decision"
                     value="deny"
@@ -108,5 +109,4 @@
         <p><a href="{{ path('player_reservations') }}">Back to my reservations</a></p>
     {% endif %}
 
-    <style>{{ include('approval/_status_styles.html.twig') }}</style>
 {% endblock %}

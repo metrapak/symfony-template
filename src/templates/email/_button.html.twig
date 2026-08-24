@@ -1,0 +1,23 @@
+{#
+    The one action an email is asking for.
+
+    An `<a>` rather than a `<button>`: there is no form here, and a button element in mail is
+    inert in several clients. The padding sits on the anchor with `display:inline-block`, which is
+    the shape that survives Outlook's Word renderer without needing a VML fallback — the corners
+    go square there and nothing else changes.
+
+    The link text is the action, never "click here": it is also what a screen reader announces
+    out of context when a user lists the links in the message.
+
+    Params: url, label, brand (optional, defaults to the platform colour).
+#}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:20px 0;">
+    <tr>
+        <td style="border-radius:8px; background-color:{{ brand|default('#006600') }};">
+            <a href="{{ url }}"
+               style="display:inline-block; padding:13px 24px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:15px; line-height:20px; font-weight:600; color:#ffffff; text-decoration:none; border-radius:8px;">
+                {{ label }}
+            </a>
+        </td>
+    </tr>
+</table>

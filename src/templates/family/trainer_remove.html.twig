@@ -30,7 +30,7 @@
     <form method="post" action="{{ path('family_trainer_remove', {id: player.id, organizationId: organizationId}) }}">
         <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
         <div class="actions">
-            <button type="submit">
+            <button class="pp-btn pp-btn--danger" type="submit">
                 <span aria-hidden="true">Remove</span>
                 <span class="visually-hidden">Remove {{ player.displayName }} from {{ trainerName }}</span>
             </button>

@@ -1,0 +1,43 @@
+{#
+    The line icons the design uses in its navigation and cards (designs/event_builder.svg).
+
+    Inline SVG rather than an icon font or a sprite sheet, for three reasons:
+
+      - An icon font renders as a missing glyph while the font is loading and as a random letter
+        if it fails, which on a navigation item is worse than no icon at all.
+      - Inline SVG inherits `currentColor`, so one definition works on the dark canvas, inside a
+        brand-tinted chip and on a light legacy page without a recoloured copy of each file.
+      - AssetMapper serves no sprite here, so a sprite would be one more asset to keep in sync
+        with the templates that reference it.
+
+    Every icon is `aria-hidden`: each one sits beside its own visible label, so announcing it
+    would repeat the label rather than add anything (WCAG 1.1.1 — decorative content).
+    An icon used *without* a text label must be given an accessible name at the call site.
+
+    `|raw` is correct here and only here: the path data is a literal map defined in this file, so
+    no request value can reach it. Adding an icon means adding a constant to that map — never
+    passing markup in, which is what would turn this into an injection point.
+#}
+
+{% macro icon(name) %}
+    {%- set paths = {
+        'dashboard': '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/>',
+        'family': '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.2 2.7-5.4 6-5.4s6 2.2 6 5.4"/><path d="M16.5 11.2a2.8 2.8 0 1 0 0-5.6"/><path d="M18 20c0-2.4-.9-4.2-2.4-5.2"/>',
+        'calendar': '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17"/><path d="M8 3v3.5"/><path d="M16 3v3.5"/>',
+        'clock': '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.2 2"/>',
+        'approvals': '<path d="M12 3l7 3v6c0 4.2-2.9 7.6-7 9-4.1-1.4-7-4.8-7-9V6l7-3Z"/><path d="M8.8 12.2l2.2 2.2 4.2-4.4"/>',
+        'reservations': '<path d="M4.5 6.5h15v11h-15z"/><path d="M8 10h8"/><path d="M8 13.5h5"/>',
+        'availability': '<path d="M4 20V10.5"/><path d="M10 20V4.5"/><path d="M16 20v-7"/><path d="M20.5 20h-17"/>',
+        'notifications': '<path d="M18 15.5V11a6 6 0 1 0-12 0v4.5L4.5 18h15L18 15.5Z"/><path d="M10 18a2 2 0 0 0 4 0"/>',
+        'profile': '<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/>',
+        'password': '<circle cx="8.5" cy="12" r="3.5"/><path d="M12 12h8.5"/><path d="M17 12v3.5"/><path d="M20 12v2.5"/>',
+        'signout': '<path d="M9.5 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3.5"/><path d="M14 8.5 17.5 12 14 15.5"/><path d="M17.5 12H9"/>',
+        'admin': '<path d="M12 3.5l6.5 2.8v5.2c0 3.9-2.7 7.1-6.5 8.3-3.8-1.2-6.5-4.4-6.5-8.3V6.3L12 3.5Z"/><path d="M12 9v3"/><path d="M12 15h.01"/>',
+        'mail': '<rect x="3.5" y="5.5" width="17" height="13" rx="2.5"/><path d="m4.5 7.5 7.5 5.5 7.5-5.5"/>',
+        'check': '<path d="M5 12.5 9.5 17 19 7.5"/>',
+    } -%}
+    <svg class="pp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        {{- paths[name]|default(paths['check'])|raw -}}
+    </svg>
+{% endmacro %}

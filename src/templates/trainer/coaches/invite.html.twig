@@ -16,7 +16,7 @@
         {{ form_row(form.email) }}
         {{ form_row(form.name) }}
         {{ form_row(form.message) }}
-        <button type="submit">Send invitation</button>
+        <button class="pp-btn pp-btn--primary" type="submit">Send invitation</button>
         <a href="{{ path('trainer_coaches_index') }}">Cancel</a>
     {{ form_end(form) }}
 {% endblock %}

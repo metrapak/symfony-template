@@ -46,7 +46,7 @@
 
         <form method="post" action="{{ path('membership_join_associate', {code: link.code}) }}">
             <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
-            <button type="submit">Join {{ organizationName }}</button>
+            <button class="pp-btn pp-btn--primary" type="submit">Join {{ organizationName }}</button>
         </form>
 
     {% elseif action == 'associate_player' %}
@@ -61,14 +61,14 @@
                     <legend>Who will train with {{ organizationName }}?</legend>
                     {{ form_widget(familyForm.profileIds) }}
                 </fieldset>
-                <button type="submit">Join {{ organizationName }}</button>
+                <button class="pp-btn pp-btn--primary" type="submit">Join {{ organizationName }}</button>
             {{ form_end(familyForm) }}
         {% else %}
             <p>Join <strong>{{ organizationName }}</strong> to see their events and content.</p>
 
             <form method="post" action="{{ path('membership_join_associate', {code: link.code}) }}">
                 <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
-                <button type="submit">Join {{ organizationName }}</button>
+                <button class="pp-btn pp-btn--primary" type="submit">Join {{ organizationName }}</button>
             </form>
         {% endif %}
     {% endif %}

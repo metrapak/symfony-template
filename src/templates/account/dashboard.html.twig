@@ -1,42 +1,130 @@
+{#
+    The role's landing page (FR-008).
+
+    Still a placeholder in substance — each role's real dashboard content arrives with its own
+    feature task — but no longer a placeholder in *shape*. The navigation that used to be this
+    page's whole body now lives in the shell (`account/_layout.html.twig`), so what is left here
+    is what a landing page is for: saying where you are, and offering the next actions.
+
+    The section cards repeat the shell's links on purpose rather than by oversight. A landing page
+    that only says "signed in" makes the user go looking; the design's card grid is the pattern
+    for "here are your sections", and every card is behind the same `is_granted` check that guards
+    its route (FR-010).
+#}
 {% extends 'account/_layout.html.twig' %}
 
 {% block title %}{{ roleLabel }} dashboard{% endblock %}
 {% block heading %}{{ roleLabel }} dashboard{% endblock %}
 
 {% block account_content %}
-    {# Placeholder. Each role's real dashboard content arrives with its own feature task. #}
-    <p>Signed in as {{ app.user.userIdentifier }}.</p>
+    {# Imported inside the block: a top-level import in a template that `extends` another is not
+       reachable from its blocks. #}
+    {% import '_icons.html.twig' as icons %}
 
-    <ul>
-        <li><a href="{{ path('account_profile') }}">Your profile</a></li>
-        {# The family section is a player's own; a trainer, coach or admin has no children to
-           manage and would only get a 403 from the voter guarding it. #}
-        {% if is_granted('FAMILY_MANAGE_CHILDREN') %}
-            <li><a href="{{ path('family_index') }}">Player profiles and family</a></li>
-        {% endif %}
-        {# FR-080 and FR-082 both say the grid is reached "from navigation". Each role reaches its
-           own: a player (or a child login) sets Best Times, a coach sets My Times, and neither
-           link is offered to somebody the route would refuse. #}
-        {% if is_granted('ROLE_PLAYER') %}
-            <li><a href="{{ path('availability_index') }}">Best Times (your availability)</a></li>
-            {# FR-090/FR-095: where a player — a parent or a child login — sees the status of what
-               they have bought or asked to buy. #}
-            <li><a href="{{ path('player_reservations') }}">My reservations</a></li>
-        {% endif %}
-        {# FR-094: only a parent decides purchases; a child login is refused the route by
-           ApprovalVoter, so it is not offered one. #}
-        {% if is_granted('ACCOUNT_MANAGE_PAYMENT_METHODS') %}
-            <li><a href="{{ path('family_approvals') }}">Purchase approvals</a></li>
-        {% endif %}
-        {# FR-093: the in-app half of the notification, reachable by everybody who can receive one. #}
-        <li>{{ include('_notification_indicator.html.twig') }}</li>
-        {% if is_granted('ROLE_COACH') %}
-            <li><a href="{{ path('coach_my_times') }}">My Times (your availability)</a></li>
-        {% endif %}
-        {% if is_granted('ROLE_TRAINER') %}
-            <li><a href="{{ path('trainer_players_availability') }}">Player availability</a></li>
-        {% endif %}
-        <li><a href="{{ path('account_password_change') }}">Change your password</a></li>
-        <li><a href="{{ logout_path() }}">Sign out</a></li>
-    </ul>
+    <div class="pp-card">
+        <div class="pp-card-head">
+            <div>
+                <p class="pp-eyebrow">Signed in as</p>
+                <h2 class="pp-card-title">{{ app.user.displayName }}</h2>
+            </div>
+            <span class="pp-badge pp-badge--accent">{{ roleLabel }}</span>
+        </div>
+        <p class="pp-card-lead">{{ app.user.userIdentifier }}</p>
+    </div>
+
+    <section class="pp-stack" aria-labelledby="dashboard-sections">
+        <h2 class="pp-card-title" id="dashboard-sections">Your sections</h2>
+
+        <ul class="pp-link-list">
+            <li>
+                <a class="pp-link-card" href="{{ path('account_profile') }}">
+                    {{ icons.icon('profile') }}
+                    <span>Your profile</span>
+                </a>
+            </li>
+
+            {# The family section is a player's own; a trainer, coach or admin has no children to
+               manage and would only get a 403 from the voter guarding it. #}
+            {% if is_granted('FAMILY_MANAGE_CHILDREN') %}
+                <li>
+                    <a class="pp-link-card" href="{{ path('family_index') }}">
+                        {{ icons.icon('family') }}
+                        <span>Player profiles and family</span>
+                    </a>
+                </li>
+            {% endif %}
+
+            {# FR-080 and FR-082 both say the grid is reached "from navigation". Each role reaches
+               its own: a player (or a child login) sets Best Times, a coach sets My Times, and
+               neither link is offered to somebody the route would refuse. #}
+            {% if is_granted('ROLE_PLAYER') %}
+                <li>
+                    <a class="pp-link-card" href="{{ path('availability_index') }}">
+                        {{ icons.icon('calendar') }}
+                        <span>Best Times (your availability)</span>
+                    </a>
+                </li>
+                {# FR-090/FR-095: where a player — a parent or a child login — sees the status of
+                   what they have bought or asked to buy. #}
+                <li>
+                    <a class="pp-link-card" href="{{ path('player_reservations') }}">
+                        {{ icons.icon('reservations') }}
+                        <span>My reservations</span>
+                    </a>
+                </li>
+            {% endif %}
+
+            {# FR-094: only a parent decides purchases; a child login is refused the route by
+               ApprovalVoter, so it is not offered one. #}
+            {% if is_granted('ACCOUNT_MANAGE_PAYMENT_METHODS') %}
+                <li>
+                    <a class="pp-link-card" href="{{ path('family_approvals') }}">
+                        {{ icons.icon('approvals') }}
+                        <span>Purchase approvals</span>
+                    </a>
+                </li>
+            {% endif %}
+
+            {% if is_granted('ROLE_COACH') %}
+                <li>
+                    <a class="pp-link-card" href="{{ path('coach_my_times') }}">
+                        {{ icons.icon('clock') }}
+                        <span>My Times (your availability)</span>
+                    </a>
+                </li>
+            {% endif %}
+
+            {% if is_granted('ROLE_TRAINER') %}
+                <li>
+                    <a class="pp-link-card" href="{{ path('trainer_players_availability') }}">
+                        {{ icons.icon('availability') }}
+                        <span>Player availability</span>
+                    </a>
+                </li>
+            {% endif %}
+
+            {# FR-093: the in-app half of the notification, reachable by everybody who can
+               receive one. The count and its wording come from the shared partial. #}
+            <li>
+                <span class="pp-link-card">
+                    {{ icons.icon('notifications') }}
+                    {{ include('_notification_indicator.html.twig') }}
+                </span>
+            </li>
+
+            <li>
+                <a class="pp-link-card" href="{{ path('account_password_change') }}">
+                    {{ icons.icon('password') }}
+                    <span>Change your password</span>
+                </a>
+            </li>
+
+            <li>
+                <a class="pp-link-card" href="{{ logout_path() }}">
+                    {{ icons.icon('signout') }}
+                    <span>Sign out</span>
+                </a>
+            </li>
+        </ul>
+    </section>
 {% endblock %}

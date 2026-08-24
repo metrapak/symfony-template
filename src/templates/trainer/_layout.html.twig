@@ -1,60 +1,70 @@
 {#
-    Shell for the trainer tools. Deliberately plain, like the admin shell: this epic ships
-    behaviour. The trainer's own colour now reaches these pages through the `--brand` custom
-    property that `_branding.html.twig` sets (US-01.14), so the styles below read it rather than
-    hard-coding an accent.
+    Shell for the trainer tools.
+
+    The same application shell as every other signed-in section (designs/event_builder.svg). The
+    trainer's own colour reaches these pages through the `--brand` custom property that
+    `_branding.html.twig` sets (US-01.14); the theme derives its whole accent scale from it, so a
+    trainer's branding now colours the sidebar, the buttons and the focus ring rather than only a
+    heading. The section's old light-canvas `<style>` block is gone.
 #}
 {% extends 'base.html.twig' %}
 
-{% block body %}
-    <main id="main-content" class="trainer">
-        <nav aria-label="Trainer sections">
-            <ul class="trainer-nav">
-                <li><a href="{{ path('trainer_dashboard') }}">Dashboard</a></li>
-                <li><a href="{{ path('trainer_share_links_index') }}">Player links</a></li>
-                <li><a href="{{ path('trainer_coaches_index') }}">Coaches</a></li>
-                <li><a href="{{ path('trainer_players_availability') }}">Player availability</a></li>
-                <li><a href="{{ path('trainer_branding') }}">Branding</a></li>
-                <li><a href="{{ path('account_profile') }}">My profile</a></li>
-                <li><a href="{{ logout_path() }}">Sign out</a></li>
-            </ul>
-        </nav>
+{% block body_class %}pp-theme{% endblock %}
 
-        <div role="status" aria-live="polite">
-            {% for label, messages in app.flashes %}
-                {% for message in messages %}
-                    <p class="flash flash-{{ label }}">{{ message }}</p>
-                {% endfor %}
-            {% endfor %}
+{% block body %}
+    {% import '_nav.html.twig' as nav %}
+
+    {% set branding = viewer_branding() %}
+    {% set logoUrl = branding_logo_url(branding) %}
+    {% set route = app.request.attributes.get('_route') %}
+
+    <div class="pp-shell">
+        <div class="pp-sidebar">
+            <a class="pp-brand" href="{{ path('trainer_dashboard') }}">
+                <span class="pp-brand-mark">
+                    {% if logoUrl %}
+                        <img src="{{ logoUrl }}" alt="">
+                    {% else %}
+                        {{ include('_logo.html.twig') }}
+                    {% endif %}
+                </span>
+                <span>{{ branding.organizationName ?? app_name }}</span>
+            </a>
+
+            <nav class="pp-nav" aria-label="Trainer sections">
+                <ul>
+                    {{ nav.item(path('trainer_dashboard'), 'Dashboard', 'dashboard', route == 'trainer_dashboard') }}
+                    {{ nav.item(path('trainer_share_links_index'), 'Player links', 'mail', route starts with 'trainer_share_links_') }}
+                    {{ nav.item(path('trainer_coaches_index'), 'Coaches', 'family', route starts with 'trainer_coach') }}
+                    {{ nav.item(path('trainer_players_availability'), 'Player availability', 'availability', route == 'trainer_players_availability') }}
+                    {{ nav.item(path('trainer_branding'), 'Branding', 'check', route == 'trainer_branding') }}
+                    {{ nav.item(path('account_profile'), 'My profile', 'profile', route == 'account_profile') }}
+                    {{ nav.item(logout_path(), 'Sign out', 'signout', false) }}
+                </ul>
+            </nav>
         </div>
 
-        <h1>{% block heading %}{% endblock %}</h1>
+        <main id="main-content" class="pp-main">
+            <div class="pp-topbar">
+                <h1 class="pp-page-title">{% block heading %}{% endblock %}</h1>
 
-        {% block trainer_content %}{% endblock %}
-    </main>
+                <a class="pp-user-chip" href="{{ path('account_profile') }}">
+                    <span class="pp-avatar" aria-hidden="true">{{ app.user.displayName|slice(0, 2) }}</span>
+                    <span>{{ app.user.displayName }}</span>
+                </a>
+            </div>
 
-    <style>
-        .trainer { max-width: 72rem; margin: 0 auto; padding: 1rem; font: 400 1rem/1.5 system-ui, sans-serif; }
-        .trainer-nav { display: flex; flex-wrap: wrap; gap: 1rem; list-style: none; padding: 0; }
-        .trainer table { width: 100%; border-collapse: collapse; }
-        .trainer th, .trainer td { padding: .5rem; border-bottom: 1px solid #d4d4d4; text-align: left; }
-        .trainer th { background: #f5f5f5; }
-        .trainer code { word-break: break-all; }
-        .trainer .flash-error { color: #b91c1c; }
-        .trainer .flash-warning { color: #b45309; }
-        .trainer .actions { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
-        .trainer :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
-        .trainer button, .trainer input[type="text"], .trainer input[type="email"] { min-height: 2.75rem; }
-        /* Status is carried by the text; the colour is an extra, never the message (NFR-X04). */
-        .trainer .status-expired { color: #b45309; }
-        .trainer .status-accepted { color: #15803d; }
-        .visually-hidden {
-            position: absolute;
-            width: 1px; height: 1px;
-            margin: -1px; padding: 0; border: 0;
-            clip-path: inset(50%);
-            overflow: hidden;
-            white-space: nowrap;
-        }
-    </style>
+            <div role="status" aria-live="polite">
+                {% for label, messages in app.flashes %}
+                    {% for message in messages %}
+                        <p class="flash flash-{{ label }}">{{ message }}</p>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+
+            <div class="pp-content">
+                {% block trainer_content %}{% endblock %}
+            </div>
+        </main>
+    </div>
 {% endblock %}

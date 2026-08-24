@@ -1,13 +1,37 @@
-{% extends 'account/_layout.html.twig' %}
+{#
+    The outcome of following a confirmation link (FR-005).
+
+    Both outcomes are a stated result with a next step, not a dead end: a failed confirmation
+    offers the resend route rather than only explaining what went wrong.
+#}
+{% extends 'account/_focus_layout.html.twig' %}
 
 {% block title %}{{ verified ? 'Email confirmed' : 'Confirmation failed' }}{% endblock %}
 {% block heading %}{{ verified ? 'Email confirmed' : 'Confirmation failed' }}{% endblock %}
 
 {% block account_content %}
     {% if verified %}
-        <p><a href="{{ path('app_login') }}">Sign in</a></p>
+        <p class="pp-prose">Your email address is confirmed. You can sign in now.</p>
+
+        <a class="pp-btn pp-btn--primary pp-btn--block" href="{{ path('app_login') }}">Sign in</a>
     {% else %}
-        <p>This link cannot be used. Links expire 24 hours after they are sent.</p>
-        <p><a href="{{ path('account_verify_resend') }}">Send me a new confirmation link</a></p>
+        {#
+            No `role` on this one. The controller adds a flash carrying the *specific* reason the
+            link was refused, and the focus layout announces that through its live region; this
+            paragraph is the standing policy behind it. Two assertive announcements for one
+            outcome is noise, and the more specific one should win.
+        #}
+        <p class="pp-notice">
+            This link cannot be used. Links expire 24 hours after they are sent, and each one
+            works only once.
+        </p>
+
+        <a class="pp-btn pp-btn--primary pp-btn--block" href="{{ path('account_verify_resend') }}">
+            Send me a new confirmation link
+        </a>
+
+        <ul class="pp-auth-links">
+            <li><a href="{{ path('app_login') }}">Back to sign in</a></li>
+        </ul>
     {% endif %}
 {% endblock %}

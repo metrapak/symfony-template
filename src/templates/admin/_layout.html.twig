@@ -1,57 +1,63 @@
 {#
-    Shell for the Super Admin tools. Deliberately plain: this epic ships behavior, and the
-    visual design system arrives with the branding task (US-01.14 / TASK-004).
+    Shell for the Super Admin tools.
+
+    The same application shell as every other signed-in section (designs/event_builder.svg). It
+    is the one shell whose accent is *not* a trainer's: a Super Admin has no organization, so
+    `viewer_branding()` returns the platform default and the theme's own green is what shows —
+    which is the honest signal that these pages are above any single tenant.
+
+    The section's old light-canvas `<style>` block is gone; the class vocabulary its pages use
+    (`filters`, `actions`, `status-*`, a plain `<table>`, the confirm `<dialog>`) is repainted in
+    `assets/styles/app.css`.
 #}
 {% extends 'base.html.twig' %}
 
-{% block body %}
-    <main id="main-content" class="admin">
-        <nav aria-label="Admin sections">
-            <ul class="admin-nav">
-                <li><a href="{{ path('admin_dashboard') }}">Dashboard</a></li>
-                <li><a href="{{ path('admin_users_index') }}">Users</a></li>
-                <li><a href="{{ path('admin_audit_impersonations') }}">Impersonation history</a></li>
-                <li><a href="{{ logout_path() }}">Sign out</a></li>
-            </ul>
-        </nav>
+{% block body_class %}pp-theme{% endblock %}
 
-        {# Announced without stealing focus, matching the account layout. #}
-        <div role="status" aria-live="polite">
-            {% for label, messages in app.flashes %}
-                {% for message in messages %}
-                    <p class="flash flash-{{ label }}">{{ message }}</p>
-                {% endfor %}
-            {% endfor %}
+{% block body %}
+    {% import '_nav.html.twig' as nav %}
+
+    {% set route = app.request.attributes.get('_route') %}
+
+    <div class="pp-shell">
+        <div class="pp-sidebar">
+            <a class="pp-brand" href="{{ path('admin_dashboard') }}">
+                <span class="pp-brand-mark">{{ include('_logo.html.twig') }}</span>
+                <span>{{ app_name }}</span>
+            </a>
+
+            <nav class="pp-nav" aria-label="Admin sections">
+                <ul>
+                    {{ nav.item(path('admin_dashboard'), 'Dashboard', 'dashboard', route == 'admin_dashboard') }}
+                    {{ nav.item(path('admin_users_index'), 'Users', 'family', route starts with 'admin_users_') }}
+                    {{ nav.item(path('admin_audit_impersonations'), 'Impersonation history', 'admin', route == 'admin_audit_impersonations') }}
+                    {{ nav.item(logout_path(), 'Sign out', 'signout', false) }}
+                </ul>
+            </nav>
         </div>
 
-        <h1>{% block heading %}{% endblock %}</h1>
+        <main id="main-content" class="pp-main">
+            <div class="pp-topbar">
+                <h1 class="pp-page-title">{% block heading %}{% endblock %}</h1>
 
-        {% block admin_content %}{% endblock %}
-    </main>
+                <a class="pp-user-chip" href="{{ path('account_profile') }}">
+                    <span class="pp-avatar" aria-hidden="true">{{ app.user.displayName|slice(0, 2) }}</span>
+                    <span>{{ app.user.displayName }}</span>
+                </a>
+            </div>
 
-    <style>
-        .admin { max-width: 72rem; margin: 0 auto; padding: 1rem; font: 400 1rem/1.5 system-ui, sans-serif; }
-        .admin-nav { display: flex; flex-wrap: wrap; gap: 1rem; list-style: none; padding: 0; }
-        .admin table { width: 100%; border-collapse: collapse; }
-        .admin th, .admin td { padding: .5rem; border-bottom: 1px solid #d4d4d4; text-align: left; }
-        .admin th { background: #f5f5f5; }
-        .admin .status-inactive, .admin .status-deleted { color: #737373; }
-        .admin .flash-error { color: #b91c1c; }
-        .admin .flash-warning { color: #b45309; }
-        .admin .filters { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; margin-bottom: 1rem; }
-        .admin :focus-visible { outline: 3px solid #1d4ed8; outline-offset: 2px; }
-        .admin .actions { display: flex; flex-wrap: wrap; gap: .4rem; }
-        .admin dialog { max-width: 32rem; padding: 1.25rem; border: 1px solid #d4d4d4; border-radius: .5rem; }
-        .admin dialog::backdrop { background: rgb(0 0 0 / .45); }
-        /* Present to assistive tech, absent from the visual layout: how a row of buttons all
-           reading "Delete" becomes "Delete user Jane Doe" for a screen reader (NFR-023). */
-        .visually-hidden {
-            position: absolute;
-            width: 1px; height: 1px;
-            margin: -1px; padding: 0; border: 0;
-            clip-path: inset(50%);
-            overflow: hidden;
-            white-space: nowrap;
-        }
-    </style>
+            {# Announced without stealing focus, matching the account layout. #}
+            <div role="status" aria-live="polite">
+                {% for label, messages in app.flashes %}
+                    {% for message in messages %}
+                        <p class="flash flash-{{ label }}">{{ message }}</p>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+
+            <div class="pp-content">
+                {% block admin_content %}{% endblock %}
+            </div>
+        </main>
+    </div>
 {% endblock %}

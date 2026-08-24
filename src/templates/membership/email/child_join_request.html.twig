@@ -2,19 +2,30 @@
     FR-048 — the notification a parent receives after their child opens a trainer's link.
     Subject and CTA are fixed by the spec: "Review Registration".
 #}
-<p>Hello {{ parentName }},</p>
+{% extends 'email/_layout.html.twig' %}
 
-<p>
-    <strong>{{ childName }}</strong> opened an invitation to join
-    <strong>{{ organizationName }}</strong>'s program. Children cannot add a trainer themselves,
-    so nothing has changed yet.
-</p>
+{% block email_title %}Review a registration{% endblock %}
+{% block preheader %}{{ childName }} opened an invitation to join {{ organizationName }}. Nothing has changed yet.{% endblock %}
 
-<p><a href="{{ joinUrl }}">Review Registration</a></p>
+{% block email_content %}
+    <p style="margin:0 0 14px 0;">Hello {{ parentName }},</p>
 
-<p>
-    Opening that link while signed in to your own account lets you choose which of your family
-    members joins {{ organizationName }}.
-</p>
+    <p style="margin:0 0 14px 0;">
+        <strong>{{ childName }}</strong> opened an invitation to join
+        <strong>{{ organizationName }}</strong>'s program. Children cannot add a trainer themselves,
+        so nothing has changed yet.
+    </p>
 
-<p>If this was not expected, you can ignore this message — no association has been created.</p>
+    {{ include('email/_button.html.twig', {
+        url: joinUrl,
+        label: 'Review Registration',
+        brand: brandColor|default('#006600'),
+    }) }}
+
+    <p style="margin:0 0 14px 0;">
+        Opening that link while signed in to your own account lets you choose which of your family
+        members joins {{ organizationName }}.
+    </p>
+
+    <p style="margin:0;">If this was not expected, you can ignore this message — no association has been created.</p>
+{% endblock %}

@@ -1,11 +1,18 @@
 {# FR-095 — denied, and nothing was charged. Said plainly, because that is the part that matters. #}
-<p>Hello {{ recipientName }},</p>
+{% extends 'email/_layout.html.twig' %}
 
-<p>
-    <strong>{{ purchaseDescription }}</strong> for <strong>{{ childName }}</strong> was not
-    approved. Nothing has been charged.
-</p>
+{% block email_title %}Purchase not approved{% endblock %}
+{% block preheader %}{{ purchaseDescription }} for {{ childName }} was not approved. Nothing has been charged.{% endblock %}
 
-{% if parentNotes %}
-    <p><strong>Note:</strong> {{ parentNotes }}</p>
-{% endif %}
+{% block email_content %}
+    <p style="margin:0 0 14px 0;">Hello {{ recipientName }},</p>
+
+    <p style="margin:0 0 14px 0;">
+        <strong>{{ purchaseDescription }}</strong> for <strong>{{ childName }}</strong> was not
+        approved. Nothing has been charged.
+    </p>
+
+    {% if parentNotes %}
+        <p style="margin:0;"><strong>Note:</strong> {{ parentNotes }}</p>
+    {% endif %}
+{% endblock %}

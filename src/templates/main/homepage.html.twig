@@ -2,6 +2,9 @@
 
 {% block body %}
     <div>
+        {# Template-era demo asset. It used to sit in `base.html.twig`, which put a red pin
+           at the top of every page in the application, including the sign-in screen. #}
+        <img src="{{ asset('main/images/red-pin.svg') }}" alt="" width="32" height="32">
         <h1> <b>Navigation:</b></h1>
         <nav style="margin-top: 20px; margin-bottom: 50px">
             <ul style="display: flex;gap: 10px;">

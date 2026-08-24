@@ -1,1 +1,2108 @@
 @import "tailwindcss";
+
+/*
+ * Tailwind v4 discovers utility classes by scanning source files. The entry stylesheet lives in
+ * `assets/styles/`, so `templates/` is declared explicitly rather than left to auto-detection —
+ * a missed directory shows up as silently absent utilities, which is the hardest kind of CSS bug
+ * to see in review.
+ */
+@source "../../templates";
+
+/* ==========================================================================================
+ * Design tokens — TASK-001 (designs/DESIGN_TOKENS.md, designs/*.svg)
+ *
+ * These are the tokens extracted from the supplied design files, expressed once here so a
+ * template never carries a raw hex value. Two notes on how this interacts with the app:
+ *
+ *  1. `--brand` and `--brand-fg` are NOT defined here. They are per-tenant values painted by
+ *     `templates/_branding.html.twig` in the document head (FR-071, FR-072, NFR-065), and the
+ *     accent tokens below are derived from `--brand` with `color-mix()` so that a trainer's
+ *     colour flows through every component. The fallback in each `var()` is the design's own
+ *     green, so an unbranded page — or one rendered before the branding block for any reason —
+ *     still looks like the design rather than like nothing.
+ *  2. Derivation happens in CSS, not in PHP. `DESIGN_TOKENS.md` describes `lightenColor()` /
+ *     `darkenColor()` helpers; `color-mix()` is the platform's own version of those, so the
+ *     accent scale needs no server-side colour maths and `HexColor` stays the single place a
+ *     colour is validated.
+ * ========================================================================================== */
+
+@theme {
+    /* -- Surfaces (event_builder.svg, inputs.svg) ------------------------------------------ */
+    --color-ink-0: #0d0d0d;   /* page canvas */
+    --color-ink-1: #111d11;   /* input / well */
+    --color-ink-2: #1d2f1d;   /* card, sidebar item */
+    --color-ink-3: #173f17;   /* raised / hover */
+
+    /* -- Lines ---------------------------------------------------------------------------- */
+    --color-line: #001900;
+    --color-line-strong: #363636;
+
+    /* -- Text ----------------------------------------------------------------------------- */
+    --color-text-1: #f3f3f3;
+    --color-text-2: #cfcfcf;
+    --color-text-3: #aaaaaa;
+
+    /* -- Accent scale (buttons.svg) ------------------------------------------------------- */
+    --color-accent: #006600;
+    --color-accent-hover: #00b500;
+    --color-accent-press: #018501;
+    --color-accent-bright: #00b300;
+    --color-accent-tint: #e6ffe6;
+    --color-accent-deep: #001900;
+
+    /* -- Status --------------------------------------------------------------------------- */
+    --color-danger: #ff5e58;
+    --color-success: #00b300;
+    --color-warning: #f5a623;
+
+    /* -- Typography scale (text.svg / DESIGN_TOKENS.md) ---------------------------------- */
+    --text-hero: 1.875rem;          /* 30px */
+    --text-hero--line-height: 2.375rem;
+    --text-hero--font-weight: 700;
+    --text-section: 1.375rem;       /* 22px */
+    --text-section--line-height: 1.75rem;
+    --text-section--font-weight: 700;
+    --text-block: 1.125rem;         /* 18px */
+    --text-block--line-height: 1.5rem;
+    --text-block--font-weight: 700;
+    --text-card: 1rem;              /* 16px */
+    --text-card--line-height: 1.375rem;
+    --text-card--font-weight: 600;
+    --text-body-lg: 1rem;           /* 16px */
+    --text-body-lg--line-height: 1.625rem;
+    --text-body: 0.875rem;          /* 14px */
+    --text-body--line-height: 1.375rem;
+    --text-caption: 0.75rem;        /* 12px */
+    --text-caption--line-height: 1.125rem;
+    --text-eyebrow: 0.6875rem;      /* 11px */
+    --text-eyebrow--line-height: 1rem;
+    --text-eyebrow--font-weight: 600;
+
+    /*
+     * The design files ship their type as outlines, so the typeface itself is not recoverable
+     * from them and no font family is named in DESIGN_TOKENS.md. Adding a hosted webfont is a
+     * privacy, CSP and self-hosting decision rather than a styling one, so this stack stays on
+     * the system UI face until that decision is taken. The scale above — which is what actually
+     * carries the design's rhythm — is unaffected either way.
+     */
+    --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+    /* -- Radius --------------------------------------------------------------------------- */
+    --radius-xs: 6px;
+    --radius-sm: 10px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --radius-xl: 32px;
+
+    /* -- Shadows -------------------------------------------------------------------------- */
+    --shadow-card-soft: 0 2px 8px rgb(0 0 0 / 0.2);
+    --shadow-card-strong: 0 4px 16px rgb(0 0 0 / 0.3);
+}
+
+/*
+ * Accent tokens derived from the tenant's `--brand`, kept outside `@theme` because `color-mix()`
+ * is resolved at used-value time and `@theme` wants static values it can also emit as utilities.
+ */
+:root {
+    --pp-accent: var(--brand, var(--color-accent));
+    --pp-accent-fg: var(--brand-fg, #ffffff);
+    --pp-accent-hover: color-mix(in srgb, var(--pp-accent) 65%, #ffffff);
+    --pp-accent-press: color-mix(in srgb, var(--pp-accent) 92%, #ffffff);
+    --pp-accent-deep: color-mix(in srgb, var(--pp-accent) 30%, #000000);
+    --pp-accent-tint: color-mix(in srgb, var(--pp-accent) 12%, #ffffff);
+    --pp-accent-glow: color-mix(in srgb, var(--pp-accent) 55%, #ffffff);
+
+    /*
+     * The top stop of the primary button's gradient (DESIGN_TOKENS.md: "Primary: gradient
+     * background, glow shadow"). Deliberately a *small* lift rather than `--pp-accent-hover`:
+     * `--pp-accent-fg` is computed server-side from the WCAG luminance of `--brand` (NFR-065),
+     * so lightening the fill much moves it away from the foreground that was chosen for it. At
+     * 88% the default #006600 keeps white text near 6:1, where the 65% mix would drop it to 3.4
+     * and fail 1.4.3 outright — which is what the primary button's hover state used to do.
+     */
+    --pp-accent-lift: color-mix(in srgb, var(--pp-accent) 88%, #ffffff);
+
+    /* Focus ring: the outline colour plus the soft halo inputs.svg shows on a focused field. */
+    --pp-focus-ring: 0 0 0 4px color-mix(in srgb, var(--pp-accent) 35%, transparent);
+
+    /*
+     * Surfaces, re-derived from the tenant's accent.
+     *
+     * `@theme` above records the four ink values exactly as they appear in event_builder.svg,
+     * and they are green — because the design was drawn in the platform's own colour. Left as
+     * literals they would stay green for every tenant, so a trainer whose brand is rust got a
+     * rust preview swatch inside a green application, and the sidebar's current-page highlight —
+     * the most prominent painted surface on any screen — ignored their colour entirely. That is
+     * not what FR-071/FR-072 ask for.
+     *
+     * Each mix below reproduces the design's own hex when `--brand` is the default #006600, so an
+     * unbranded install is pixel-identical to the mockup; the percentages are the solution of
+     * `mix(accent, neutral) = design value` for each surface, which is why they are not round
+     * numbers. Overriding the names here rather than at the call sites means every existing
+     * `var(--color-ink-2)` follows without a component rule changing.
+     *
+     * These declarations sit outside `@layer`, so they win over the `@theme` layer regardless of
+     * source order. The page canvas (`--color-ink-0`) stays neutral: it is nearly black, a hue
+     * would only show up as a cast, and the accent already reaches it through the wash.
+     */
+    --color-ink-1: color-mix(in srgb, var(--pp-accent) 12%, #131313);
+    --color-ink-2: color-mix(in srgb, var(--pp-accent) 18%, #232323);
+    --color-ink-3: color-mix(in srgb, var(--pp-accent) 39%, #262626);
+    --color-line: color-mix(in srgb, var(--pp-accent) 25%, #000000);
+}
+
+/* ==========================================================================================
+ * Theme opt-in
+ *
+ * The dark theme is applied through `body.pp-theme`, not to `body` itself. The repository still
+ * carries template-era pages (products, starships, videos, the todo list) and four audience
+ * shells whose own inline CSS assumes a light canvas; repainting the document root would leave
+ * those unreadable as a side effect of a TASK-001 change. Every surface that opts in sets the
+ * class, so extending the theme to another audience later is one word in that layout.
+ * ========================================================================================== */
+
+@layer base {
+    body.pp-theme {
+        min-height: 100vh;
+        margin: 0;
+        background-color: var(--color-ink-0);
+        color: var(--color-text-1);
+        font-family: var(--font-sans);
+        font-size: var(--text-body-lg);
+        line-height: var(--text-body-lg--line-height);
+        color-scheme: dark;
+        -webkit-font-smoothing: antialiased;
+
+        /*
+         * event_builder.svg puts a single very soft accent ellipse behind the whole page
+         * (a #00B300 ellipse under a 284px gaussian blur, anchored low and left of centre).
+         * A fixed radial gradient is the same effect for a fraction of the cost, and being
+         * fixed it does not slide away on a long page the way a painted ellipse would.
+         */
+        background-image: radial-gradient(
+            95% 70% at 34% 112%,
+            color-mix(in srgb, var(--pp-accent-glow) 78%, transparent) 0%,
+            color-mix(in srgb, var(--pp-accent-glow) 34%, transparent) 34%,
+            color-mix(in srgb, var(--pp-accent-glow) 8%, transparent) 60%,
+            transparent 78%
+        );
+        background-attachment: fixed;
+        background-repeat: no-repeat;
+    }
+
+    .pp-theme :where(h1, h2, h3, h4, h5, h6) {
+        color: var(--color-text-1);
+        text-wrap: balance;
+    }
+
+    /*
+     * Tailwind's preflight resets `text-decoration` on `a`, which would leave an inline link in a
+     * paragraph looking exactly like the paragraph — not "distinguished by colour alone" (WCAG
+     * 1.4.1) but not distinguished at all. So the underline is put back here, tinted with the
+     * accent. Every component that turns a link into a box — nav item, button, card, brand mark,
+     * skip link — already sets `text-decoration: none`, and each of those selectors outranks this
+     * zero-specificity one, so putting the underline back costs none of them.
+     */
+    .pp-theme :where(a) {
+        color: var(--color-text-1);
+        text-decoration-line: underline;
+        text-decoration-color: color-mix(in srgb, var(--pp-accent-glow) 60%, transparent);
+        text-underline-offset: 0.2em;
+    }
+
+    .pp-theme :where(a):hover {
+        text-decoration-color: var(--pp-accent-glow);
+    }
+
+    /*
+     * One focus style for the whole theme. NFR-004 asks for visible focus; a 3px outline plus
+     * the halo from inputs.svg stays visible on the card surface and on the page canvas, which
+     * a 1px accent border would not.
+     */
+    .pp-theme :focus-visible {
+        outline: 3px solid var(--pp-accent-glow);
+        outline-offset: 2px;
+        border-radius: var(--radius-xs);
+    }
+
+    /* Reduced motion is honoured globally: every transition below is decoration. */
+    @media (prefers-reduced-motion: reduce) {
+        .pp-theme *,
+        .pp-theme *::before,
+        .pp-theme *::after {
+            transition-duration: 0.01ms !important;
+            animation-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
+    }
+}
+
+@layer components {
+    /* ======================================================================================
+     * Utilities that are part of the accessibility contract
+     * ====================================================================================== */
+
+    .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        border: 0;
+        clip-path: inset(50%);
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    /* First focusable thing in the document, visible only once focused (WCAG 2.4.1). */
+    .pp-skip-link {
+        position: absolute;
+        left: 1rem;
+        top: -4rem;
+        z-index: 1200;
+        padding: 0.75rem 1.25rem;
+        border-radius: var(--radius-sm);
+        background: var(--pp-accent);
+        color: var(--pp-accent-fg);
+        font-size: var(--text-body);
+        font-weight: 600;
+        text-decoration: none;
+        transition: top 120ms ease-out;
+    }
+
+    .pp-skip-link:focus-visible {
+        top: 1rem;
+    }
+
+    /* ======================================================================================
+     * App shell — the sidebar + content frame from event_builder.svg
+     * ====================================================================================== */
+
+    .pp-shell {
+        display: grid;
+        grid-template-columns: 15rem minmax(0, 1fr);
+        gap: 1.5rem;
+        align-items: start;
+        /*
+         * `min-height: 100vh` below makes the grid taller than its rows need. Without this, the
+         * spare height is handed to the auto rows, which on narrow viewports — where the sidebar
+         * becomes the first *row* rather than the first column — stretched that row and left a
+         * screenful of empty space between the navigation and the page heading.
+         */
+        align-content: start;
+        max-width: 90rem;
+        min-height: 100vh;
+        margin: 0 auto;
+        padding: 1.5rem;
+    }
+
+    .pp-sidebar {
+        position: sticky;
+        top: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .pp-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-height: 2.75rem;
+        color: var(--color-text-1);
+        font-size: var(--text-card);
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .pp-brand-mark {
+        display: grid;
+        place-items: center;
+        flex: 0 0 auto;
+        width: 2.75rem;
+        height: 2.75rem;
+        padding: 0.4rem;
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-sm);
+        background: var(--color-ink-2);
+        color: var(--color-text-1);
+        overflow: hidden;
+    }
+
+    .pp-brand-mark svg,
+    .pp-brand-mark img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .pp-nav ul {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .pp-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-height: 2.75rem;
+        padding: 0.5rem 0.875rem;
+        border: 1px solid transparent;
+        border-radius: var(--radius-sm);
+        color: var(--color-text-2);
+        font-size: var(--text-body);
+        text-decoration: none;
+        transition: background-color 120ms ease-out, color 120ms ease-out;
+    }
+
+    .pp-nav-item:hover {
+        background: var(--color-ink-2);
+        color: var(--color-text-1);
+        text-decoration: none;
+    }
+
+    /*
+     * The current page is marked with `aria-current="page"` and the styling hangs off that
+     * attribute rather than off a class, so the visual state and the announced state cannot
+     * drift apart (NFR-004, WCAG 1.4.1 — the bold weight and the border carry it too, not only
+     * the background tint).
+     */
+    .pp-nav-item[aria-current="page"] {
+        border-color: color-mix(in srgb, var(--pp-accent) 45%, transparent);
+        background: var(--color-ink-3);
+        color: var(--color-text-1);
+        font-weight: 600;
+    }
+
+    .pp-nav-item .pp-icon {
+        color: var(--pp-accent-glow);
+    }
+
+    .pp-icon {
+        flex: 0 0 auto;
+        width: 1.125rem;
+        height: 1.125rem;
+    }
+
+    .pp-main {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        min-width: 0;
+    }
+
+    .pp-topbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .pp-page-title {
+        margin: 0;
+        font-size: var(--text-hero);
+        line-height: var(--text-hero--line-height);
+        font-weight: 700;
+    }
+
+    .pp-user-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.625rem;
+        min-height: 2.75rem;
+        padding: 0.375rem 1rem 0.375rem 0.375rem;
+        border: 1px solid var(--color-line);
+        border-radius: 999px;
+        background: var(--color-ink-2);
+        color: var(--color-text-1);
+        font-size: var(--text-body);
+        text-decoration: none;
+    }
+
+    /* Narrow viewports: the sidebar becomes a horizontal, scroll-free wrapped nav (NFR-005). */
+    @media (max-width: 60rem) {
+        .pp-shell {
+            grid-template-columns: minmax(0, 1fr);
+            padding: 1rem;
+        }
+
+        .pp-sidebar {
+            position: static;
+            gap: 1rem;
+        }
+
+        .pp-nav ul {
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+    }
+
+    /* ======================================================================================
+     * Cards
+     * ====================================================================================== */
+
+    .pp-card {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 1rem;
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-md);
+        background: var(--color-ink-2);
+        box-shadow: var(--shadow-card-soft);
+    }
+
+    .pp-card-head {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .pp-card-title {
+        margin: 0;
+        font-size: var(--text-block);
+        line-height: var(--text-block--line-height);
+        font-weight: 700;
+    }
+
+    .pp-card-lead {
+        margin: 0;
+        color: var(--color-text-3);
+        font-size: var(--text-body);
+        line-height: var(--text-body--line-height);
+    }
+
+    .pp-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(17rem, 100%), 1fr));
+        gap: 1rem;
+    }
+
+    /* Label / value pairs, as stacked in the event card. */
+    .pp-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+    }
+
+    .pp-meta-label {
+        color: var(--color-text-3);
+        font-size: var(--text-caption);
+        line-height: var(--text-caption--line-height);
+    }
+
+    .pp-meta-value {
+        color: var(--color-text-1);
+        font-size: var(--text-body);
+        line-height: var(--text-body--line-height);
+        font-weight: 600;
+    }
+
+    /* Read-only facts, as a description list (FR-060 renders these as text, never as inputs). */
+    .pp-dl {
+        display: grid;
+        grid-template-columns: minmax(8rem, max-content) minmax(0, 1fr);
+        gap: 0.375rem 1rem;
+        margin: 0;
+    }
+
+    .pp-dl dt {
+        color: var(--color-text-3);
+        font-size: var(--text-caption);
+        line-height: var(--text-caption--line-height);
+    }
+
+    .pp-dl dd {
+        margin: 0;
+        color: var(--color-text-1);
+        font-size: var(--text-body);
+        line-height: var(--text-body--line-height);
+    }
+
+    @media (max-width: 30rem) {
+        .pp-dl {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 0 0;
+        }
+
+        .pp-dl dd {
+            margin-bottom: 0.625rem;
+        }
+    }
+
+    .pp-photo {
+        width: 6rem;
+        height: 6rem;
+        border: 1px solid var(--color-line);
+        border-radius: 999px;
+        object-fit: cover;
+    }
+
+    .pp-eyebrow {
+        color: var(--color-text-3);
+        font-size: var(--text-eyebrow);
+        line-height: var(--text-eyebrow--line-height);
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .pp-muted {
+        color: var(--color-text-3);
+    }
+
+    /* ======================================================================================
+     * Buttons (buttons.svg)
+     * ====================================================================================== */
+
+    .pp-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        /* 2.75rem, not the 40px in DESIGN_TOKENS.md: NFR-005 asks for touch-friendly targets
+           and 44px is the WCAG 2.2 target-size floor. The design's own controls measure 44px
+           in event_builder.svg, so this follows the mockup over the summary table. */
+        min-height: 2.75rem;
+        padding: 0.5rem 1.5rem;
+        border: 1px solid transparent;
+        border-radius: var(--radius-sm);
+        font-family: inherit;
+        font-size: var(--text-body);
+        line-height: var(--text-body--line-height);
+        font-weight: 600;
+        text-align: center;
+        text-decoration: none;
+        cursor: pointer;
+        transition: background-color 120ms ease-out, border-color 120ms ease-out,
+            transform 120ms ease-out, box-shadow 120ms ease-out;
+    }
+
+    .pp-btn:hover {
+        text-decoration: none;
+    }
+
+    .pp-btn:disabled,
+    .pp-btn[aria-disabled="true"] {
+        cursor: not-allowed;
+        opacity: 0.55;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .pp-btn--primary {
+        background: linear-gradient(180deg, var(--pp-accent-lift) 0%, var(--pp-accent) 100%);
+        color: var(--pp-accent-fg);
+        box-shadow: 0 10px 30px color-mix(in srgb, var(--pp-accent) 45%, transparent);
+    }
+
+    /* Hover lifts the glow and the button, not the fill: the fill is as light as it can go and
+       still carry `--pp-accent-fg`. */
+    .pp-btn--primary:hover:not(:disabled) {
+        background: var(--pp-accent-lift);
+        box-shadow: 0 12px 34px color-mix(in srgb, var(--pp-accent) 65%, transparent);
+        transform: translateY(-1px);
+    }
+
+    .pp-btn--primary:active:not(:disabled) {
+        background: var(--pp-accent);
+        box-shadow: 0 6px 18px color-mix(in srgb, var(--pp-accent) 45%, transparent);
+        transform: translateY(0);
+    }
+
+    .pp-btn--secondary {
+        border-color: color-mix(in srgb, var(--pp-accent) 55%, transparent);
+        background: transparent;
+        color: var(--color-text-1);
+    }
+
+    .pp-btn--secondary:hover:not(:disabled) {
+        border-color: var(--pp-accent-hover);
+        background: color-mix(in srgb, var(--pp-accent) 18%, transparent);
+        transform: translateY(-1px);
+    }
+
+    .pp-btn--secondary:active:not(:disabled) {
+        background: color-mix(in srgb, var(--pp-accent) 28%, transparent);
+        transform: translateY(0);
+    }
+
+    .pp-btn--ghost {
+        background: transparent;
+        color: var(--color-text-2);
+    }
+
+    .pp-btn--ghost:hover:not(:disabled) {
+        background: var(--color-ink-2);
+        color: var(--color-text-1);
+    }
+
+    /* Destructive actions are named by their word first; the colour is the second signal. */
+    .pp-btn--danger {
+        border-color: color-mix(in srgb, var(--color-danger) 60%, transparent);
+        background: transparent;
+        color: var(--color-danger);
+    }
+
+    .pp-btn--danger:hover:not(:disabled) {
+        background: color-mix(in srgb, var(--color-danger) 16%, transparent);
+    }
+
+    .pp-btn--sm {
+        min-height: 2.25rem;
+        padding: 0.25rem 1rem;
+        border-radius: 999px;
+        font-size: var(--text-caption);
+    }
+
+    .pp-btn--pill {
+        border-radius: 999px;
+    }
+
+    .pp-btn--block {
+        width: 100%;
+    }
+
+    .pp-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    /* ======================================================================================
+     * Forms (inputs.svg, form_control_element.svg)
+     * ====================================================================================== */
+
+    .pp-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+    }
+
+    .pp-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    /*
+     * Control styling is attached to the elements, not to a `.pp-form` wrapper.
+     *
+     * Tailwind's preflight resets every element to `border-width: 0`, so a field that is not
+     * explicitly given a border has none — invisible against the dark canvas. Keying off the
+     * elements means a page that opts into the theme cannot end up with unreadable inputs
+     * because its form forgot a class; `.pp-form` above is then only about spacing.
+     */
+    .pp-label,
+    .pp-theme :where(label, legend) {
+        color: var(--color-text-1);
+        font-size: var(--text-body);
+        line-height: var(--text-body--line-height);
+        font-weight: 600;
+    }
+
+    .pp-input,
+    .pp-theme :where(
+        input:not([type="checkbox"], [type="radio"], [type="submit"], [type="button"], [type="reset"], [type="range"], [type="color"]),
+        select,
+        textarea
+    ) {
+        width: 100%;
+        max-width: 100%;
+        min-height: 2.75rem;
+        padding: 0.625rem 0.875rem;
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-sm);
+        background: var(--color-ink-1);
+        color: var(--color-text-1);
+        font-family: inherit;
+        font-size: var(--text-body);
+        line-height: var(--text-body--line-height);
+        transition: border-color 120ms ease-out, box-shadow 120ms ease-out;
+    }
+
+    .pp-theme :where(input, select, textarea)::placeholder {
+        color: var(--color-text-3);
+    }
+
+    .pp-theme :where(input, select, textarea):hover:not(:disabled) {
+        border-color: color-mix(in srgb, var(--pp-accent) 60%, var(--color-line));
+    }
+
+    .pp-theme :where(input, select, textarea):focus {
+        border-color: var(--pp-accent-glow);
+        box-shadow: var(--pp-focus-ring);
+        outline: none;
+    }
+
+    /* Keyboard focus keeps the theme outline as well, so the field is unmistakable. */
+    .pp-theme :where(input, select, textarea):focus-visible {
+        outline: 3px solid var(--pp-accent-glow);
+        outline-offset: 2px;
+    }
+
+    .pp-theme :where(input, select, textarea):disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+
+    /*
+     * The error state is driven by `aria-invalid`, which `_form_theme.html.twig` sets whenever a
+     * field carries errors. Styling the attribute rather than a class means a red field is always
+     * a field a screen reader also announces as invalid — the two cannot disagree.
+     */
+    .pp-theme :where(input, select, textarea)[aria-invalid="true"] {
+        border-color: var(--color-danger);
+    }
+
+    .pp-theme :where(input, select, textarea)[aria-invalid="true"]:focus {
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-danger) 30%, transparent);
+    }
+
+    /* A file input's own button is drawn by the browser; give it the same affordance. */
+    .pp-theme input[type="file"] {
+        padding: 0.375rem 0.5rem;
+    }
+
+    .pp-theme input[type="file"]::file-selector-button {
+        margin-right: 0.75rem;
+        min-height: 2rem;
+        padding: 0.25rem 0.875rem;
+        border: 1px solid color-mix(in srgb, var(--pp-accent) 55%, transparent);
+        border-radius: var(--radius-xs);
+        background: transparent;
+        color: var(--color-text-1);
+        font-family: inherit;
+        font-size: var(--text-body);
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .pp-help,
+    .pp-theme :where(.form-help, small) {
+        color: var(--color-text-3);
+        font-size: var(--text-caption);
+        line-height: var(--text-caption--line-height);
+    }
+
+    /* Field-level errors. The class is kept from the existing form theme. */
+    .form-errors {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        color: var(--color-danger);
+        font-size: var(--text-caption);
+        line-height: var(--text-caption--line-height);
+    }
+
+    .form-errors li::before {
+        content: "";
+        display: inline-block;
+        width: 0.375rem;
+        height: 0.375rem;
+        margin-right: 0.5rem;
+        border-radius: 999px;
+        background: currentColor;
+        vertical-align: 0.15em;
+    }
+
+    /*
+     * Error summary. `.form-error-summary` and `#error-summary` are asserted by the functional
+     * suite and by `account/_error_summary.html.twig`; only the paint changes here.
+     */
+    .form-error-summary {
+        padding: 0.875rem 1rem;
+        border: 1px solid color-mix(in srgb, var(--color-danger) 55%, transparent);
+        border-left-width: 4px;
+        border-radius: var(--radius-sm);
+        background: color-mix(in srgb, var(--color-danger) 12%, var(--color-ink-2));
+        color: var(--color-text-1);
+        font-size: var(--text-body);
+        line-height: var(--text-body--line-height);
+    }
+
+    .form-error-summary h2 {
+        margin: 0 0 0.5rem;
+        font-size: var(--text-card);
+        line-height: var(--text-card--line-height);
+        font-weight: 600;
+    }
+
+    .form-error-summary ul {
+        margin: 0;
+        padding-left: 1.125rem;
+    }
+
+    .form-error-summary a {
+        color: var(--color-danger);
+    }
+
+    /* Native checkbox / radio / colour controls, tinted rather than replaced: a real control
+       keeps its keyboard behaviour and its screen-reader role for free. */
+    .pp-theme :where(input[type="checkbox"], input[type="radio"]) {
+        width: 1.25rem;
+        height: 1.25rem;
+        accent-color: var(--pp-accent);
+    }
+
+    .pp-choice {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        min-height: 2.75rem;
+    }
+
+    /* ======================================================================================
+     * Badges, avatars, pills
+     * ====================================================================================== */
+
+    .pp-badge,
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.1875rem 0.625rem;
+        border: 1px solid var(--color-line-strong);
+        border-radius: 999px;
+        color: var(--color-text-2);
+        font-size: var(--text-caption);
+        line-height: var(--text-caption--line-height);
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .pp-badge--accent,
+    .badge {
+        border-color: color-mix(in srgb, var(--pp-accent) 60%, transparent);
+        background: color-mix(in srgb, var(--pp-accent) 20%, transparent);
+        color: var(--color-text-1);
+    }
+
+    .pp-avatar {
+        display: grid;
+        place-items: center;
+        width: 2rem;
+        height: 2rem;
+        border: 2px solid var(--color-ink-0);
+        border-radius: 999px;
+        background: var(--color-accent-tint);
+        color: var(--color-ink-0);
+        font-size: var(--text-caption);
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .pp-avatar-stack {
+        display: flex;
+        align-items: center;
+    }
+
+    .pp-avatar-stack > * + * {
+        margin-left: -0.5rem;
+    }
+
+    /* ======================================================================================
+     * Flash messages — class names are asserted by the functional suite, keep them
+     * ====================================================================================== */
+
+    .pp-theme .flash {
+        display: flex;
+        gap: 0.625rem;
+        margin: 0;
+        padding: 0.875rem 1rem;
+        border: 1px solid var(--color-line);
+        border-left-width: 4px;
+        border-radius: var(--radius-sm);
+        background: var(--color-ink-2);
+        color: var(--color-text-1);
+        font-size: var(--text-body);
+        line-height: var(--text-body--line-height);
+    }
+
+    .pp-theme .flash + .flash {
+        margin-top: 0.5rem;
+    }
+
+    /* The word carries the meaning; the colour is a second, redundant signal (NFR-023). */
+    .pp-theme .flash-success {
+        border-left-color: var(--color-success);
+    }
+
+    .pp-theme .flash-error {
+        border-left-color: var(--color-danger);
+    }
+
+    .pp-theme .flash-warning {
+        border-left-color: var(--color-warning);
+    }
+
+    .pp-theme .flash-info,
+    .pp-theme .flash-notice {
+        border-left-color: var(--pp-accent-glow);
+    }
+
+    /* ======================================================================================
+     * Context switcher (FR-069) — class names are asserted by the functional suite
+     * ====================================================================================== */
+
+    .pp-theme .context-switcher {
+        margin: 0;
+        padding: 0.875rem 1rem;
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-md);
+        background: var(--color-ink-2);
+        font-size: var(--text-body);
+    }
+
+    .pp-theme .context-switcher form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .pp-theme .context-switcher label {
+        color: var(--color-text-3);
+        font-size: var(--text-caption);
+        font-weight: 600;
+    }
+
+    .pp-theme .context-switcher select {
+        min-height: 2.75rem;
+        max-width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-sm);
+        background: var(--color-ink-1);
+        color: var(--color-text-1);
+        font-family: inherit;
+        font-size: var(--text-body);
+    }
+
+    .pp-theme .context-current {
+        margin: 0;
+    }
+
+    /* ======================================================================================
+     * Focused single-task pages: sign in, password reset, forced password change
+     * ====================================================================================== */
+
+    .pp-auth {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.5rem;
+        min-height: 100vh;
+        padding: 2rem 1rem;
+    }
+
+    .pp-auth-card {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        width: 100%;
+        max-width: 26rem;
+        padding: 2rem;
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-lg);
+        background: color-mix(in srgb, var(--color-ink-2) 88%, transparent);
+        box-shadow: var(--shadow-card-strong);
+    }
+
+    .pp-auth-head {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .pp-auth-title {
+        margin: 0;
+        font-size: var(--text-section);
+        line-height: var(--text-section--line-height);
+        font-weight: 700;
+    }
+
+    .pp-auth-lead {
+        margin: 0;
+        color: var(--color-text-3);
+        font-size: var(--text-body);
+        line-height: var(--text-body--line-height);
+    }
+
+    .pp-auth-links {
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font-size: var(--text-body);
+    }
+
+    .pp-auth-links a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 2.75rem;
+        color: var(--color-text-2);
+    }
+
+    .pp-auth-links a:hover {
+        color: var(--color-text-1);
+    }
+
+    /* 400% zoom / 320px width: the card gives up its padding and radius before it clips. */
+    @media (max-width: 26rem) {
+        .pp-auth {
+            padding: 1rem 0.75rem;
+        }
+
+        .pp-auth-card {
+            padding: 1.25rem;
+            border-radius: var(--radius-md);
+        }
+    }
+
+    /* ======================================================================================
+     * Link list — the dashboard's section index until each role's real dashboard lands
+     * ====================================================================================== */
+
+    .pp-link-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
+        gap: 0.75rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .pp-link-card {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-height: 3.25rem;
+        height: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-sm);
+        background: var(--color-ink-2);
+        color: var(--color-text-1);
+        font-size: var(--text-body);
+        font-weight: 600;
+        text-decoration: none;
+        transition: background-color 120ms ease-out, border-color 120ms ease-out,
+            transform 120ms ease-out;
+    }
+
+    .pp-link-card:hover {
+        border-color: color-mix(in srgb, var(--pp-accent) 50%, transparent);
+        background: var(--color-ink-3);
+        transform: translateY(-1px);
+        text-decoration: none;
+    }
+
+    .pp-link-card .pp-icon {
+        color: var(--pp-accent-glow);
+    }
+
+    /* The notification indicator brings its own `<a>`; the card is the frame around it. */
+    .pp-link-card a {
+        display: flex;
+        flex: 1 1 auto;
+        align-items: center;
+        gap: 0.5rem;
+        color: inherit;
+        text-decoration: none;
+    }
+
+    /* ======================================================================================
+     * Navigation item assembled from a shared partial rather than by `_nav.html.twig`
+     * ====================================================================================== */
+
+    .pp-nav-item--wrap {
+        color: var(--color-text-2);
+    }
+
+    .pp-nav-item--wrap:hover {
+        background: var(--color-ink-2);
+        color: var(--color-text-1);
+    }
+
+    .pp-nav-item--wrap a {
+        display: flex;
+        flex: 1 1 auto;
+        align-items: center;
+        gap: 0.5rem;
+        color: inherit;
+        text-decoration: none;
+    }
+
+    /* ======================================================================================
+     * Input with a trailing control — the affix slot inputs.svg shows on the right of a field
+     * ====================================================================================== */
+
+    .pp-input-group {
+        display: flex;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+
+    .pp-input-group > :where(input, select) {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .pp-input-affix {
+        flex: 0 0 auto;
+        min-width: 4.5rem;
+        min-height: 2.75rem;
+        padding: 0 0.875rem;
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-sm);
+        background: var(--color-ink-1);
+        color: var(--color-text-2);
+        font-family: inherit;
+        font-size: var(--text-body);
+        font-weight: 600;
+        cursor: pointer;
+        transition: border-color 120ms ease-out, color 120ms ease-out;
+    }
+
+    .pp-input-affix:hover {
+        border-color: color-mix(in srgb, var(--pp-accent) 60%, var(--color-line));
+        color: var(--color-text-1);
+    }
+
+    /* ======================================================================================
+     * Requirement checklist — the password hint's static markup, annotated by password-hint.js
+     * ====================================================================================== */
+
+    .pp-hint-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        color: var(--color-text-3);
+        font-size: var(--text-caption);
+        line-height: var(--text-caption--line-height);
+    }
+
+    .pp-hint-list li {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+    }
+
+    /*
+     * The marker is a second signal, never the only one: `password-hint.js` writes "met" /
+     * "not met yet" into each item, and that text is what a screen reader and a reader who
+     * cannot separate the colours both rely on (WCAG 1.4.1).
+     */
+    .pp-hint-list li::before {
+        content: "\2013";
+        color: var(--color-text-3);
+    }
+
+    .pp-hint-list li[data-met="true"] {
+        color: var(--color-success);
+    }
+
+    .pp-hint-list li[data-met="true"]::before {
+        content: "\2713";
+        color: var(--color-success);
+    }
+
+    /* ======================================================================================
+     * Notice — a stated condition the page is in, such as a forced password change (FR-006)
+     * ====================================================================================== */
+
+    .pp-notice {
+        margin: 0;
+        padding: 0.875rem 1rem;
+        border: 1px solid color-mix(in srgb, var(--pp-accent) 45%, transparent);
+        border-left-width: 4px;
+        border-radius: var(--radius-sm);
+        background: color-mix(in srgb, var(--pp-accent) 14%, var(--color-ink-2));
+        color: var(--color-text-1);
+        font-size: var(--text-body);
+        line-height: var(--text-body--line-height);
+    }
+
+    .pp-prose {
+        margin: 0;
+        color: var(--color-text-2);
+        font-size: var(--text-body);
+        line-height: var(--text-body--line-height);
+    }
+
+    .pp-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    /* ======================================================================================
+     * Symfony Forms compatibility
+     *
+     * `account/_form_theme.html.twig` extends `bootstrap_4_layout`, which twenty templates in
+     * this repository already rely on, so the theme's structure is left alone and repainted here
+     * instead. Rewriting it to a bespoke layout would have changed the markup of every form in
+     * the application to restyle six pages.
+     * ====================================================================================== */
+
+    .pp-theme .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+        margin: 0;
+    }
+
+    .pp-theme :where(.form-text, .invalid-feedback, .valid-feedback) {
+        color: var(--color-text-3);
+        font-size: var(--text-caption);
+        line-height: var(--text-caption--line-height);
+    }
+
+    .pp-theme .invalid-feedback {
+        display: block;
+        color: var(--color-danger);
+    }
+
+    .pp-theme :where(.form-check, .custom-control, .custom-checkbox, .custom-radio) {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        min-height: 2.75rem;
+        padding: 0;
+    }
+
+    /* Bootstrap's own layout hides the native control and paints a replacement with CSS this
+       application never loads. Undo the hiding so the real checkbox is the visible one. */
+    .pp-theme .custom-control-input {
+        position: static;
+        width: 1.25rem;
+        height: 1.25rem;
+        opacity: 1;
+    }
+
+    .pp-theme fieldset {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin: 0;
+        padding: 0;
+        border: 0;
+    }
+
+    .pp-theme legend {
+        padding: 0;
+        color: var(--color-text-1);
+        font-size: var(--text-body);
+        font-weight: 600;
+    }
+}
+
+/* ==========================================================================================
+ * Audience shells — the family, player, coach, trainer, admin and join sections
+ *
+ * These six sections were written before the design system existed, each carrying its own
+ * `<style>` block on a light canvas. Moving them onto the theme is done by repainting the class
+ * vocabulary they already use — `card`, `muted`, `actions`, `warning`, `status-*`, a plain
+ * `<table>` — rather than by rewriting thirty content templates. That keeps this a styling
+ * change: if a rule below is deleted the pages still say the same things in the same order,
+ * which is the test the status colours in particular have to pass (NFR-094).
+ *
+ * Everything is scoped under `.pp-theme` so the template-era pages (products, starships, videos,
+ * the todo list) that share these generic class names are untouched.
+ * ========================================================================================== */
+
+@layer components {
+    /* ======================================================================================
+     * Data tables
+     *
+     * The audience sections list users, coaches, share links and impersonations in plain
+     * `<table>` markup. Below 40rem the table stops being a table and each row becomes a
+     * labelled block, so nothing is reachable only by scrolling sideways (NFR-005 / NFR-X05).
+     * That reflow reads `data-label` off each cell, which the templates already set.
+     * ====================================================================================== */
+
+    .pp-theme :where(table) {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin: 0;
+        font-size: var(--text-body);
+        line-height: var(--text-body--line-height);
+    }
+
+    .pp-theme :where(caption) {
+        margin-bottom: 0.5rem;
+        color: var(--color-text-3);
+        font-size: var(--text-caption);
+        text-align: left;
+    }
+
+    .pp-theme :where(th, td) {
+        padding: 0.75rem 0.875rem;
+        border-bottom: 1px solid var(--color-line-strong);
+        text-align: left;
+        vertical-align: top;
+    }
+
+    .pp-theme :where(thead th) {
+        border-bottom-color: color-mix(in srgb, var(--pp-accent) 40%, var(--color-line-strong));
+        background: var(--color-ink-2);
+        color: var(--color-text-2);
+        font-size: var(--text-eyebrow);
+        font-weight: var(--text-eyebrow--font-weight);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .pp-theme :where(thead th:first-child) { border-top-left-radius: var(--radius-sm); }
+    .pp-theme :where(thead th:last-child)  { border-top-right-radius: var(--radius-sm); }
+
+    .pp-theme :where(tbody tr:last-child td) { border-bottom: 0; }
+
+    .pp-theme :where(tbody tr):hover {
+        background: color-mix(in srgb, var(--pp-accent) 7%, transparent);
+    }
+
+    /* A table on the canvas needs its own edge; one inside a `.card` already has the card's. */
+    .pp-theme :where(table):not(.card table, .pp-card table) {
+        border: 1px solid var(--color-line-strong);
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+        background: color-mix(in srgb, var(--color-ink-2) 55%, transparent);
+    }
+
+    @media (max-width: 40rem) {
+        .pp-theme :where(table, tbody, tr, td) {
+            display: block;
+            width: 100%;
+        }
+
+        .pp-theme :where(thead) { display: none; }
+
+        .pp-theme :where(tbody tr) {
+            margin-bottom: 0.75rem;
+            padding: 0.5rem 0.25rem;
+            border: 1px solid var(--color-line-strong);
+            border-radius: var(--radius-sm);
+            background: var(--color-ink-2);
+        }
+
+        .pp-theme :where(tbody tr:last-child) { margin-bottom: 0; }
+
+        .pp-theme :where(tbody td) {
+            padding: 0.25rem 0.625rem;
+            border: 0;
+        }
+
+        /* The column heading, reattached to the cell it belonged to. */
+        .pp-theme :where(tbody td)::before {
+            content: attr(data-label) ": ";
+            color: var(--color-text-3);
+            font-size: var(--text-caption);
+            font-weight: 600;
+        }
+
+        .pp-theme :where(tbody td.no-label)::before { content: ""; }
+    }
+
+    /* ======================================================================================
+     * The class vocabulary the audience templates already use
+     * ====================================================================================== */
+
+    /*
+     * A bare `<dl>`. The account pages use `.pp-dl`, but the admin screens write the element on
+     * its own, and a `<dt>`/`<dd>` pair with no styling renders as two unrelated stacked lines —
+     * which on a delete-confirmation page is exactly where a label must stay attached to the
+     * value it labels.
+     */
+    .pp-theme :where(dl) {
+        display: grid;
+        grid-template-columns: minmax(8rem, max-content) minmax(0, 1fr);
+        gap: 0.5rem 1.5rem;
+        margin: 0;
+    }
+
+    .pp-theme :where(dl) > dt {
+        margin: 0;
+        color: var(--color-text-3);
+        font-size: var(--text-body);
+    }
+
+    .pp-theme :where(dl) > dd {
+        margin: 0;
+        color: var(--color-text-1);
+    }
+
+    @media (max-width: 30rem) {
+        .pp-theme :where(dl) {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 0 0;
+        }
+
+        .pp-theme :where(dl) > dd { margin-bottom: 0.625rem; }
+    }
+
+    .pp-theme .card {
+        padding: 1.25rem;
+        border: 1px solid var(--color-line-strong);
+        border-radius: var(--radius-md);
+        background: var(--color-ink-2);
+        box-shadow: var(--shadow-card-soft);
+    }
+
+    .pp-theme .card + .card { margin-top: 1rem; }
+
+    .pp-theme .muted {
+        color: var(--color-text-3);
+        font-size: var(--text-body);
+    }
+
+    .pp-theme .label {
+        color: var(--color-text-2);
+        font-weight: 600;
+    }
+
+    .pp-theme :where(.actions, .filters) {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    /* A row that mixes bare buttons with labelled fields is a filter bar: line them up on the
+       controls' baseline rather than centring a 2.75rem button against a label-plus-field stack. */
+    .pp-theme :where(.filters, .actions:has(.form-group)) { align-items: end; }
+
+    /* A warning is an alert, so it is the one place a status colour is not the accent. */
+    .pp-theme .warning {
+        padding: 0.75rem 1rem;
+        border: 1px solid color-mix(in srgb, var(--color-warning) 55%, transparent);
+        border-left-width: 4px;
+        border-radius: var(--radius-sm);
+        background: color-mix(in srgb, var(--color-warning) 12%, var(--color-ink-2));
+        color: var(--color-text-1);
+    }
+
+    .pp-theme :where(img.avatar) {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        border: 1px solid var(--color-line-strong);
+        object-fit: cover;
+        background: var(--color-ink-1);
+    }
+
+    /* The unread/pending count beside a navigation label. It is `aria-hidden` at every call site
+       and the same number is spelled out in a `visually-hidden` sibling, so this is decoration. */
+    .pp-theme .badge {
+        display: inline-block;
+        min-width: 1.5rem;
+        padding: 0 0.4rem;
+        border-radius: 999px;
+        background: var(--pp-accent);
+        color: var(--pp-accent-fg);
+        font-size: var(--text-caption);
+        font-weight: 700;
+        line-height: 1.5rem;
+        text-align: center;
+    }
+
+    .pp-theme .form-error-summary {
+        margin-bottom: 1rem;
+        padding: 0.875rem 1rem;
+        border: 1px solid color-mix(in srgb, var(--color-danger) 55%, transparent);
+        border-left-width: 4px;
+        border-radius: var(--radius-sm);
+        background: color-mix(in srgb, var(--color-danger) 12%, var(--color-ink-2));
+        color: var(--color-text-1);
+    }
+
+    .pp-theme .form-error-summary :where(ul) { margin: 0.5rem 0 0; padding-left: 1.25rem; }
+
+    /* ======================================================================================
+     * Status tones
+     *
+     * Four tones, shared by every enum the application renders: purchase approvals (pending /
+     * approved / not_required / denied / expired), coach invitations (pending / accepted /
+     * expired), share links (valid / expired / unusable) and user accounts (active / inactive /
+     * deleted). Grouping them by meaning rather than by enum is what keeps "expired" looking the
+     * same on a share link and on a purchase request.
+     *
+     * Each status is also written out as its own word — "Pending parent approval", "Confirmed",
+     * "Denied", "Expired" — so a tone only ever reinforces a label that is already there.
+     * Deleting every rule below changes nothing about what any of these pages says (NFR-094).
+     *
+     * A `status-*` class lands on three different kinds of element and only one of them is a
+     * chip: `.status.status-x` on a span, `.purchase-card.status-x` on a card, and a bare
+     * `status-x` on a `<tr>` or a `<td>` in the admin and trainer tables. So a tone publishes
+     * itself as `--status-tone` and each shape decides what to do with it — a filled background
+     * on a whole table row would read as a selection rather than as a status.
+     * ====================================================================================== */
+
+    .pp-theme :where(.status-pending) { --status-tone: var(--color-warning); }
+
+    .pp-theme :where(.status-approved, .status-not_required, .status-accepted,
+                     .status-active, .status-valid) { --status-tone: var(--color-success); }
+
+    .pp-theme :where(.status-denied, .status-deleted, .status-unusable) { --status-tone: var(--color-danger); }
+
+    .pp-theme :where(.status-expired, .status-inactive) { --status-tone: var(--color-text-3); }
+
+    /* The chip outlines and fills itself from the tone it was given. */
+    .pp-theme .status {
+        display: inline-block;
+        padding: 0.15rem 0.6rem;
+        border: 1px solid currentColor;
+        border-radius: 999px;
+        background: color-mix(in srgb, currentColor 15%, transparent);
+        color: var(--status-tone, var(--color-text-2));
+        font-size: var(--text-caption);
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    /* A status column in a table is one cell, so the tone can simply be its text. */
+    .pp-theme td[class*="status-"] { color: var(--status-tone); }
+
+    /*
+     * A whole *row* is different. Painting every cell of an active user green would read as a
+     * selection rather than as a status, and it would do it to nine rows out of eleven. So a row
+     * only ever takes the muted tone, which is the one case where the row itself is the subject:
+     * a deactivated or deleted account is still listed, but it is not live.
+     */
+    .pp-theme :where(tr.status-inactive, tr.status-deleted) { color: var(--color-text-3); }
+
+    /*
+     * The card takes the tone on its spine and keeps normal text inside: the status word on it is
+     * already a chip, and tinting a paragraph of purchase detail amber would make the least
+     * important text on the card the loudest thing on it.
+     */
+    .pp-theme .purchase-card[class*="status-"] {
+        border-left-color: var(--status-tone, var(--pp-accent));
+    }
+
+    /* The amount is the number a parent is being asked about, so it is never the smallest thing
+       on the card. */
+    .pp-theme .amount {
+        font-size: var(--text-section);
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .pp-theme .purchase-card {
+        padding: 1.25rem;
+        border: 1px solid var(--color-line-strong);
+        border-left-width: 0.35rem;
+        border-left-color: var(--pp-accent);
+        border-radius: var(--radius-md);
+        background: var(--color-ink-2);
+        box-shadow: var(--shadow-card-soft);
+    }
+
+    .pp-theme .purchase-card + .purchase-card { margin-top: 1rem; }
+    .pp-theme .purchase-card :where(h2, h3) { margin: 0 0 0.25rem; font-size: var(--text-block); }
+
+    /* NFR-X05: at 320px the header stacks and the amount stays on screen, because it is a
+       sibling of the title rather than a column that scrolled away. */
+    .pp-theme .purchase-card .headline {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1rem;
+        align-items: baseline;
+        justify-content: space-between;
+    }
+
+    .pp-theme .purchase-card .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem 1.25rem;
+        margin: 0.75rem 0;
+        color: var(--color-text-3);
+        font-size: var(--text-body);
+    }
+
+    .pp-theme .purchase-card .notes {
+        margin: 0.5rem 0 0;
+        padding-left: 0.75rem;
+        border-left: 3px solid var(--color-line-strong);
+        color: var(--color-text-2);
+    }
+
+    .pp-theme :where(.expiry, .countdown) {
+        color: var(--color-text-3);
+        font-size: var(--text-body);
+    }
+
+    /* ======================================================================================
+     * Availability grid (availability/_grid_styles.html.twig, now unused)
+     *
+     * Two rules carry requirements rather than taste: the checkbox is a 1.4rem target in a cell
+     * at least 2.2rem tall, which is what makes 168 cells usable with a thumb (NFR-082); and
+     * below 48rem the table becomes a day-by-day list with the hour written beside every box, so
+     * a phone never scrolls sideways. Selection is a ticked box, never a colour (NFR-X04).
+     * ====================================================================================== */
+
+    .pp-theme .availability-grid {
+        table-layout: fixed;
+        margin: 1rem 0;
+    }
+
+    /*
+     * `table-layout: fixed` takes every column width from the first row, so the day column would
+     * otherwise be as narrow as an hour column — and the `tfoot` row label, "Not available",
+     * would overflow it and sit on top of the first checkbox. 5.5rem is what that label needs on
+     * two lines; the 24 hour columns share what is left.
+     */
+    .pp-theme .availability-grid :where(thead th:first-child) { width: 5.5rem; }
+
+    .pp-theme .availability-grid :where(th, td) {
+        padding: 0;
+        border: 1px solid var(--color-line-strong);
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    .pp-theme .availability-grid th.hour {
+        padding: 0.3rem 0;
+        background: var(--color-ink-2);
+        font-size: var(--text-caption);
+        font-weight: 400;
+        letter-spacing: normal;
+        text-transform: none;
+    }
+
+    .pp-theme .availability-grid th.day {
+        padding: 0.35rem 0.6rem;
+        background: var(--color-ink-2);
+        font-size: var(--text-body);
+        font-weight: 600;
+        letter-spacing: normal;
+        text-align: left;
+        text-transform: none;
+        white-space: nowrap;
+    }
+
+    .pp-theme .availability-grid td.cell { height: 2.2rem; }
+
+    .pp-theme .availability-grid input[type="checkbox"] {
+        width: 1.4rem;
+        height: 1.4rem;
+        margin: 0.2rem;
+        cursor: pointer;
+    }
+
+    .pp-theme .availability-grid tfoot th {
+        padding: 0.5rem;
+        background: transparent;
+        vertical-align: middle;
+        font-size: var(--text-body);
+        letter-spacing: normal;
+        text-transform: none;
+    }
+
+    .pp-theme .availability-grid .unavailable-days {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin: 0;
+        padding: 0.5rem;
+        list-style: none;
+    }
+
+    .pp-theme .availability-grid .unavailable-days li {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .pp-theme .grid-summary {
+        min-height: 1.5rem;
+        font-weight: 600;
+    }
+
+    .pp-theme .week-lines {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 0.75rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .pp-theme .week-lines li {
+        padding: 0.15rem 0.6rem;
+        border: 1px solid var(--color-line-strong);
+        border-radius: 999px;
+        background: var(--color-ink-2);
+        font-size: var(--text-body);
+    }
+
+    /* NFR-082: a day-by-day list at 320px, not a table with a scrollbar. The generic table
+       reflow above already unwraps the rows; these rules turn each one into a wrapped strip of
+       hour boxes instead of a stack of labelled lines. */
+    @media (max-width: 48rem) {
+        .pp-theme :where(.availability-grid, .availability-grid tbody, .availability-grid tfoot,
+                         .availability-grid tr, .availability-grid td, .availability-grid th) {
+            display: block;
+            width: auto;
+        }
+
+        .pp-theme .availability-grid thead { display: none; }
+
+        .pp-theme .availability-grid tbody tr {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.4rem;
+        }
+
+        .pp-theme .availability-grid th.day {
+            flex: 1 0 100%;
+            border: 0;
+            background: transparent;
+        }
+
+        .pp-theme .availability-grid td.cell {
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+            height: auto;
+            padding: 0.1rem 0.35rem;
+            border-radius: var(--radius-xs);
+        }
+
+        /* The hour has to be visible once the column headings are gone. It replaces the generic
+           `data-label` prefix, which this grid does not set. */
+        .pp-theme .availability-grid td.cell::before { content: none; }
+
+        .pp-theme .availability-grid td.cell::after {
+            content: attr(data-hour);
+            color: var(--color-text-3);
+            font-size: var(--text-caption);
+        }
+    }
+
+    /* ======================================================================================
+     * Page furniture inside the shell
+     * ====================================================================================== */
+
+    /* A second-level heading on a page whose `<h1>` is the topbar title. */
+    .pp-theme .pp-main :where(h2) {
+        margin: 0;
+        font-size: var(--text-section);
+        line-height: var(--text-section--line-height);
+        font-weight: var(--text-section--font-weight);
+    }
+
+    .pp-theme .pp-main :where(h3) {
+        margin: 0;
+        font-size: var(--text-block);
+        line-height: var(--text-block--line-height);
+        font-weight: var(--text-block--font-weight);
+    }
+
+    /* Content sections separate themselves so a page does not have to. */
+    .pp-theme .pp-content > * + * { margin-top: 1.25rem; }
+
+    .pp-theme .pp-content :where(p) {
+        margin: 0;
+        color: var(--color-text-2);
+    }
+
+    /*
+     * The join pages have no navigation — a visitor there has no account yet — so they use a
+     * centred column on the same canvas rather than the sidebar shell.
+     */
+    .pp-public {
+        width: min(44rem, 100%);
+        margin: 0 auto;
+        padding: 2.5rem 1.25rem 4rem;
+    }
+
+    .pp-public-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        margin-bottom: 2rem;
+        font-size: var(--text-card);
+        font-weight: var(--text-card--font-weight);
+        text-decoration: none;
+    }
+
+    .pp-public-brand :where(svg, img) {
+        width: 2.25rem;
+        height: 2.25rem;
+        border-radius: var(--radius-xs);
+        object-fit: contain;
+    }
+
+    /* A centred column has no card to space its contents, so it spaces them itself. */
+    .pp-public > * + * { margin-top: 0.875rem; }
+
+    /*
+     * The heading of a page that *is* the page, rather than the heading of a card on one. The
+     * sign-in card's `.pp-auth-title` is a section title because it sits inside a bordered box
+     * that already frames it; a join page or the 500 page has no box, so its title carries the
+     * hero size the design gives a page title.
+     */
+    .pp-public :where(h1) {
+        margin: 0;
+        font-size: var(--text-hero);
+        line-height: var(--text-hero--line-height);
+        font-weight: var(--text-hero--font-weight);
+    }
+}
+
+@layer components {
+    /* ======================================================================================
+     * The last of the per-page `<style>` blocks
+     *
+     * Five content templates carried a handful of rules each, scoped to a `.trainer` / `.player`
+     * wrapper that the shells no longer render. Collected here so the wrapper can go and so a
+     * rule is not defined twice with two different colours, which is how `.warning` ended up
+     * amber on one page and absent on another.
+     * ====================================================================================== */
+
+    /* Confirmation dialogs (admin/_confirm_form.html.twig). Native `<dialog>` renders on the
+       user-agent's own white by default, which on this canvas is a flashbang. */
+    .pp-theme dialog {
+        max-width: 32rem;
+        padding: 1.5rem;
+        border: 1px solid var(--color-line-strong);
+        border-radius: var(--radius-md);
+        background: var(--color-ink-2);
+        color: var(--color-text-1);
+        box-shadow: var(--shadow-card-strong);
+    }
+
+    .pp-theme dialog::backdrop {
+        background: rgb(0 0 0 / 0.6);
+    }
+
+    /* Per-field validation errors under a join form control. */
+    .pp-theme .form-errors {
+        margin: 0.25rem 0 0;
+        padding-left: 1.25rem;
+        color: var(--color-danger);
+        font-size: var(--text-caption);
+    }
+
+    .pp-theme :where(.choice-list, .notifications) {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .pp-theme .notifications > li + li { margin-top: 0.75rem; }
+
+    /* How many players picked a slot — the number the trainer came to the page for. */
+    .pp-theme .tally {
+        padding: 0.625rem 0.875rem;
+        border-left: 4px solid var(--pp-accent);
+        border-radius: var(--radius-xs);
+        background: color-mix(in srgb, var(--pp-accent) 12%, var(--color-ink-2));
+    }
+
+    /*
+     * The coach conflict check. The message says everything; the border only draws the eye to it
+     * (NFR-X04) — a conflict reads "conflicts with" in its own sentence, and a clear check reads
+     * "no conflict", so removing both rules loses nothing but emphasis.
+     */
+    .pp-theme .conflict {
+        padding: 0.625rem 0.875rem;
+        border-left: 4px solid var(--color-warning);
+        border-radius: var(--radius-xs);
+        background: color-mix(in srgb, var(--color-warning) 12%, var(--color-ink-2));
+    }
+
+    .pp-theme .no-conflict {
+        padding: 0.625rem 0.875rem;
+        border-left: 4px solid var(--color-success);
+        border-radius: var(--radius-xs);
+        background: color-mix(in srgb, var(--color-success) 12%, var(--color-ink-2));
+    }
+
+    .pp-theme .best-times .label { font-weight: 600; }
+
+    /* A `<code>` holding a share link has nowhere to break, so it is told it may break anywhere
+       rather than being allowed to widen the page past 320px. */
+    .pp-theme :where(code) {
+        padding: 0.1rem 0.35rem;
+        border-radius: var(--radius-xs);
+        background: var(--color-ink-1);
+        color: var(--color-text-2);
+        font-size: 0.9em;
+        word-break: break-all;
+    }
+}
+
+@layer components {
+    /* ======================================================================================
+     * Bare `<button>` on the themed canvas
+     *
+     * The audience sections write plain `<button type="submit">Save</button>`. Left alone, the
+     * user agent paints it light grey on white in the middle of the dark canvas — so the theme
+     * gives an unclassed button the secondary treatment and `.pp-btn--primary` remains the
+     * deliberate choice for the one action a page is actually about.
+     *
+     * The exclusion is written into the selector rather than left to specificity. `:where()`
+     * contributes none, but neither does it *lose*: `.pp-theme :where(button)` and
+     * `.pp-btn--danger` both score (0,1,0), and this block is declared later in the same
+     * cascade layer, so on a tie it won — which is how a `pp-btn--danger` came out looking
+     * exactly like the default. `:not()` inside `:where()` is likewise free, so the exception is
+     * named here and cannot be undone by moving a rule.
+     *
+     * It matches on the `pp-` prefix rather than on `pp-btn`, because `.pp-input-affix` — the
+     * "Show" control welded to the password field — is a button this design system has already
+     * dressed, and would have been undressed by the same tie. `.action` is the one component
+     * that owns a button without carrying the prefix; it paints itself further down.
+     * ====================================================================================== */
+
+    .pp-theme :where(button:not([class*="pp-"], .action), input[type="submit"], input[type="reset"]) {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        min-height: 2.75rem;
+        padding: 0 1.125rem;
+        border: 1px solid color-mix(in srgb, var(--pp-accent) 55%, transparent);
+        border-radius: var(--radius-sm);
+        /* buttons.svg gives the secondary an outline on nothing, and the unclassed button is a
+           secondary by definition — the one action a page is *about* is the one that had
+           `pp-btn--primary` put on it deliberately. Filling this too is what made the three
+           controls under the availability grid read as three equal choices. */
+        background: transparent;
+        color: var(--color-text-1);
+        font: inherit;
+        font-size: var(--text-body);
+        font-weight: 600;
+        line-height: 1;
+        cursor: pointer;
+        transition: background-color 140ms ease-out, border-color 140ms ease-out;
+    }
+
+    .pp-theme :where(button:not([class*="pp-"], .action), input[type="submit"], input[type="reset"]):hover:not(:disabled) {
+        border-color: var(--pp-accent-hover);
+        background: color-mix(in srgb, var(--pp-accent) 18%, transparent);
+    }
+
+    .pp-theme :where(button:not([class*="pp-"], .action), input[type="submit"], input[type="reset"]):disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+
+    /* ======================================================================================
+     * Trainer branding page (trainer/branding/edit.html.twig)
+     *
+     * The preview shows the *resolved* pairing — the brand colour with the foreground the server
+     * computed from its WCAG luminance (NFR-065) — so it is painted from `--brand` directly
+     * rather than from the theme's derived accent, which is the point of the preview.
+     * ====================================================================================== */
+
+    .pp-theme .brand-preview {
+        padding: 1.25rem;
+        border: 1px solid var(--color-line-strong);
+        border-radius: var(--radius-md);
+        background: var(--color-ink-2);
+    }
+
+    .pp-theme .brand-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 0.75rem 0;
+        padding: 0.75rem 1rem;
+        border-radius: var(--radius-sm);
+        background: var(--brand, var(--color-accent));
+        color: var(--brand-fg, #ffffff);
+    }
+
+    .pp-theme .brand-logo {
+        height: 2.5rem;
+        width: auto;
+    }
+
+    .pp-theme .colour-field {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.5rem;
+    }
+
+    .pp-theme .colour-picker {
+        width: 3rem;
+        min-height: 2.75rem;
+        padding: 0.2rem;
+        border: 1px solid var(--color-line-strong);
+        border-radius: var(--radius-sm);
+        background: var(--color-ink-1);
+        cursor: pointer;
+    }
+}
+
+@layer components {
+    /* ======================================================================================
+     * The confirm-form button (admin/_confirm_form.html.twig)
+     *
+     * That partial renders every destructive admin action — deactivate, reactivate, delete,
+     * remove a trainer — and stamps the caller's `variant` onto the button as a class. Styling
+     * the variant here rather than passing `pp-btn--danger` in at each call site keeps the
+     * partial's parameter list as its API: a caller says what the action *means*, not what the
+     * button should look like.
+     * ====================================================================================== */
+
+    /*
+     * `.action` is excluded from the unclassed-button default above, so it carries the whole
+     * outline treatment itself rather than inheriting half of one — a button that opted out of
+     * the default and was given only a radius is a button with no border at all.
+     */
+    .pp-theme .action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 2.75rem;
+        padding: 0 1.125rem;
+        border: 1px solid color-mix(in srgb, var(--pp-accent) 55%, transparent);
+        border-radius: var(--radius-sm);
+        background: transparent;
+        color: var(--color-text-1);
+        font: inherit;
+        font-size: var(--text-body);
+        font-weight: 600;
+        line-height: 1;
+        cursor: pointer;
+        transition: background-color 140ms ease-out, border-color 140ms ease-out;
+    }
+
+    .pp-theme .action:hover:not(:disabled) {
+        border-color: var(--pp-accent-hover);
+        background: color-mix(in srgb, var(--pp-accent) 18%, transparent);
+    }
+
+    .pp-theme .action-destructive {
+        border-color: color-mix(in srgb, var(--color-danger) 60%, transparent);
+        background: color-mix(in srgb, var(--color-danger) 14%, var(--color-ink-2));
+        color: color-mix(in srgb, var(--color-danger) 88%, #ffffff);
+    }
+
+    .pp-theme .action-destructive:hover:not(:disabled) {
+        border-color: var(--color-danger);
+        background: color-mix(in srgb, var(--color-danger) 24%, var(--color-ink-2));
+    }
+}
+

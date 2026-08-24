@@ -49,7 +49,7 @@ final class BrandingInput
         $color = HexColor::tryParse($this->primaryColorHex);
 
         if (null === $color) {
-            $context->buildViolation('Enter a colour as a hex code, for example #1d4ed8.')
+            $context->buildViolation('Enter a colour as a hex code, for example #006600.')
                 ->atPath('primaryColorHex')
                 ->addViolation();
 

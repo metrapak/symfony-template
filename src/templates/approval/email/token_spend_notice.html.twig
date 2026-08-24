@@ -3,14 +3,25 @@
     request. The first line says so, because a parent who receives both kinds must be able to tell
     them apart without opening either.
 #}
-<p>Hello {{ recipientName }},</p>
+{% extends 'email/_layout.html.twig' %}
 
-<p>This is for your information — there is nothing for you to approve.</p>
+{% block email_title %}{{ childName }} spent tokens{% endblock %}
+{% block preheader %}For your information — there is nothing for you to approve.{% endblock %}
 
-<p>
-    <strong>{{ childName }}</strong> bought <strong>{{ purchaseDescription }}</strong> for
-    <strong>{{ amount }}</strong> using tokens. You allow this child to spend tokens without
-    approval, so they were registered straight away.
-</p>
+{% block email_content %}
+    <p style="margin:0 0 14px 0;">Hello {{ recipientName }},</p>
 
-<p><a href="{{ settingsUrl }}">Change what {{ childName }} may spend without asking</a></p>
+    <p style="margin:0 0 14px 0;">This is for your information — there is nothing for you to approve.</p>
+
+    <p style="margin:0 0 14px 0;">
+        <strong>{{ childName }}</strong> bought <strong>{{ purchaseDescription }}</strong> for
+        <strong>{{ amount }}</strong> using tokens. You allow this child to spend tokens without
+        approval, so they were registered straight away.
+    </p>
+
+    {{ include('email/_button.html.twig', {
+        url: settingsUrl,
+        label: 'Change what ' ~ childName ~ ' may spend without asking',
+        brand: brandColor|default('#006600'),
+    }) }}
+{% endblock %}

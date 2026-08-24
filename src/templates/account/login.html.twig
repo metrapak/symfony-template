@@ -1,7 +1,22 @@
-{% extends 'account/_layout.html.twig' %}
+{#
+    Sign in (FR-001, FR-003, FR-011, NFR-004, NFR-005).
+
+    A plain server round trip: no JavaScript is required to sign in, and the show-password toggle
+    below enhances the form rather than implementing it.
+
+    The error block keeps `role="alert"` and `tabindex="-1"` so a rejected attempt is announced,
+    and `.form-error-summary` is the hook the functional suite reads the message from — the two
+    generic-error tests compare its text between a known and an unknown address, which is what
+    proves the wording gives no account away (FR-001).
+#}
+{% extends 'account/_focus_layout.html.twig' %}
 
 {% block title %}Sign in{% endblock %}
 {% block heading %}Sign in{% endblock %}
+
+{% block lead %}
+    <p class="pp-auth-lead">Use the email address your account was created with.</p>
+{% endblock %}
 
 {% block account_content %}
     {% if error %}
@@ -11,26 +26,45 @@
     {% endif %}
 
     {% if app.user %}
-        <p>You are signed in as {{ app.user.userIdentifier }}. <a href="{{ logout_path() }}">Sign out</a></p>
+        <p class="pp-auth-lead">
+            You are signed in as {{ app.user.userIdentifier }}.
+            <a href="{{ logout_path() }}">Sign out</a>
+        </p>
     {% endif %}
 
-    <form action="{{ path('app_login') }}" method="post">
-        <div>
+    <form class="pp-form" action="{{ path('app_login') }}" method="post">
+        <div class="pp-field">
             <label for="username">Email address</label>
             <input type="email" value="{{ last_username }}" name="_username" id="username"
                    autocomplete="email" required autofocus>
         </div>
 
-        <div>
+        <div class="pp-field">
             <label for="password">Password</label>
-            <input type="password" name="_password" id="password" autocomplete="current-password" required>
+            {#
+                The toggle is a real `<button>` inside the field, so it is in the tab order and
+                announces its own state. `password-toggle.js` gives it behaviour and hides it
+                when JavaScript is unavailable — see the comment in that file for why the
+                fallback is "no button" rather than "a button that does nothing".
+            #}
+            <div class="pp-input-group" data-password-field>
+                <input type="password" name="_password" id="password"
+                       autocomplete="current-password" required>
+                <button type="button" class="pp-input-affix" data-password-toggle hidden
+                        aria-controls="password" aria-pressed="false">
+                    <span data-password-toggle-label>Show</span>
+                    <span class="visually-hidden"> password</span>
+                </button>
+            </div>
         </div>
 
         <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('authenticate') }}">
 
-        <button type="submit">Sign in</button>
+        <button type="submit" class="pp-btn pp-btn--primary pp-btn--block">Sign in</button>
     </form>
 
-    <p><a href="{{ path('account_password_forgot') }}">Forgotten your password?</a></p>
-    <p><a href="{{ path('account_verify_resend') }}">Need a new confirmation link?</a></p>
+    <ul class="pp-auth-links">
+        <li><a href="{{ path('account_password_forgot') }}">Forgotten your password?</a></li>
+        <li><a href="{{ path('account_verify_resend') }}">Need a new confirmation link?</a></li>
+    </ul>
 {% endblock %}

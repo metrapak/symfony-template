@@ -1,24 +1,31 @@
 {# FR-042 — the confirmation a new player or parent receives. #}
-<p>Hello {{ name }},</p>
+{% extends 'email/_layout.html.twig' %}
 
-<p>
-    {% if playerName == name %}
-        You are registered with <strong>{{ organizationName }}</strong>.
-    {% else %}
-        <strong>{{ playerName }}</strong> is registered with <strong>{{ organizationName }}</strong>.
-    {% endif %}
-</p>
+{% block email_title %}You are registered{% endblock %}
+{% block preheader %}Registration with {{ organizationName }} is confirmed.{% endblock %}
 
-{% if verificationRequired %}
-    <p>
-        One more step: we have sent a second email with a confirmation link. Open it to activate
-        your sign-in — you will not be able to sign in until you do.
+{% block email_content %}
+    <p style="margin:0 0 14px 0;">Hello {{ name }},</p>
+
+    <p style="margin:0 0 14px 0;">
+        {% if playerName == name %}
+            You are registered with <strong>{{ organizationName }}</strong>.
+        {% else %}
+            <strong>{{ playerName }}</strong> is registered with <strong>{{ organizationName }}</strong>.
+        {% endif %}
     </p>
-{% else %}
-    <p>You can sign in and see this trainer's events and content straight away.</p>
-{% endif %}
 
-<p>
-    Your details are visible to {{ organizationName }} only. If you later join another trainer,
-    each trainer sees their own program and nothing else.
-</p>
+    {% if verificationRequired %}
+        <p style="margin:0 0 14px 0;">
+            One more step: we have sent a second email with a confirmation link. Open it to activate
+            your sign-in — you will not be able to sign in until you do.
+        </p>
+    {% else %}
+        <p style="margin:0 0 14px 0;">You can sign in and see this trainer's events and content straight away.</p>
+    {% endif %}
+
+    <p style="margin:0;">
+        Your details are visible to {{ organizationName }} only. If you later join another trainer,
+        each trainer sees their own program and nothing else.
+    </p>
+{% endblock %}

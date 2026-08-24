@@ -1,9 +1,25 @@
-{# http://localhost:8080/_error/500 #}
+{#
+    The page a visitor gets when the application itself has failed (http://localhost:8080/_error/500).
+
+    On the theme's canvas like every other page, and deliberately without navigation: whatever
+    broke may well be whatever renders a sidebar, so this template asks for nothing but the
+    stylesheet. It names no exception, no route and no stack — a 500 page is read by the public,
+    and the detail belongs in the log.
+#}
 {% extends 'base.html.twig' %}
 
-{% block title %}Server Error{% endblock %}
+{% block title %}Server error{% endblock %}
+
+{% block body_class %}pp-theme{% endblock %}
 
 {% block body %}
-    <h1 class="error">500 Internal Server Error</h1>
-    <p>Sorry, something went wrong on our end.</p>
+    <main id="main-content" class="pp-public">
+        <p class="pp-eyebrow">Error 500</p>
+        <h1>Something went wrong on our end</h1>
+        <p class="pp-prose">
+            The page could not be loaded. Nothing you did caused this, and nothing you were part
+            way through has been lost — try again in a moment.
+        </p>
+        <p><a href="{{ path('homepage') }}">Back to the start</a></p>
+    </main>
 {% endblock %}

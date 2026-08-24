@@ -239,7 +239,9 @@ final class ParentDecisionTest extends ApprovalWebTestCase
         $this->submitLogin(self::PARENT_EMAIL);
         $this->client->request('GET', \sprintf('/family/approvals/%d', $purchase->getId()));
 
-        self::assertSelectorTextContains('.player, .family', 'no "request more info" here yet');
+        // `#main-content` rather than the section's wrapper class: both shells now render the
+        // themed application shell, and what this test is about is that the page says it.
+        self::assertSelectorTextContains('#main-content', 'no "request more info" here yet');
     }
 
     /**

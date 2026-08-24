@@ -1,18 +1,31 @@
-{% extends 'account/_layout.html.twig' %}
+{#
+    Request a new email confirmation link (FR-005).
+
+    Same enumeration rule as the password reset screen: the response must not depend on whether
+    the address is known, so nothing here echoes the submitted value.
+#}
+{% extends 'account/_focus_layout.html.twig' %}
 {% form_theme form 'account/_form_theme.html.twig' %}
 
 {% block title %}Send a new confirmation link{% endblock %}
 {% block heading %}Send a new confirmation link{% endblock %}
 
-{% block account_content %}
-    <p>Enter the email address for your account and we will send you a new link to confirm it.</p>
+{% block lead %}
+    <p class="pp-auth-lead">
+        Enter the email address for your account and we will send you a new link to confirm it.
+        Confirmation links expire 24 hours after they are sent.
+    </p>
+{% endblock %}
 
+{% block account_content %}
     {{ include('account/_error_summary.html.twig') }}
 
-    {{ form_start(form) }}
+    {{ form_start(form, {attr: {class: 'pp-form'}}) }}
         {{ form_row(form.email) }}
-        <button type="submit">Send confirmation link</button>
+        <button type="submit" class="pp-btn pp-btn--primary pp-btn--block">Send confirmation link</button>
     {{ form_end(form) }}
 
-    <p><a href="{{ path('app_login') }}">Back to sign in</a></p>
+    <ul class="pp-auth-links">
+        <li><a href="{{ path('app_login') }}">Back to sign in</a></li>
+    </ul>
 {% endblock %}

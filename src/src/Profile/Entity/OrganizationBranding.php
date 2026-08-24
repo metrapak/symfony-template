@@ -32,8 +32,14 @@ class OrganizationBranding
     /**
      * The platform's own accent. Used whenever an organization has not chosen one, and the
      * value FR-072's reset restores by clearing the column.
+     *
+     * This is the accent of the supplied design system (`designs/buttons.svg`,
+     * `designs/DESIGN_TOKENS.md`), and it is the default for exactly that reason: an unbranded
+     * page — the sign-in screen, a Super Admin's view, a player who has not picked a context —
+     * is the platform's own look, so it has to be the design's own accent rather than a
+     * placeholder the mockups never show.
      */
-    public const DEFAULT_PRIMARY_COLOR = '#1d4ed8';
+    public const DEFAULT_PRIMARY_COLOR = '#006600';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]

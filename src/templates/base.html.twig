@@ -2,8 +2,15 @@
 <html lang="{{ app.request.locale }}">
     <head>
         <meta charset="UTF-8">
+        {#
+            NFR-005 asks for screens usable at 320px. Without this a mobile browser lays the page
+            out at ~980px and scales it down, so every "responsive" rule below the fold never
+            applies and every touch target ends up under 44px. It is the one line the whole
+            responsive contract rests on.
+        #}
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>{% block title %}Welcome!{% endblock %}</title>
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text></svg>">
+        <link rel="icon" href="{{ asset('main/images/favicon.svg') }}" type="image/svg+xml">
         {# FR-071/FR-072: the viewer's brand colours, before any page stylesheet, so a layout
            can override them and a component can only read them. #}
         {{ include('_branding.html.twig') }}
@@ -15,10 +22,22 @@
             {% block importmap %}{{ importmap('app') }}{% endblock %}
         {% endblock %}
     </head>
-    <body>
+    {#
+        The design's dark canvas is opted into per layout through `body_class`, not applied to
+        `body` unconditionally. The template-era pages (products, starships, videos, the todo
+        list) and the four audience shells carry their own light-canvas CSS, and repainting the
+        document root would leave them unreadable as a side effect of a TASK-001 change.
+    #}
+    <body class="{% block body_class %}{% endblock %}">
+        {#
+            WCAG 2.4.1 — first focusable thing in the document, so a keyboard user is not walked
+            through the whole sidebar on every page. It targets `#main-content`, which every
+            layout in this repository already puts on its `<main>`.
+        #}
+        <a class="pp-skip-link" href="#main-content">Skip to main content</a>
+
         {# FR-029: above all content, on every page that uses this layout. #}
         {{ include('_impersonation_banner.html.twig') }}
-        <img src="{{ asset('main/images/red-pin.svg') }}" alt="Red pin">
         {% block body %}{% endblock %}
     </body>
 </html>

@@ -1,0 +1,53 @@
+{#
+    The focused single-task shell: sign in, password reset, email confirmation, the forced
+    password change (FR-001, FR-004, FR-005, FR-006).
+
+    One card, centred on the dark canvas, with the platform mark above it — the design's auth
+    surface. No navigation, and that is the point on two of these pages:
+
+      - A signed-out visitor has nowhere to navigate to.
+      - A user carrying `must_change_password` is redirected back here from every other route
+         (FR-006), so a sidebar would be a list of links that all bounce.
+
+    The context switcher is deliberately absent for the same reason: it changes what every
+    subsequent page shows, and on these pages there is no subsequent page yet.
+
+    Heading structure: the card's own `<h1>` is the page heading, so a screen-reader user landing
+    here hears the task first. `#main-content` is on the `<main>` so the skip link in
+    `base.html.twig` has its target on these pages too.
+#}
+{% extends 'base.html.twig' %}
+
+{% block body_class %}pp-theme{% endblock %}
+
+{% block body %}
+    <main id="main-content" class="pp-auth">
+        {#
+            Not a link. The only thing above a sign-in form worth linking to would be a marketing
+            site this application does not have, and a logo that navigates to the demo route
+            index is a trap rather than a wayfinder.
+        #}
+        <p class="pp-brand">
+            <span class="pp-brand-mark">{{ include('_logo.html.twig') }}</span>
+            <span>{{ app_name }}</span>
+        </p>
+
+        <div class="pp-auth-card">
+            <div class="pp-auth-head">
+                <h1 class="pp-auth-title">{% block heading %}{% endblock %}</h1>
+                {% block lead %}{% endblock %}
+            </div>
+
+            {# Flash messages announce themselves to assistive tech without stealing focus. #}
+            <div role="status" aria-live="polite">
+                {% for label, messages in app.flashes %}
+                    {% for message in messages %}
+                        <p class="flash flash-{{ label }}">{{ message }}</p>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+
+            {% block account_content %}{% endblock %}
+        </div>
+    </main>
+{% endblock %}

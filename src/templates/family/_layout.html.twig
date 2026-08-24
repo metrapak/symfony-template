@@ -1,87 +1,105 @@
 {#
     Shell for the family section (FR-066, FR-069).
 
-    Carries the context switcher, because FR-069 calls it "a navigation control" and this is the
-    navigation. Plain CSS in the layout, like the trainer and admin shells: this epic ships
-    behaviour, and the brand colour arrives through the `--brand` custom property that
-    `_branding.html.twig` sets, so a trainer's colour reaches these pages with nothing here
-    knowing whose colour it is.
+    The same application shell as `account/_layout.html.twig` — sidebar of destinations, topbar,
+    dark canvas with the accent wash (designs/event_builder.svg) — with a parent's navigation in
+    it. The section used to carry its own light-canvas `<style>` block; that block is gone and
+    the class vocabulary its pages already use (`card`, `muted`, `actions`, `warning`, a plain
+    `<table>`) is repainted by the theme instead, so moving the section across changed no content
+    template.
 
-    Responsive without a framework: the family table reflows at narrow widths by turning each row
-    into a stacked block (NFR-X05 asks for 320px), and every control is at least 2.75rem tall so
-    it is a comfortable touch target.
+    Carries the context switcher, because FR-069 calls it "a navigation control" and this is the
+    navigation.
+
+    The approvals count is rendered here rather than by `nav.item`, because the item needs a
+    badge the macro does not draw. The number is `aria-hidden` and spelled out beside it, so it
+    is never the only way to know how many are waiting.
 #}
 {% extends 'base.html.twig' %}
 
+{% block body_class %}pp-theme{% endblock %}
+
 {% block body %}
-    <main id="main-content" class="family">
-        <nav aria-label="Family sections">
-            <ul class="family-nav">
-                <li><a href="{{ path('family_dashboard') }}">Dashboard</a></li>
-                <li><a href="{{ path('family_index') }}">Player profiles</a></li>
-                <li><a href="{{ path('availability_index') }}">Best Times</a></li>
-                <li><a href="{{ path('family_approvals') }}">Approvals{% set waiting = pending_approval_count() %}{% if waiting > 0 %} <span class="badge" aria-hidden="true">{{ waiting }}</span><span class="visually-hidden">— {{ waiting }} waiting for you</span>{% endif %}</a></li>
-                <li><a href="{{ path('player_reservations') }}">Reservations</a></li>
-                <li>{{ include('_notification_indicator.html.twig') }}</li>
-                <li><a href="{{ path('account_profile') }}">My profile</a></li>
-                <li><a href="{{ logout_path() }}">Sign out</a></li>
-            </ul>
-        </nav>
+    {% import '_nav.html.twig' as nav %}
+    {% import '_icons.html.twig' as icons %}
 
-        {{ include('_context_switcher.html.twig') }}
+    {% set branding = viewer_branding() %}
+    {% set logoUrl = branding_logo_url(branding) %}
+    {% set route = app.request.attributes.get('_route') %}
 
-        {# Flash messages announce themselves without stealing focus. #}
-        <div role="status" aria-live="polite">
-            {% for label, messages in app.flashes %}
-                {% for message in messages %}
-                    <p class="flash flash-{{ label }}">{{ message }}</p>
-                {% endfor %}
-            {% endfor %}
+    <div class="pp-shell">
+        <div class="pp-sidebar">
+            <a class="pp-brand" href="{{ path('family_dashboard') }}">
+                <span class="pp-brand-mark">
+                    {% if logoUrl %}
+                        {# `alt=""`: the organization's name is written out immediately beside it. #}
+                        <img src="{{ logoUrl }}" alt="">
+                    {% else %}
+                        {{ include('_logo.html.twig') }}
+                    {% endif %}
+                </span>
+                <span>{{ branding.organizationName ?? app_name }}</span>
+            </a>
+
+            <nav class="pp-nav" aria-label="Family sections">
+                <ul>
+                    {{ nav.item(path('family_dashboard'), 'Dashboard', 'dashboard', route == 'family_dashboard') }}
+                    {{ nav.item(path('family_index'), 'Player profiles', 'family', route starts with 'family_' and route not in ['family_dashboard', 'family_approvals', 'family_approval_show']) }}
+                    {{ nav.item(path('availability_index'), 'Best Times', 'calendar', route starts with 'availability_') }}
+
+                    <li>
+                        <a class="pp-nav-item" href="{{ path('family_approvals') }}"
+                           {% if route starts with 'family_approval' %}aria-current="page"{% endif %}>
+                            {{ icons.icon('approvals') }}
+                            <span>Approvals</span>
+                            {% set waiting = pending_approval_count() %}
+                            {% if waiting > 0 %}
+                                <span class="badge" aria-hidden="true">{{ waiting }}</span>
+                                <span class="visually-hidden">— {{ waiting }} waiting for you</span>
+                            {% endif %}
+                        </a>
+                    </li>
+
+                    {{ nav.item(path('player_reservations'), 'Reservations', 'reservations', route == 'player_reservations') }}
+
+                    {# FR-093. The count and its screen-reader wording live in the shared partial,
+                       which four other shells also include, so the item is assembled here. #}
+                    <li class="pp-nav-item pp-nav-item--wrap">
+                        {{ icons.icon('notifications') }}
+                        {{ include('_notification_indicator.html.twig') }}
+                    </li>
+
+                    {{ nav.item(path('account_profile'), 'My profile', 'profile', route == 'account_profile') }}
+                    {{ nav.item(logout_path(), 'Sign out', 'signout', false) }}
+                </ul>
+            </nav>
         </div>
 
-        <h1>{% block heading %}{% endblock %}</h1>
+        <main id="main-content" class="pp-main">
+            <div class="pp-topbar">
+                <h1 class="pp-page-title">{% block heading %}{% endblock %}</h1>
 
-        {% block family_content %}{% endblock %}
-    </main>
+                {# The initials are decoration: the name they abbreviate is in the same link. #}
+                <a class="pp-user-chip" href="{{ path('account_profile') }}">
+                    <span class="pp-avatar" aria-hidden="true">{{ app.user.displayName|slice(0, 2) }}</span>
+                    <span>{{ app.user.displayName }}</span>
+                </a>
+            </div>
 
-    <style>
-        .family { max-width: 72rem; margin: 0 auto; padding: 1rem; font: 400 1rem/1.5 system-ui, sans-serif; }
-        .family-nav { display: flex; flex-wrap: wrap; gap: 1rem; list-style: none; padding: 0; }
-        .family h1, .family h2 { color: var(--brand); }
-        .family table { width: 100%; border-collapse: collapse; }
-        .family th, .family td { padding: .5rem; border-bottom: 1px solid #d4d4d4; text-align: left; vertical-align: top; }
-        .family th { background: #f5f5f5; }
-        .family .flash-error { color: #b91c1c; }
-        .family .flash-warning { color: #b45309; }
-        .family .actions { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
-        .family :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
-        .family button, .family input, .family select { min-height: 2.75rem; }
-        .family .avatar { width: 3rem; height: 3rem; border-radius: 50%; object-fit: cover; }
-        .family .muted { color: #525252; }
-        .family .warning { border-left: 4px solid #b45309; padding: .5rem .75rem; background: #fffbeb; }
-        .family .card { border: 1px solid #d4d4d4; border-radius: .5rem; padding: 1rem; margin-bottom: 1rem; }
-        {{ include('approval/_status_styles.html.twig') }}
-        .context-switcher { margin: 1rem 0; padding: .75rem; border: 1px solid #d4d4d4; border-radius: .5rem; }
-        .context-switcher form { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
-        .form-error-summary { border-left: 4px solid #b91c1c; padding: .5rem .75rem; background: #fef2f2; }
-        .visually-hidden {
-            position: absolute;
-            width: 1px; height: 1px;
-            margin: -1px; padding: 0; border: 0;
-            clip-path: inset(50%);
-            overflow: hidden;
-            white-space: nowrap;
-        }
+            {{ include('_context_switcher.html.twig') }}
 
-        /* The family table reflows rather than scrolling: at 320px each row becomes a labelled
-           block, so nothing is reachable only by horizontal scrolling. */
-        @media (max-width: 40rem) {
-            .family table, .family tbody, .family tr, .family td { display: block; width: 100%; }
-            .family thead { display: none; }
-            .family tr { border: 1px solid #d4d4d4; border-radius: .5rem; margin-bottom: 1rem; padding: .5rem; }
-            .family td { border: 0; padding: .25rem .5rem; }
-            .family td::before { content: attr(data-label) ": "; font-weight: 600; }
-            .family td.no-label::before { content: ""; }
-        }
-    </style>
+            {# Flash messages announce themselves without stealing focus. #}
+            <div role="status" aria-live="polite">
+                {% for label, messages in app.flashes %}
+                    {% for message in messages %}
+                        <p class="flash flash-{{ label }}">{{ message }}</p>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+
+            <div class="pp-content">
+                {% block family_content %}{% endblock %}
+            </div>
+        </main>
+    </div>
 {% endblock %}
