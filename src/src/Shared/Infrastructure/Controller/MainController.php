@@ -4,17 +4,11 @@ namespace App\Shared\Infrastructure\Controller;
 
 use App\Starships\Infrastructure\Persistence\StarshipRepository;
 use Psr\Log\LoggerInterface;
-use Symfony\Bridge\Twig\Command\DebugCommand;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Console\Input\ArrayInput;
-use Symfony\Component\Console\Output\BufferedOutput;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -27,33 +21,28 @@ class MainController extends AbstractController
         $this->logger->info('MainController instantiated');
     }
 
-    #[Route('/', name: 'homepage')]
-    public function homepage(
-        Request $request,
-        SessionInterface $session,
-        #[Autowire(service: 'twig.command.debug')]
-        DebugCommand $twigdebugCommand,
-    ): Response {
-        $output = new BufferedOutput();
-        $twigdebugCommand->run(new ArrayInput([]), $output);
-
-        $this->addFlash('success', 'Welcome to the homepage!');
-        $response = $this->render('main/homepage.html.twig');
-
-        $cookie = new Cookie('visited_homepage', 'visited_homepage', strtotime('+1 day'));
-        $response->headers->setCookie($cookie);
-
-        $request->cookies->get('visited_homepage');
-
-        $session->set('visited_homepage', true);
-        $session->remove('visited_homepage');
-        if ($session->has('visited_homepage')) {
-            exit($session->get('visited_homepage'));
-        }
-
-        $request->isXmlHttpRequest(); // Is it an AJAX request?
-
-        return $response;
+    /**
+     * The public front door: sign in, and see every section the viewer may reach.
+     *
+     * Signed out it is the only page in the application that offers a way *in* other than the
+     * bare `/login` form, so the sign-in card posts straight to the firewall's check path
+     * (`app_login`) rather than linking to it — one fewer round trip before a visitor can type
+     * a password. `_failure_path` sends a rejected attempt back here instead of to `/login`,
+     * which is why this action reads `AuthenticationUtils`: the error belongs on the form the
+     * visitor actually used. `HttpUtils` refuses a host other than this one, so that parameter
+     * is not a redirect an attacker can steer off-site.
+     *
+     * Signed in it is a section index, not a second dashboard: every destination below is behind
+     * the same `is_granted` check that guards its route (FR-010), so the page never advertises a
+     * page that would answer 403.
+     */
+    #[Route('/', name: 'homepage', methods: ['GET'])]
+    public function homepage(AuthenticationUtils $authenticationUtils): Response
+    {
+        return $this->render('main/homepage.html.twig', [
+            'error' => $authenticationUtils->getLastAuthenticationError(),
+            'last_username' => $authenticationUtils->getLastUsername(),
+        ]);
     }
 
     #[Route('/starships', name: 'starships')]
