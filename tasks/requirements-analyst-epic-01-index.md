@@ -77,11 +77,11 @@ open questions carried forward.
 ### Spec defects (need client/author correction)
 
 - [ ] **G-01** — §9 Business Rules states "ALL players under 18 require parent-managed accounts (no independent accounts for minors)", directly contradicting US-01.06 which fully specifies child logins. *Resolved for now by D-03 (child logins ship); the spec text must be corrected.*
-- [ ] **G-02** — §3 and §4 both reference "US-01.12" for portal branding, but US-01.12 is "Super Admin Deactivates User". Branding is **US-01.14**.
-- [ ] **G-03** — Footer claims "User Stories: 12"; the spec contains **14** (US-01.01 … US-01.14).
-- [ ] **G-04** — US-01.05 and US-01.06 both cross-reference "parent approval — see US-01.04", but approval is US-01.05; US-01.04 is child-trainer associations.
-- [ ] **G-05** — Duplicate section numbers: two `§10` (User Flows / Epic AC), two `§11` (Performance / Mockups), two `§12` (Questions / Testing).
-- [ ] **G-06** — `Q-01.05` is used twice with different content: inside US-01.06 (COPPA / 16-18 independent accounts) and in the §12 table (email verification before login). `Q-01.03` is missing from the table entirely.
+- [x] **G-02** — *Corrected in the spec, 2026-08-24.* The §4 note pointing at "US-01.12" for portal branding now points at **US-01.14**. (§3 lists branding as a bullet and never carried a story reference, so only one site needed the fix.)
+- [x] **G-03** — *Corrected in the spec, 2026-08-24.* The footer now reads "User Stories: 14 (includes portal branding - US-01.14)".
+- [x] **G-04** — *Corrected in the spec, 2026-08-24.* US-01.06's RSVP bullet now cross-references **US-01.05**. Only US-01.06 carried the wrong reference; US-01.05 itself never did.
+- [x] **G-05** — *Corrected in the spec, 2026-08-24.* The second run of numbers was renumbered in document order, so the spec is now `§1` … `§16`: Epic AC `§13`, Mockups `§14`, Testing `§15`, Implementation Notes `§16`.
+- [x] **G-06** — *Corrected in the spec, 2026-08-24.* The COPPA / 16-18 question inside US-01.06 took the free id **Q-01.03** and was added to the `§12` table at P1; `Q-01.05` now means email verification only, as the table and `EMAIL_VERIFICATION_REQUIRED` already assumed.
 - [x] **G-07** — Availability scope contradiction: US-01.03 says each child has availability "**per trainer**"; US-01.09 says availability is stored "per player profile" (trainer-agnostic). *Decided by TASK-005, 2026-08-22: **per profile**. `availability_slot` carries no organization id, so every trainer of a player reads the same declared times. The spec text still says both and needs correcting.*
 - [ ] **G-08** — "Camp-to-User Conversion (Integration with Epic-08)" is listed in §3 MVP scope with 5 bullet behaviours but has **no user story and no acceptance criteria**. Cannot be estimated or tested as written.
 
@@ -91,7 +91,7 @@ open questions carried forward.
 - [ ] **G-10** — Success metrics "0% data leakage between trainer organizations" and "platform handles 1,000 concurrent users" have no stated verification method. Recommend converting to explicit test criteria (isolation test suite + load test target) or removing from the Definition of Done.
 - [ ] **G-11** — Spec says "specific security implementations decided by development team". Package selection for password reset, email verification, image resizing, and rate limiting is therefore an open architecture decision, not a requirement.
 - [ ] **G-12** — Spec §9 requires permissions "enforced on both frontend (UI) and backend (API)", but D-02 scopes delivery to server-rendered Twig. Decide whether the existing `ApiLoginController` / `json_login` firewall stays, is removed, or is deferred to a later epic.
-- [ ] **G-13** — WCAG 2.1 AA is required in §13 but appears in **no** epic-level acceptance criterion. Accessibility is currently untestable as a gate.
+- [ ] **G-13** — WCAG 2.1 AA is required in §16 (Implementation Notes) but appears in **no** epic-level acceptance criterion. Accessibility is currently untestable as a gate.
 - [x] **G-14** — *Resolved 2026-08-22 (TASK-002).* Expiry means **exit to the admin view**, not logout. Implemented as a `kernel.request` subscriber reading the open audit row; window is `IMPERSONATION_TTL`, default 3600s.
 - [ ] **G-15** — No requirement covers what happens to a **trainer's** organization data when the trainer themself is deactivated or GDPR-deleted (US-01.12 / US-01.13 are written for players). Do their players, coaches, ShareLinks, and branding survive? *Unchanged by TASK-002 and TASK-003, which added associations, assignments and links to the list of things with no defined fate. Carried to TASK-004.*
 - [x] **G-17** — *Resolved 2026-08-22 (TASK-002).* Self-deactivation, self-deletion, and removal or demotion of the last active Super Admin are all blocked in the services.

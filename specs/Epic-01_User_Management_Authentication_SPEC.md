@@ -103,7 +103,7 @@ The platform serves multiple distinct user types (platform owner, trainers runni
 - ❌ User bulk import/export
 - ❌ API access for external integrations
 
-**Note**: Simple portal branding (logo upload + color selection) IS included in MVP - see US-01.12
+**Note**: Simple portal branding (logo upload + color selection) IS included in MVP - see US-01.14
 
 ---
 
@@ -340,7 +340,7 @@ Your Training:
 
 **Child CAN Do** (when logged in):
 - [ ] Browse eligible events (view-only)
-- [ ] RSVP to events (requires parent approval - see US-01.04)
+- [ ] RSVP to events (requires parent approval - see US-01.05)
 - [ ] Cancel RSVP (requires parent approval)
 - [ ] View assigned content (if purchased)
 - [ ] View own training progress
@@ -373,7 +373,7 @@ Your Training:
 - [ ] Context selector shows only child's own trainer contexts (no parent data)
 - [ ] Format: Simple trainer list (no "Me" section like parents have)
 
-**Open Question** (Q-01.05):
+**Open Question** (Q-01.03):
 - Should ALL players under 18 require parent accounts?
 - Or allow 16-18 year olds to have independent accounts?
 - COPPA compliance considerations
@@ -923,6 +923,7 @@ Your Training:
 |:---|:---|:---:|:---|:---|
 | Q-01.01 | What are the specific skill level definitions? (Beginner, Intermediate, Advanced, Elite, or custom?) | P2 | Open | Client |
 | Q-01.02 | How are age groups defined? (Birth year, age ranges, grade levels?) | P2 | Open | Client |
+| Q-01.03 | Must ALL players under 18 have parent-managed accounts, or may 16-18 year olds hold independent accounts? (COPPA considerations — see US-01.06) | P1 | Open | Client |
 | Q-01.04 | What automated emails are required? (Welcome, password reset, invite, others?) | P1 | Open | Client |
 | Q-01.05 | Email verification: Required before login or optional? | P1 | Open | Client |
 | Q-01.06 | Coach availability override: Should coach be notified when overridden? | P2 | Open | Client |
@@ -932,7 +933,7 @@ Your Training:
 
 ---
 
-## 10. Acceptance Criteria (Epic-Level)
+## 13. Acceptance Criteria (Epic-Level)
 
 This Epic is complete when:
 
@@ -995,7 +996,7 @@ This Epic is complete when:
 
 ---
 
-## 11. Mockups / Design References
+## 14. Mockups / Design References
 
 **Key Screens to Design**:
 1. Login page
@@ -1013,7 +1014,7 @@ This Epic is complete when:
 
 ---
 
-## 12. Testing Considerations
+## 15. Testing Considerations
 
 **What Should Be Tested**:
 
@@ -1057,7 +1058,7 @@ This Epic is complete when:
 
 ---
 
-## 13. Implementation Notes
+## 16. Implementation Notes
 
 **Suggested Implementation Order**:
 1. Core authentication and authorization
@@ -1094,7 +1095,7 @@ This Epic is complete when:
 
 **Priority**: P0 - Foundation (blocks all other epics)
 **Complexity**: High (authentication, multi-role system, multi-tenancy)
-**User Stories**: 12 (includes portal branding - US-01.12)
+**User Stories**: 14 (includes portal branding - US-01.14)
 
 **Note**: This specification focuses on **business requirements** and **user needs**. Technical implementation details (API design, database schema, indexing strategies, specific technologies) are decided by the development team based on their expertise.
 

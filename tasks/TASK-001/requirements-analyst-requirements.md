@@ -10,7 +10,7 @@ This is the only task with no dependencies and it blocks the other five.
 
 ## Source
 
-- `specs/Epic-01_User_Management_Authentication_SPEC.md` — §3 (Core Authentication & Authorization), §6 (User Roles), §9 (Authentication & Security / Role-Based Access / Multi-Tenancy), §10 Epic AC (Authentication & Authorization), §11 Performance, §13 Security
+- `specs/Epic-01_User_Management_Authentication_SPEC.md` — §3 (Core Authentication & Authorization), §6 (User Roles), §9 (Authentication & Security / Role-Based Access / Multi-Tenancy), §13 Epic AC (Authentication & Authorization), §11 Performance, §16 Security
 - Scoping decisions D-01, D-02 — see `tasks/requirements-analyst-epic-01-index.md`
 
 ## Functional Requirements
