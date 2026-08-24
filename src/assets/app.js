@@ -13,5 +13,6 @@ import './availability-grid.js';
 import './approval-actions.js';
 import './password-toggle.js';
 import './password-hint.js';
+import './home-tabs.js';
 
 console.log('This log comes from assets/app.js - welcome to AssetMapper! 🎉');

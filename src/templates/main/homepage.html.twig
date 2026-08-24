@@ -1,37 +1,401 @@
+{#
+    The front page (`/`).
+
+    Two jobs, side by side: sign in, and see where you can go. Both are on the same canvas as the
+    rest of the application (`pp-theme`, designs/event_builder.svg) rather than on the template-era
+    light page this route used to render.
+
+    The destination list is grouped into panels, and `home-tabs.js` turns those panels into a
+    tablist. It is written panels-first on purpose: without JavaScript every group is visible,
+    stacked, under its own heading, so "view all the links" is the *unenhanced* behaviour and the
+    tabs are the enhancement. A tab strip built in markup would instead need JavaScript to reveal
+    anything at all.
+
+    Every link is behind the same `is_granted` check that guards its route (FR-010) — the page
+    must not advertise a destination that would answer 403 — and a panel is only rendered when the
+    viewer can reach something in it, so nobody is offered an empty tab.
+#}
 {% extends 'base.html.twig' %}
 
+{% block title %}{{ app_name }}{% endblock %}
+
+{% block body_class %}pp-theme{% endblock %}
+
 {% block body %}
-    <div>
-        {# Template-era demo asset. It used to sit in `base.html.twig`, which put a red pin
-           at the top of every page in the application, including the sign-in screen. #}
-        <img src="{{ asset('main/images/red-pin.svg') }}" alt="" width="32" height="32">
-        <h1> <b>Navigation:</b></h1>
-        <nav style="margin-top: 20px; margin-bottom: 50px">
-            <ul style="display: flex;gap: 10px;">
-                <li>
-                    <a href="{{ path('homepage') }}">
-                        {% trans %}
-                        homepage
+    {# Imported inside the block: a top-level import in a template that `extends` another is not
+       reachable from its blocks. #}
+    {% import '_icons.html.twig' as icons %}
 
-                    {% endtrans %}
-                    </a>
-                </li>
-                <li><a href="{{ path('available_routes') }}">Available routes</a></li>
-                <li><a href="{{ path('product_list') }}">Products</a></li>
-                <li><a href="{{ path('starships') }}">Starships</a></li>
-                <li><a href="{{ path('to_do_list') }}">To do list</a></li>
-                <li><a href="{{ path('videos_front') }}">Videos app</a></li>
+    {% set branding = viewer_branding() %}
+    {% set logoUrl = branding_logo_url(branding) %}
+    {% set platformName = branding.organizationName ?? app_name %}
 
-            </ul>
-        </nav>
+    {# `is_granted('ROLE_PLAYER')` is true for a parent *and* for a child login; which of the two
+       is looking decides the contents of the panel, never whether it is shown. #}
+    {% set isPlayer = is_granted('ROLE_PLAYER') %}
+    {% set isPayer = is_granted('ACCOUNT_MANAGE_PAYMENT_METHODS') %}
 
-        {% if app.user %}{{ app.user.displayName }}{% endif %}
-        {{ app.request.uri }}
-        {{ path('homepage') }}
-        {{ app_name }}
-        {{ include('main/flashes.html.twig') }}
+    <main id="main-content" class="pp-landing">
+        <header class="pp-landing-head">
+            <p class="pp-brand">
+                <span class="pp-brand-mark">
+                    {% if logoUrl %}
+                        {# `alt=""`: the organization's name is written out immediately beside it. #}
+                        <img src="{{ logoUrl }}" alt="">
+                    {% else %}
+                        {{ include('_logo.html.twig') }}
+                    {% endif %}
+                </span>
+                <span>{{ platformName }}</span>
+            </p>
 
-        {{ render(controller('App\\Shared\\Infrastructure\\Controller\\MainController::mostPopularPosts')) }}
+            {% if app.user %}
+                <a class="pp-btn pp-btn--secondary pp-btn--sm" href="{{ path('account_dashboard') }}">
+                    Go to your dashboard
+                </a>
+            {% endif %}
+        </header>
 
-    </div>
+        {# Flash messages announce themselves without stealing focus — a signed-out visitor who
+           has just logged out lands here and should hear that, not be moved. #}
+        <div role="status" aria-live="polite">
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <p class="flash flash-{{ label }}">{{ message }}</p>
+                {% endfor %}
+            {% endfor %}
+        </div>
+
+        <div class="pp-landing-hero">
+            <p class="pp-eyebrow">Practice, planned</p>
+            <h1 class="pp-landing-title">Everything your club runs on, in one place</h1>
+            <p class="pp-landing-lead">
+                Sign in to set best times, approve what your children buy, and keep a squad's week
+                straight. The sections you can reach are listed below.
+            </p>
+        </div>
+
+        <div class="pp-landing-body">
+            {# `data-home-tabs` marks the element `home-tabs.js` prepends the tab strip to. The
+               region is named with `aria-label` rather than a visually hidden heading, so nothing
+               sits between that strip and the panels it controls. #}
+            <div class="pp-landing-sections" data-home-tabs role="region" aria-label="Where you can go">
+                {% if app.user %}
+                    <section class="pp-landing-panel" data-home-panel data-home-panel-label="Your account">
+                        <h2 class="pp-card-title" data-home-panel-heading>Your account</h2>
+                        <ul class="pp-link-list">
+                            <li>
+                                <a class="pp-link-card" href="{{ path('account_dashboard') }}">
+                                    {{ icons.icon('dashboard') }}
+                                    <span>Dashboard</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="pp-link-card" href="{{ path('account_profile') }}">
+                                    {{ icons.icon('profile') }}
+                                    <span>Your profile</span>
+                                </a>
+                            </li>
+                            {# FR-093: the count and its screen-reader wording live in the shared
+                               partial, which brings its own `<a>`; the card is the frame. #}
+                            <li>
+                                <span class="pp-link-card">
+                                    {{ icons.icon('notifications') }}
+                                    {{ include('_notification_indicator.html.twig') }}
+                                </span>
+                            </li>
+                            <li>
+                                <a class="pp-link-card" href="{{ path('account_password_change') }}">
+                                    {{ icons.icon('password') }}
+                                    <span>Change your password</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="pp-link-card" href="{{ logout_path() }}">
+                                    {{ icons.icon('signout') }}
+                                    <span>Sign out</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </section>
+                {% endif %}
+
+                {% if isPlayer %}
+                    <section class="pp-landing-panel" data-home-panel data-home-panel-label="Family">
+                        <h2 class="pp-card-title" data-home-panel-heading>Family</h2>
+                        <ul class="pp-link-list">
+                            <li>
+                                <a class="pp-link-card" href="{{ path('family_dashboard') }}">
+                                    {{ icons.icon('dashboard') }}
+                                    <span>Family dashboard</span>
+                                </a>
+                            </li>
+                            {# A child login holds ROLE_PLAYER but manages nobody, so the voter —
+                               not the role — decides whether these three are offered. #}
+                            {% if is_granted('FAMILY_MANAGE_CHILDREN') %}
+                                <li>
+                                    <a class="pp-link-card" href="{{ path('family_index') }}">
+                                        {{ icons.icon('family') }}
+                                        <span>Player profiles</span>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            <li>
+                                <a class="pp-link-card" href="{{ path('availability_index') }}">
+                                    {{ icons.icon('calendar') }}
+                                    <span>Best Times</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="pp-link-card" href="{{ path('player_reservations') }}">
+                                    {{ icons.icon('reservations') }}
+                                    <span>Reservations</span>
+                                </a>
+                            </li>
+                            {% if isPayer %}
+                                <li>
+                                    <a class="pp-link-card" href="{{ path('family_approvals') }}">
+                                        {{ icons.icon('approvals') }}
+                                        <span>Purchase approvals</span>
+                                        {% set waiting = pending_approval_count() %}
+                                        {% if waiting > 0 %}
+                                            <span class="badge" aria-hidden="true">{{ waiting }}</span>
+                                            <span class="visually-hidden">— {{ waiting }} waiting for you</span>
+                                        {% endif %}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="pp-link-card" href="{{ path('family_spending') }}">
+                                        {{ icons.icon('availability') }}
+                                        <span>Spending limits</span>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </section>
+                {% endif %}
+
+                {% if is_granted('ROLE_COACH') %}
+                    <section class="pp-landing-panel" data-home-panel data-home-panel-label="Coaching">
+                        <h2 class="pp-card-title" data-home-panel-heading>Coaching</h2>
+                        <ul class="pp-link-list">
+                            <li>
+                                <a class="pp-link-card" href="{{ path('coach_dashboard') }}">
+                                    {{ icons.icon('dashboard') }}
+                                    <span>Coach dashboard</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="pp-link-card" href="{{ path('coach_my_times') }}">
+                                    {{ icons.icon('clock') }}
+                                    <span>My Times</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </section>
+                {% endif %}
+
+                {% if is_granted('ROLE_TRAINER') %}
+                    <section class="pp-landing-panel" data-home-panel data-home-panel-label="Organization">
+                        <h2 class="pp-card-title" data-home-panel-heading>Organization</h2>
+                        <ul class="pp-link-list">
+                            <li>
+                                <a class="pp-link-card" href="{{ path('trainer_dashboard') }}">
+                                    {{ icons.icon('dashboard') }}
+                                    <span>Trainer dashboard</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="pp-link-card" href="{{ path('trainer_players_availability') }}">
+                                    {{ icons.icon('availability') }}
+                                    <span>Player availability</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="pp-link-card" href="{{ path('trainer_coaches_index') }}">
+                                    {{ icons.icon('family') }}
+                                    <span>Coaches</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="pp-link-card" href="{{ path('trainer_share_links_index') }}">
+                                    {{ icons.icon('mail') }}
+                                    <span>Share links</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="pp-link-card" href="{{ path('trainer_branding') }}">
+                                    {{ icons.icon('check') }}
+                                    <span>Branding</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </section>
+                {% endif %}
+
+                {% if is_granted('ROLE_SUPER_ADMIN') %}
+                    <section class="pp-landing-panel" data-home-panel data-home-panel-label="Administration">
+                        <h2 class="pp-card-title" data-home-panel-heading>Administration</h2>
+                        <ul class="pp-link-list">
+                            <li>
+                                <a class="pp-link-card" href="{{ path('admin_dashboard') }}">
+                                    {{ icons.icon('admin') }}
+                                    <span>Admin dashboard</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="pp-link-card" href="{{ path('admin_users_index') }}">
+                                    {{ icons.icon('family') }}
+                                    <span>Users</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="pp-link-card" href="{{ path('admin_audit_impersonations') }}">
+                                    {{ icons.icon('approvals') }}
+                                    <span>Impersonation audit</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="pp-link-card" href="{{ path('videos_admin_my_profile') }}">
+                                    {{ icons.icon('reservations') }}
+                                    <span>Video library admin</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </section>
+                {% endif %}
+
+                {#
+                    The template-era pages (a starship API, a product list, a todo list, the video
+                    demo and the route index) are public routes with no role rule in front of them
+                    — see the note at the end of `access_control`. They are listed, and labelled
+                    for what they are, rather than left as URLs only somebody who read the routing
+                    table would know about.
+                #}
+                <section class="pp-landing-panel" data-home-panel data-home-panel-label="Demo pages">
+                    <h2 class="pp-card-title" data-home-panel-heading>Demo pages</h2>
+                    <p class="pp-card-lead">
+                        Public template leftovers, kept so the sample data has somewhere to render.
+                    </p>
+                    <ul class="pp-link-list">
+                        <li>
+                            <a class="pp-link-card" href="{{ path('videos_front') }}">
+                                {{ icons.icon('reservations') }}
+                                <span>Videos</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="pp-link-card" href="{{ path('product_list') }}">
+                                {{ icons.icon('reservations') }}
+                                <span>Products</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="pp-link-card" href="{{ path('starships') }}">
+                                {{ icons.icon('availability') }}
+                                <span>Starships</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="pp-link-card" href="{{ path('to_do_list') }}">
+                                {{ icons.icon('check') }}
+                                <span>To-do list</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="pp-link-card" href="{{ path('available_routes') }}">
+                                {{ icons.icon('admin') }}
+                                <span>Route index</span>
+                            </a>
+                        </li>
+                    </ul>
+                </section>
+            </div>
+
+            <aside class="pp-landing-aside" aria-labelledby="landing-signin">
+                <div class="pp-auth-card">
+                    {% if app.user %}
+                        <div class="pp-auth-head">
+                            <h2 class="pp-auth-title" id="landing-signin">You are signed in</h2>
+                            <p class="pp-auth-lead">{{ app.user.displayName }} — {{ app.user.userIdentifier }}</p>
+                        </div>
+
+                        <a class="pp-btn pp-btn--primary pp-btn--block" href="{{ path('account_dashboard') }}">
+                            Open your dashboard
+                        </a>
+
+                        <ul class="pp-auth-links">
+                            <li><a href="{{ path('account_profile') }}">Your profile</a></li>
+                            <li><a href="{{ logout_path() }}">Sign out</a></li>
+                        </ul>
+                    {% else %}
+                        <div class="pp-auth-head">
+                            <h2 class="pp-auth-title" id="landing-signin">Sign in</h2>
+                            <p class="pp-auth-lead">Use the email address your account was created with.</p>
+                        </div>
+
+                        {#
+                            Same hook and wording as `account/login.html.twig`: the generic message
+                            that gives no account away (FR-001) is the authenticator's, and this
+                            form only renders it where the attempt was made.
+                        #}
+                        {% if error %}
+                            <div class="form-error-summary" role="alert" tabindex="-1">
+                                {{ error.messageKey|trans(error.messageData, 'security') }}
+                            </div>
+                        {% endif %}
+
+                        {#
+                            Posts to the firewall's own check path. A plain server round trip — no
+                            JavaScript is required to sign in from here either, and the show-password
+                            button below is enhanced by the same `password-toggle.js` the sign-in
+                            page uses.
+                        #}
+                        <form class="pp-form" action="{{ path('app_login') }}" method="post">
+                            <div class="pp-field">
+                                <label for="home-username">Email address</label>
+                                <input type="email" value="{{ last_username }}" name="_username" id="home-username"
+                                       autocomplete="email" required>
+                            </div>
+
+                            <div class="pp-field">
+                                <label for="home-password">Password</label>
+                                <div class="pp-input-group" data-password-field>
+                                    <input type="password" name="_password" id="home-password"
+                                           autocomplete="current-password" required>
+                                    <button type="button" class="pp-input-affix" data-password-toggle hidden
+                                            aria-controls="home-password" aria-pressed="false">
+                                        <span data-password-toggle-label>Show</span>
+                                        <span class="visually-hidden"> password</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {#
+                                A rejected attempt comes back to this form rather than to `/login`,
+                                where the visitor never was.
+
+                                It must be a *path*: `DefaultAuthenticationFailureHandler` reads
+                                this parameter and ignores anything that does not start with `/`
+                                or `http(s)://`, so a route name here silently falls back to the
+                                firewall's `login_path` — which is exactly the redirect this is
+                                meant to avoid, and it fails quietly. `HttpUtils` then refuses a
+                                host other than this one, so the parameter is not a way to steer
+                                the redirect off-site.
+                            #}
+                            <input type="hidden" name="_failure_path" value="{{ path('homepage') }}">
+                            <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('authenticate') }}">
+
+                            <button type="submit" class="pp-btn pp-btn--primary pp-btn--block">Sign in</button>
+                        </form>
+
+                        <ul class="pp-auth-links">
+                            <li><a href="{{ path('account_password_forgot') }}">Forgotten your password?</a></li>
+                            <li><a href="{{ path('account_verify_resend') }}">Need a new confirmation link?</a></li>
+                        </ul>
+                    {% endif %}
+                </div>
+            </aside>
+        </div>
+    </main>
 {% endblock %}
